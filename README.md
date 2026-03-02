@@ -8,7 +8,7 @@
 
 ## About
 
-AI Tech Pros is an AI consultancy specializing in building autonomous enterprise solutions powered by Google Cloud. We help businesses harness the full potential of artificial intelligence through agentic AI systems, retrieval-augmented generation (RAG), MLOps pipelines, and custom AI integrations.
+AITechPros.ai is engineering a proprietary agentic orchestration layer. We are currently partnering with a select cohort of design partners to refine our core engine before a wider release.
 
 ## Services
 
