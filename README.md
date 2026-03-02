@@ -1,6 +1,6 @@
 # AI Tech Pros — Official Website
 
-**AI consultancy building autonomous enterprise solutions on Google Cloud.**
+**AI Engineers and Cybersecurity experts building autonomous enterprise solutions on Google Cloud.**
 
 🌐 [aitechpros.ai](https://aitechpros.ai)
 
