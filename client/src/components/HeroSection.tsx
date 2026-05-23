@@ -8,6 +8,40 @@ import { useEffect, useState } from "react";
 import NeuralNetworkCanvas from "./NeuralNetworkCanvas";
 
 const HERO_BG = "https://d2xsxph8kpxj0f.cloudfront.net/310419663028368274/RDzc8Kay9NxmabXz39Hgzg/neural-network-hero_5b8079da.png";
+const trustedLogos = [
+  {
+    name: "Department of Defense",
+    src: "https://commons.wikimedia.org/wiki/Special:FilePath/Seal_of_the_United_States_Department_of_Defense.svg",
+  },
+  {
+    name: "Department of Homeland Security",
+    src: "https://commons.wikimedia.org/wiki/Special:FilePath/Seal_of_the_United_States_Department_of_Homeland_Security.svg",
+  },
+  {
+    name: "Department of the Treasury",
+    src: "https://commons.wikimedia.org/wiki/Special:FilePath/Seal_of_the_United_States_Department_of_the_Treasury.svg",
+  },
+  {
+    name: "Denton Law Firm",
+    src: "https://commons.wikimedia.org/wiki/Special:FilePath/Dentons_logo.svg",
+  },
+  {
+    name: "Frontline Managed Services",
+    src: "https://logo.clearbit.com/frontlinems.com",
+  },
+  {
+    name: "US Army",
+    src: "https://commons.wikimedia.org/wiki/Special:FilePath/Logo_of_the_United_States_Army_2023.svg",
+  },
+  {
+    name: "Blue Cross Blue Shield",
+    src: "https://logo.clearbit.com/bcbs.com",
+  },
+  {
+    name: "Georgia Pacific",
+    src: "https://commons.wikimedia.org/wiki/Special:FilePath/Georgia-Pacific_symbol.svg",
+  },
+];
 
 export default function HeroSection() {
   const [visible, setVisible] = useState(false);
@@ -18,7 +52,7 @@ export default function HeroSection() {
   }, []);
 
   return (
-    <section className="relative overflow-hidden">
+    <section className="relative overflow-hidden min-h-[92vh]">
       {/* Background layers */}
       <div className="absolute inset-0">
         {/* Base gradient */}
@@ -39,8 +73,8 @@ export default function HeroSection() {
       </div>
 
       {/* Content */}
-      <div className="container relative z-10 pt-32 pb-20 lg:pt-40 lg:pb-24">
-        <div className="max-w-3xl">
+      <div className="container relative z-10 pt-24 pb-16 sm:pt-28 sm:pb-20 lg:pt-32 lg:pb-24">
+        <div className="max-w-5xl">
           {/* Stealth badge */}
           <div
             className={`inline-flex items-center gap-3 mb-6 transition-all duration-700 ${
@@ -54,33 +88,39 @@ export default function HeroSection() {
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
               </span>
               <span className="text-xs font-semibold text-amber-400/90 uppercase tracking-wider font-[Montserrat]">
-                Early Access — Design Partner Cohort Open
+                Enterprise Runtime Engine
               </span>
             </span>
           </div>
 
           {/* Main headline */}
           <h1
-            className={`text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold text-white leading-[1.08] tracking-tight font-[Montserrat] mb-6 transition-all duration-700 ${
+            className={`text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold text-white leading-[1.08] tracking-tight font-[Montserrat] mb-5 transition-all duration-700 ${
               visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
             }`}
             style={{ transitionDelay: "400ms" }}
           >
-            Building the{" "}
+            The <span className="gradient-text">Hardened Runtime Engine</span>
             <br className="hidden sm:block" />
-            <span className="gradient-text">Autonomous Backbone</span>
-            <br className="hidden sm:block" />
-            for Enterprise.
+            for Autonomous Enterprise Workflows
           </h1>
 
           {/* Subheadline */}
           <p
-            className={`text-lg lg:text-xl text-white/55 max-w-2xl leading-relaxed mb-10 transition-all duration-700 ${
+            className={`text-lg lg:text-xl text-white/55 max-w-3xl leading-relaxed mb-7 transition-all duration-700 ${
               visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5"
             }`}
             style={{ transitionDelay: "600ms" }}
           >
-            AITechPros.ai is engineering a proprietary agentic orchestration layer. We are currently partnering with a select cohort of design partners to refine our core engine before a wider release.
+            Stop chasing AI hype. Build secure, deterministic, high-yield automation that bridges your legacy infrastructure and modern LLMs.
+          </p>
+          <p
+            className={`text-sm sm:text-base text-white/70 max-w-2xl mb-8 transition-all duration-700 ${
+              visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+            }`}
+            style={{ transitionDelay: "700ms" }}
+          >
+            For CIOs, CTOs, and CISOs operating in regulated, high-stakes environments.
           </p>
 
           {/* CTA Buttons */}
@@ -91,14 +131,12 @@ export default function HeroSection() {
             style={{ transitionDelay: "800ms" }}
           >
             <a
-              href="#contact"
-              onClick={(e) => {
-                e.preventDefault();
-                document.querySelector("#contact")?.scrollIntoView({ behavior: "smooth" });
-              }}
+              href="https://calendly.com/aitechpros/15min"
+              target="_blank"
+              rel="noopener noreferrer"
               className="glow-btn text-white font-semibold px-8 py-4 rounded-lg text-base animate-pulse-glow inline-flex items-center justify-center gap-2 group"
             >
-              Apply for Design Partnership
+              Schedule a Strategy Call
               <svg
                 className="w-4 h-4 group-hover:translate-x-1 transition-transform"
                 fill="none"
@@ -117,29 +155,35 @@ export default function HeroSection() {
               }}
               className="glass-card text-white/80 hover:text-white font-medium px-8 py-4 rounded-lg text-base inline-flex items-center justify-center gap-2 transition-all duration-300"
             >
-              View Our Technical Thesis
+              View Runtime Architecture
             </a>
           </div>
 
-          {/* Credibility signals */}
+          {/* Trusted-by social proof */}
           <div
-            className={`flex flex-wrap gap-8 lg:gap-12 mt-12 pt-8 border-t border-white/[0.06] transition-all duration-1000 ${
-              visible ? "opacity-100" : "opacity-0"
+            className={`mt-11 pt-8 border-t border-white/[0.08] transition-all duration-1000 ${
+              visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
             }`}
             style={{ transitionDelay: "1200ms" }}
           >
-            {[
-              { value: "1", label: "Live Product on Google Cloud" },
-              { value: "6+", label: "Google Cloud Services in Production" },
-              { value: "2026", label: "Platform GA Target" },
-            ].map((stat) => (
-              <div key={stat.label}>
-                <div className="text-2xl lg:text-3xl font-bold gradient-text font-[Montserrat]">
-                  {stat.value}
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <p className="text-xs text-white/45 uppercase tracking-[0.22em] font-[Montserrat]">
+                Trusted by
+              </p>
+              <p className="text-xs text-white/35">Federal and enterprise operators</p>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {trustedLogos.map((logo) => (
+                <div key={logo.name} className="glass-card rounded-xl p-3 sm:p-4 flex items-center justify-center min-h-20">
+                  <img
+                    src={logo.src}
+                    alt={logo.name}
+                    loading="lazy"
+                    className="max-h-10 sm:max-h-12 w-auto max-w-full object-contain grayscale contrast-125 brightness-95 opacity-90"
+                  />
                 </div>
-                <div className="text-sm text-white/40 mt-1">{stat.label}</div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </div>

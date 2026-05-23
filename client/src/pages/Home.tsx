@@ -1,7 +1,7 @@
 /*
  * Design: Quantum Glass — Luminous Glassmorphism
  * Home: Stealth-mode venture positioning — single-page layout
- * Sections: Hero → Design Partners → Technical Edge → Roadmap → Founders → Contact → Footer
+ * Sections: Hero → AI Dilemma → Runtime Engine → Production Workflows → Roadmap → Contact → Footer
  */
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
@@ -9,7 +9,6 @@ import DesignPartnerSection from "@/components/DesignPartnerSection";
 import TrustSection from "@/components/TrustSection";
 import TechEdgeSection from "@/components/TechEdgeSection";
 import RoadmapSection from "@/components/RoadmapSection";
-import FoundersSection from "@/components/FoundersSection";
 import ContactSection from "@/components/ContactSection";
 import Footer from "@/components/Footer";
 
@@ -19,10 +18,9 @@ export default function Home() {
       <Navbar />
       <HeroSection />
       <DesignPartnerSection />
-      <TrustSection />
       <TechEdgeSection />
+      <TrustSection />
       <RoadmapSection />
-      <FoundersSection />
       <ContactSection />
       <Footer />
     </div>

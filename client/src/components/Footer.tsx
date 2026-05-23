@@ -10,13 +10,13 @@ import { MapPin, Mail } from "lucide-react";
 
 const footerLinks = {
   Platform: [
-    { label: "Design Partner Program", href: "#partners" },
-    { label: "Technical Thesis", href: "#tech-edge" },
+    { label: "AI Dilemma", href: "#partners" },
+    { label: "Runtime Engine", href: "#tech-edge" },
     { label: "Product Roadmap", href: "#roadmap" },
   ],
   Company: [
-    { label: "Founders", href: "#founders" },
-    { label: "Apply for Partnership", href: "#contact" },
+    { label: "Production Workflows", href: "#trust" },
+    { label: "Schedule a Strategy Call", href: "https://calendly.com/aitechpros/15min" },
     { label: "Newsletter", href: "#contact" },
   ],
   Resources: [
@@ -50,6 +50,10 @@ export default function Footer() {
   const handleClick = (href: string) => {
     if (href === "#") {
       comingSoon();
+      return;
+    }
+    if (href.startsWith("http")) {
+      window.open(href, "_blank", "noopener,noreferrer");
       return;
     }
     const el = document.querySelector(href);

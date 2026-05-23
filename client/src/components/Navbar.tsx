@@ -2,18 +2,18 @@
  * Design: Quantum Glass — Luminous Glassmorphism
  * Navbar: Sticky glassmorphism header — stealth-mode venture positioning
  * Live indicator: Pulsing green dot next to logo for agility
- * Nav: Design Partners, Technical Edge, Roadmap, Founders, Contact
+ * Nav: AI Dilemma, Runtime Engine, Production Workflows, Roadmap, Briefing
  */
 import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 
 const navLinks = [
   { label: "Home", href: "#top" },
-  { label: "Design Partners", href: "#partners" },
-  { label: "Technical Edge", href: "#tech-edge" },
+  { label: "AI Dilemma", href: "#partners" },
+  { label: "Runtime Engine", href: "#tech-edge" },
+  { label: "Production Workflows", href: "#trust" },
   { label: "Roadmap", href: "#roadmap" },
-  { label: "Founders", href: "#founders" },
-  { label: "Contact", href: "#contact" },
+  { label: "Briefing", href: "#contact" },
 ];
 
 export default function Navbar() {
@@ -86,12 +86,14 @@ export default function Navbar() {
               <span className="absolute -bottom-1 left-0 w-0 h-px bg-gradient-to-r from-[#3B82F6] to-[#06B6D4] group-hover:w-full transition-all duration-300" />
             </button>
           ))}
-          <button
-            onClick={() => handleNavClick("#contact")}
+          <a
+            href="https://calendly.com/aitechpros/15min"
+            target="_blank"
+            rel="noopener noreferrer"
             className="glow-btn text-white text-sm font-semibold px-5 py-2.5 rounded-lg animate-pulse-glow"
           >
-            Apply for Partnership
-          </button>
+            Schedule a Strategy Call
+          </a>
         </div>
 
         {/* Mobile Toggle */}
@@ -120,12 +122,14 @@ export default function Navbar() {
               {link.label}
             </button>
           ))}
-          <button
-            onClick={() => handleNavClick("#contact")}
+          <a
+            href="https://calendly.com/aitechpros/15min"
+            target="_blank"
+            rel="noopener noreferrer"
             className="glow-btn text-white text-sm font-semibold px-5 py-2.5 rounded-lg mt-4 w-full"
           >
-            Apply for Partnership
-          </button>
+            Schedule a Strategy Call
+          </a>
         </div>
       </div>
     </header>
