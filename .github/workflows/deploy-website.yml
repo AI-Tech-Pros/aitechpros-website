@@ -85,7 +85,7 @@ jobs:
           protocol: ftps
           port: 21
           local-dir: ./dist/public/
-          server-dir: /public_html/
+          server-dir: /home/aitevrpo/public_html/
           dangerous-clean-slate: false
 
       - name: Smoke test live site
