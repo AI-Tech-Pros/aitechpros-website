@@ -79,6 +79,7 @@ jobs:
       - name: Build and push
         run: |
           IMAGE=ghcr.io/${{ github.repository_owner }}/orchestrateos-api
-          docker build -f resume_engine/Dockerfile -t ${IMAGE}:latest -t ${IMAGE}:${{ github.sha }} .
-          docker push ${IMAGE}:latest
-          docker push ${IMAGE}:${{ github.sha }}
+          IMAGE_LC=$(echo "${IMAGE}" | tr '[:upper:]' '[:lower:]')
+          docker build -f resume_engine/Dockerfile -t ${IMAGE_LC}:latest -t ${IMAGE_LC}:${{ github.sha }} .
+          docker push ${IMAGE_LC}:latest
+          docker push ${IMAGE_LC}:${{ github.sha }}

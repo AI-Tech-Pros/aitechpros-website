@@ -19,12 +19,6 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Topic :: Software Development :: Libraries",
 ]
-
-[project.urls]
-Homepage = "https://orchestrateos.aitechpros.ai"
-Documentation = "https://github.com/AI-Tech-Pros/aitechpros-website/tree/main/resume_engine"
-Repository = "https://github.com/AI-Tech-Pros/aitechpros-website"
-Issues = "https://github.com/AI-Tech-Pros/aitechpros-website/issues"
 dependencies = [
     "sqlalchemy>=2.0.0",
 ]
@@ -40,6 +34,12 @@ langgraph = ["langgraph>=0.0.20"]
 crewai = ["crewai>=0.1.0"]
 dev = ["pytest>=7.4.0", "pytest-asyncio>=0.21.0", "httpx>=0.25.0"]
 all = ["resume_engine[api,langgraph,crewai,dev]"]
+
+[project.urls]
+Homepage = "https://orchestrateos.aitechpros.ai"
+Documentation = "https://github.com/AI-Tech-Pros/aitechpros-website/tree/main/resume_engine"
+Repository = "https://github.com/AI-Tech-Pros/aitechpros-website"
+Issues = "https://github.com/AI-Tech-Pros/aitechpros-website/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
