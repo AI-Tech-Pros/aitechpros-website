@@ -34,13 +34,13 @@ python -m pytest resume_engine/tests -q
 | Layer | Provider |
 |-------|----------|
 | **Domain registrar / DNS** | Namecheap |
-| **Web hosting** | Namecheap Stellar (`public_html` via cPanel) |
-| **CI/CD** | GitHub Actions → FTPS deploy on push to `main` |
-| **Edge CDN** | Cloudflare (optional, if proxied) |
+| **Web hosting (production)** | Namecheap Stellar — `server97.web-hosting.com` / `198.54.116.40` |
+| **CI/CD** | GitHub Actions → SFTP deploy (SSH key) on push to `main` |
+| **Docroot** | `/home/aitevrpo/public_html/` |
 
-The marketing site deploys as a **static SPA** (`dist/public`) — no Node process required on shared hosting. See [docs/namecheap-deploy.md](docs/namecheap-deploy.md) for FTP secrets and DNS cutover.
+The marketing site is a **static SPA** (`dist/public`) on Namecheap shared hosting. See [docs/namecheap-deploy.md](docs/namecheap-deploy.md) and [docs/namecheap-ssh-key.md](docs/namecheap-ssh-key.md).
 
-**OrchestrateOS API** remains a separate Docker/Cloud Run deploy (`resume_engine/`).
+**OrchestrateOS API** is a separate Docker/Cloud Run deploy (`resume_engine/`).
 
 ---
 
@@ -48,8 +48,13 @@ The marketing site deploys as a **static SPA** (`dist/public`) — no Node proce
 
 ### 1. Website (automatic on push to `main`)
 
-Add GitHub secrets: `NAMECHEAP_FTP_SERVER`, `NAMECHEAP_FTP_USERNAME`, `NAMECHEAP_FTP_PASSWORD`.  
-Optional environment: `namecheap-production`.
+GitHub secrets (environment `namecheap-production`):
+
+| Secret | Value |
+|--------|-------|
+| `NAMECHEAP_FTP_SERVER` | `server97.web-hosting.com` |
+| `NAMECHEAP_FTP_USERNAME` | `aitevrpo` |
+| `NAMECHEAP_SSH_PRIVATE_KEY` | Deploy key (see `docs/namecheap-ssh-key.md`) |
 
 ```powershell
 npm run build   # local verify
@@ -63,10 +68,23 @@ docker compose -f resume_engine/docker-compose.yml up --build
 # Or: resume_engine/scripts/deploy_cloud_run.ps1 -ProjectId YOUR_GCP_PROJECT
 ```
 
-### 3. DNS (when cutting over from Manus)
+### 3. DNS (Namecheap Advanced DNS)
 
-Point `@` A record to your Namecheap server IP (cPanel → Server Information).  
-Subdomains last: `orchestrateos`, `api.orchestrateos`.
+**Current (live traffic still on Manus):**
+
+| Host | Type | Current value |
+|------|------|---------------|
+| `@` | A | `104.18.26.246`, `104.18.27.246` (Cloudflare → Manus) |
+| `www` | CNAME | `cname.manus.space` |
+
+**Required for Namecheap hosting:**
+
+| Type | Host | Value | TTL |
+|------|------|-------|-----|
+| **A** | `@` | `198.54.116.40` | Automatic |
+| **CNAME** | `www` | `aitechpros.ai` | Automatic |
+
+Remove the `www` → `cname.manus.space` record when updating. Subdomains (later): `orchestrateos` → same docroot; `api.orchestrateos` → Cloud Run URL.
 
 ---
 
@@ -75,7 +93,7 @@ Subdomains last: `orchestrateos`, `api.orchestrateos`.
 - **Frontend:** React 19 + TypeScript
 - **Styling:** Tailwind CSS 4 + shadcn/ui
 - **Build:** Vite (static) + optional Express for local preview
-- **Hosting:** Namecheap Stellar, deployed via GitHub Actions FTPS
+- **Hosting:** Namecheap Stellar (`server97.web-hosting.com`), GitHub Actions SFTP
 
 ## Connect
 

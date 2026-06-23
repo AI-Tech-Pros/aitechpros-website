@@ -87,7 +87,7 @@ jobs:
           remote_path: "/home/aitevrpo/public_html/"
           sftp_only: true
 
-      - name: Smoke test live site
+      - name: Smoke test Namecheap origin
         run: |
-          curl -fsSI "https://aitechpros.ai/" | head -n 1
-          curl -fsS "https://aitechpros.ai/" | grep -q "<!doctype html"
+          curl -fsSI "http://198.54.116.40/" -H "Host: aitechpros.ai" | head -n 1
+          curl -fsS "http://198.54.116.40/" -H "Host: aitechpros.ai" | grep -qi "<!doctype html"

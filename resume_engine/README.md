@@ -172,7 +172,7 @@ docker run --rm -p 8000:8000 -v orchestrateos_data:/data orchestrateos-api:lates
 
 ### Cloud Run
 
-**Deploy order:** site on Manus → API on Cloud Run/Docker → DNS subdomains last.
+**Deploy order:** site on Namecheap → API on Cloud Run/Docker → DNS subdomains last.
 
 1. Push the image to Artifact Registry or GHCR (`ghcr.io/<org>/orchestrateos-api`).
 2. Store `DATABASE_URL` in Secret Manager as `orchestrateos-database-url`.
