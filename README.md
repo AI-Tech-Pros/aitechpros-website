@@ -31,28 +31,36 @@ python -m pytest resume_engine/tests -q
 
 ## Hosting architecture
 
-| Layer | Provider | Status |
-|-------|----------|--------|
-| **Domain registrar** | Namecheap | Active |
-| **Live site (what visitors see today)** | Manus (`cname.manus.space` / Cloudflare) | **Serving** `aitechpros.ai` + `/orchestrateos` |
-| **Namecheap Stellar** | `server97.web-hosting.com` / `198.54.116.40` | Account active; `public_html` empty until deploy + DNS |
-| **CI/CD (optional)** | GitHub Actions → Namecheap SFTP | Manual — see below |
+| Layer | Provider |
+|-------|----------|
+| **Domain registrar** | Namecheap |
+| **Production web host** | Namecheap Stellar — `server97.web-hosting.com` / `198.54.116.40` |
+| **Docroot** | `/home/aitevrpo/public_html/` |
+| **CI/CD** | GitHub Actions → SFTP deploy on push to `main` |
+| **Previous host (legacy)** | Manus — no longer in use |
 
-**If the site looks fine in your browser**, Manus is already publishing it. Pushing to `main` updates the repo; **publish in your Manus project** to refresh the live build.
+The marketing site is a **static SPA** (`dist/public`) on Namecheap shared hosting. See [docs/namecheap-deploy.md](docs/namecheap-deploy.md) and [docs/namecheap-ssh-key.md](docs/namecheap-ssh-key.md).
 
-To **move the live site to Namecheap** instead: authorize the SSH key ([docs/namecheap-ssh-key.md](docs/namecheap-ssh-key.md)), run **Deploy Website** in Actions, then point DNS `@` → `198.54.116.40` in Namecheap Advanced DNS.
+**OrchestrateOS API** is a separate Docker/Cloud Run deploy (`resume_engine/`).
 
 ---
 
 ## Deploy checklist
 
-### 1. Website — live today (Manus)
+### 1. Website (Namecheap — automatic on push to `main`)
 
-Push to `main`, then **publish** from your Manus project dashboard (connected to this repo).
+GitHub secrets (environment `namecheap-production`):
 
-### 1b. Website — Namecheap (optional cutover)
+| Secret | Value |
+|--------|-------|
+| `NAMECHEAP_FTP_SERVER` | `server97.web-hosting.com` |
+| `NAMECHEAP_FTP_USERNAME` | `aitevrpo` |
+| `NAMECHEAP_SSH_PRIVATE_KEY` | Deploy key — [docs/namecheap-ssh-key.md](docs/namecheap-ssh-key.md) |
 
-Manual deploy only (Actions → **Deploy Website** → Run workflow). Requires SSH key in cPanel — [docs/namecheap-ssh-key.md](docs/namecheap-ssh-key.md).
+```powershell
+npm run build   # local verify
+git push origin main   # triggers .github/workflows/deploy-website.yml
+```
 
 ### 2. API (Cloud Run or Docker)
 
@@ -63,17 +71,17 @@ docker compose -f resume_engine/docker-compose.yml up --build
 
 ### 3. DNS (Namecheap Advanced DNS)
 
-**Hosting** is on Namecheap (`198.54.116.40`). **Public DNS** may still point elsewhere until you update records — visitors follow DNS, not where you pay for hosting.
+Ensure public DNS points at your Namecheap server:
 
 | Type | Host | Value | TTL |
 |------|------|-------|-----|
 | **A** | `@` | `198.54.116.40` | Automatic |
 | **CNAME** | `www` | `aitechpros.ai` | Automatic |
 
-Remove any old apex A records and `www` CNAMEs that do not target Namecheap.  
+Remove legacy records from the previous Manus host (`cname.manus.space`, old Cloudflare A records).  
 Subdomains (later): `orchestrateos` → same docroot; `api.orchestrateos` → Cloud Run URL.
 
-After DNS propagates, `https://aitechpros.ai/orchestrateos` serves from the same `public_html` bundle as the home page.
+> **Note:** External DNS lookups may still show stale Cloudflare/Manus IPs until records propagate. Production hosting is Namecheap (`198.54.116.40`).
 
 ---
 

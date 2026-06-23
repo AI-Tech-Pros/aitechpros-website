@@ -1,6 +1,6 @@
 # Namecheap CI/CD (aitechpros.ai)
 
-Production hosting is **Namecheap Stellar** on cPanel — not Manus.
+Production hosting is **Namecheap Stellar** on cPanel. **Manus was the previous host** — remove any legacy DNS records pointing at `cname.manus.space` when cleaning up Advanced DNS.
 
 | Setting | Value |
 |---------|-------|
@@ -11,6 +11,18 @@ Production hosting is **Namecheap Stellar** on cPanel — not Manus.
 | Docroot | `/home/aitevrpo/public_html/` |
 
 Deploy workflow: `.github/workflows/deploy-website.yml`
+
+## Migration from Manus (legacy)
+
+1. **Deploy files** — authorize RSA SSH key ([namecheap-ssh-key.md](namecheap-ssh-key.md)), push to `main` or run **Deploy Website**
+2. **Update DNS** in Namecheap Advanced DNS:
+   - Set `@` A → `198.54.116.40`
+   - Set `www` CNAME → `aitechpros.ai`
+   - Delete `www` CNAME → `cname.manus.space` and any old apex A records
+3. **Verify** — `curl.exe -sI "http://198.54.116.40/" -H "Host: aitechpros.ai"` should return your SPA (LiteSpeed, `index.html`)
+4. **AutoSSL** — run in cPanel after DNS propagates for HTTPS
+
+External resolvers may cache old Cloudflare/Manus IPs briefly after DNS changes.
 
 ## GitHub secrets
 
