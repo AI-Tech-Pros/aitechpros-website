@@ -76,16 +76,17 @@ jobs:
           name: dist-public
           path: dist/public
 
-      - name: Deploy to Namecheap (SFTP)
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+      - name: Deploy to Namecheap (FTPS)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
           server: ${{ secrets.NAMECHEAP_FTP_SERVER }}
           username: ${{ secrets.NAMECHEAP_FTP_USERNAME }}
-          ssh_private_key: ${{ secrets.NAMECHEAP_SSH_PRIVATE_KEY }}
-          port: 21098
-          local_path: "./dist/public/*"
-          remote_path: "/home/aitevrpo/public_html/"
-          sftp_only: true
+          password: ${{ secrets.NAMECHEAP_FTP_PASSWORD }}
+          protocol: ftps
+          port: 21
+          local-dir: ./dist/public/
+          server-dir: /home/aitevrpo/public_html/
+          dangerous-clean-slate: false
 
       - name: Smoke test Namecheap origin
         run: |

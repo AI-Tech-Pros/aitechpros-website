@@ -7,14 +7,14 @@ Production hosting is **Namecheap Stellar** on cPanel. **Manus was the previous 
 | Server | `server97.web-hosting.com` |
 | Server IP | `198.54.116.40` |
 | cPanel user | `aitevrpo` |
-| SSH/SFTP port | `21098` |
+| FTPS port | `21` |
 | Docroot | `/home/aitevrpo/public_html/` |
 
 Deploy workflow: `.github/workflows/deploy-website.yml`
 
 ## Migration from Manus (legacy)
 
-1. **Deploy files** — authorize RSA SSH key ([namecheap-ssh-key.md](namecheap-ssh-key.md)), push to `main` or run **Deploy Website**
+1. **Deploy files** — set `NAMECHEAP_FTP_PASSWORD` (cPanel password), push to `main` or run **Deploy Website**
 2. **Update DNS** in Namecheap Advanced DNS:
    - Set `@` A → `198.54.116.40`
    - Set `www` CNAME → `aitechpros.ai`
@@ -32,14 +32,15 @@ Environment: `namecheap-production`
 |--------|---------|
 | `NAMECHEAP_FTP_SERVER` | `server97.web-hosting.com` |
 | `NAMECHEAP_FTP_USERNAME` | `aitevrpo` |
-| `NAMECHEAP_SSH_PRIVATE_KEY` | Private half of `github-actions-deploy` key |
+| `NAMECHEAP_FTP_PASSWORD` | cPanel / FTP password |
+| `NAMECHEAP_SSH_PRIVATE_KEY` | Optional — SFTP fallback if SSH port 21098 is open |
 
-SSH key setup: [namecheap-ssh-key.md](namecheap-ssh-key.md)
+Optional SSH key setup: [namecheap-ssh-key.md](namecheap-ssh-key.md)
 
 ## How deploy works
 
 ```
-push to main → npm ci → npm run build → dist/public → SFTP (port 21098) → public_html
+push to main → npm ci → npm run build → dist/public → FTPS (port 21) → public_html
 ```
 
 - **Pull requests** — build only
