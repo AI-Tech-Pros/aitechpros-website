@@ -19,6 +19,12 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Topic :: Software Development :: Libraries",
 ]
+
+[project.urls]
+Homepage = "https://orchestrateos.aitechpros.ai"
+Documentation = "https://github.com/AI-Tech-Pros/aitechpros-website/tree/main/resume_engine"
+Repository = "https://github.com/AI-Tech-Pros/aitechpros-website"
+Issues = "https://github.com/AI-Tech-Pros/aitechpros-website/issues"
 dependencies = [
     "sqlalchemy>=2.0.0",
 ]

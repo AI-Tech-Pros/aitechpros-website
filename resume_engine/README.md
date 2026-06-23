@@ -172,13 +172,27 @@ docker run --rm -p 8000:8000 -v orchestrateos_data:/data orchestrateos-api:lates
 
 ### Cloud Run
 
+**Deploy order:** site on Manus → API on Cloud Run/Docker → DNS subdomains last.
+
 1. Push the image to Artifact Registry or GHCR (`ghcr.io/<org>/orchestrateos-api`).
 2. Store `DATABASE_URL` in Secret Manager as `orchestrateos-database-url`.
 3. Apply `deploy/cloud-run.yaml` (replace `PROJECT_ID` and `REGION`).
 
+Or use the helper script (requires `gcloud`):
+
+```powershell
+.\resume_engine\scripts\deploy_cloud_run.ps1 -ProjectId YOUR_GCP_PROJECT
+```
+
+Smoke test after deploy:
+
+```powershell
+.\resume_engine\scripts\smoke_test_api.ps1 -BaseUrl https://YOUR_API_URL
+```
+
 CI builds and pushes to GHCR on every push to `main` via `.github/workflows/orchestrateos-api.yml`.
 
-**Production DNS**
+**Production DNS (do this last)**
 
 | Host | Purpose |
 |------|---------|
@@ -186,6 +200,8 @@ CI builds and pushes to GHCR on every push to `main` via `.github/workflows/orch
 | `api.orchestrateos.aitechpros.ai` | FastAPI control plane |
 
 Set `CORS_ORIGINS` so the landing page can call the API from the browser (see `.env.example`).
+
+Until DNS is configured, use https://aitechpros.ai/orchestrateos and point the gate explorer at your API URL via `VITE_ORCHESTRATEOS_API_URL`.
 
 ## Storage Backends
 

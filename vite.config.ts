@@ -150,7 +150,27 @@ function vitePluginManusDebugCollector(): Plugin {
   };
 }
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
+const plugins = [
+  react(),
+  tailwindcss(),
+  jsxLocPlugin(),
+  vitePluginManusRuntime(),
+  vitePluginManusDebugCollector(),
+  {
+    name: "conditional-analytics",
+    transformIndexHtml(html: string) {
+      const endpoint = process.env.VITE_ANALYTICS_ENDPOINT;
+      const websiteId = process.env.VITE_ANALYTICS_WEBSITE_ID;
+      if (!endpoint || !websiteId) {
+        return html;
+      }
+      return html.replace(
+        "</body>",
+        `    <script defer src="${endpoint}/umami" data-website-id="${websiteId}"></script>\n  </body>`,
+      );
+    },
+  },
+];
 
 export default defineConfig({
   plugins,
