@@ -36,19 +36,12 @@ push to main → npm ci → npm run build → dist/public → SFTP (port 21098) 
 
 ## DNS (Namecheap Advanced DNS)
 
-**Current live DNS** (traffic still serves Manus):
-
-| Host | Type | Current |
-|------|------|---------|
-| `@` | A | Cloudflare IPs `104.18.26/27.246` |
-| `www` | CNAME | `cname.manus.space` |
-
-**Set these for Namecheap hosting:**
+Point the domain at your Namecheap server so visitors reach `public_html`:
 
 | Type | Host | Value | Notes |
 |------|------|-------|-------|
-| **A Record** | `@` | `198.54.116.40` | Replace apex A records |
-| **CNAME Record** | `www` | `aitechpros.ai` | Delete `www` → `cname.manus.space` first |
+| **A Record** | `@` | `198.54.116.40` | Server IP from cPanel → Manage SSH |
+| **CNAME Record** | `www` | `aitechpros.ai` | Remove conflicting `www` records first |
 
 Optional (later):
 
@@ -56,6 +49,12 @@ Optional (later):
 |------|------|-------|
 | A or CNAME | `orchestrateos` | `198.54.116.40` or `aitechpros.ai` |
 | CNAME | `api.orchestrateos` | Cloud Run URL |
+
+Until DNS uses `198.54.116.40`, `https://aitechpros.ai` may show a different origin than Namecheap. Verify deploy with:
+
+```powershell
+curl.exe -sI "http://198.54.116.40/" -H "Host: aitechpros.ai"
+```
 
 ## Verify deploy before DNS cutover
 
@@ -72,8 +71,9 @@ Check `public_html` in cPanel File Manager for `index.html` and `assets/`.
 
 | Issue | Fix |
 |-------|-----|
-| `Permission denied (publickey)` | cPanel → SSH Access → deauthorize key → re-authorize. Confirm fingerprint `SHA256:U9gANzzZuSjpIcrVr+UQiRT1j8HwO+1woFISz7O3sPQ` |
-| Key authorized but still rejected | Delete key in cPanel, re-import from [namecheap-ssh-key.md](namecheap-ssh-key.md), authorize again |
-| Old Manus site at https://aitechpros.ai | DNS not updated — apex still on Cloudflare/Manus |
+| `Permission denied (publickey)` | Import RSA key from [namecheap-ssh-key.md](namecheap-ssh-key.md), authorize. Fingerprint: `SHA256:sWNiQYQU/hxucim9HwxtQb0rpWmAaY3Zq9102OFTPSU` |
+| Key authorized but still rejected | Delete all `github-actions-deploy` keys, re-import RSA public key, authorize again |
+| `https://aitechpros.ai` shows old site | DNS apex not pointing to `198.54.116.40` — update Namecheap Advanced DNS |
+| Empty directory on `198.54.116.40` | Deploy has not succeeded yet — fix SSH key, re-run workflow |
 | 404 on `/orchestrateos` | Ensure `.htaccess` is in `public_html` |
 | Gate explorer offline | Set `VITE_ORCHESTRATEOS_API_URL` GitHub variable |

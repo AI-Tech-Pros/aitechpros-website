@@ -70,21 +70,17 @@ docker compose -f resume_engine/docker-compose.yml up --build
 
 ### 3. DNS (Namecheap Advanced DNS)
 
-**Current (live traffic still on Manus):**
-
-| Host | Type | Current value |
-|------|------|---------------|
-| `@` | A | `104.18.26.246`, `104.18.27.246` (Cloudflare → Manus) |
-| `www` | CNAME | `cname.manus.space` |
-
-**Required for Namecheap hosting:**
+**Hosting** is on Namecheap (`198.54.116.40`). **Public DNS** may still point elsewhere until you update records — visitors follow DNS, not where you pay for hosting.
 
 | Type | Host | Value | TTL |
 |------|------|-------|-----|
 | **A** | `@` | `198.54.116.40` | Automatic |
 | **CNAME** | `www` | `aitechpros.ai` | Automatic |
 
-Remove the `www` → `cname.manus.space` record when updating. Subdomains (later): `orchestrateos` → same docroot; `api.orchestrateos` → Cloud Run URL.
+Remove any old apex A records and `www` CNAMEs that do not target Namecheap.  
+Subdomains (later): `orchestrateos` → same docroot; `api.orchestrateos` → Cloud Run URL.
+
+After DNS propagates, `https://aitechpros.ai/orchestrateos` serves from the same `public_html` bundle as the home page.
 
 ---
 
