@@ -81,7 +81,7 @@ jobs:
         with:
           server: ${{ secrets.NAMECHEAP_FTP_SERVER }}
           username: ${{ secrets.NAMECHEAP_FTP_USERNAME }}
-          password: ${{ secrets.NAMECHEAP_FTP_PASSWORD }}
+          ssh_private_key: ${{ secrets.NAMECHEAP_SSH_PRIVATE_KEY }}
           port: 21098
           local_path: "./dist/public/*"
           remote_path: "/home/aitevrpo/public_html/"
