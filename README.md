@@ -31,35 +31,28 @@ python -m pytest resume_engine/tests -q
 
 ## Hosting architecture
 
-| Layer | Provider |
-|-------|----------|
-| **Domain registrar / DNS** | Namecheap |
-| **Web hosting (production)** | Namecheap Stellar — `server97.web-hosting.com` / `198.54.116.40` |
-| **CI/CD** | GitHub Actions → SFTP deploy (SSH key) on push to `main` |
-| **Docroot** | `/home/aitevrpo/public_html/` |
+| Layer | Provider | Status |
+|-------|----------|--------|
+| **Domain registrar** | Namecheap | Active |
+| **Live site (what visitors see today)** | Manus (`cname.manus.space` / Cloudflare) | **Serving** `aitechpros.ai` + `/orchestrateos` |
+| **Namecheap Stellar** | `server97.web-hosting.com` / `198.54.116.40` | Account active; `public_html` empty until deploy + DNS |
+| **CI/CD (optional)** | GitHub Actions → Namecheap SFTP | Manual — see below |
 
-The marketing site is a **static SPA** (`dist/public`) on Namecheap shared hosting. See [docs/namecheap-deploy.md](docs/namecheap-deploy.md) and [docs/namecheap-ssh-key.md](docs/namecheap-ssh-key.md).
+**If the site looks fine in your browser**, Manus is already publishing it. Pushing to `main` updates the repo; **publish in your Manus project** to refresh the live build.
 
-**OrchestrateOS API** is a separate Docker/Cloud Run deploy (`resume_engine/`).
+To **move the live site to Namecheap** instead: authorize the SSH key ([docs/namecheap-ssh-key.md](docs/namecheap-ssh-key.md)), run **Deploy Website** in Actions, then point DNS `@` → `198.54.116.40` in Namecheap Advanced DNS.
 
 ---
 
 ## Deploy checklist
 
-### 1. Website (automatic on push to `main`)
+### 1. Website — live today (Manus)
 
-GitHub secrets (environment `namecheap-production`):
+Push to `main`, then **publish** from your Manus project dashboard (connected to this repo).
 
-| Secret | Value |
-|--------|-------|
-| `NAMECHEAP_FTP_SERVER` | `server97.web-hosting.com` |
-| `NAMECHEAP_FTP_USERNAME` | `aitevrpo` |
-| `NAMECHEAP_SSH_PRIVATE_KEY` | Deploy key (see `docs/namecheap-ssh-key.md`) |
+### 1b. Website — Namecheap (optional cutover)
 
-```powershell
-npm run build   # local verify
-git push origin main   # triggers .github/workflows/deploy-website.yml
-```
+Manual deploy only (Actions → **Deploy Website** → Run workflow). Requires SSH key in cPanel — [docs/namecheap-ssh-key.md](docs/namecheap-ssh-key.md).
 
 ### 2. API (Cloud Run or Docker)
 
