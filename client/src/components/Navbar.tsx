@@ -13,7 +13,7 @@ const navLinks = [
   { label: "Runtime Engine", href: "#tech-edge" },
   { label: "Production Workflows", href: "#trust" },
   { label: "Roadmap", href: "#roadmap" },
-  { label: "Briefing", href: "#contact" },
+  { label: "Briefing", href: "https://calendly.com/aitechpros/15min" },
 ];
 
 export default function Navbar() {
@@ -28,6 +28,10 @@ export default function Navbar() {
 
   const handleNavClick = (href: string) => {
     setMobileOpen(false);
+    if (href.startsWith("http")) {
+      window.open(href, "_blank", "noopener,noreferrer");
+      return;
+    }
     if (href === "#top") {
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;

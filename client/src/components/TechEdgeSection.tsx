@@ -122,6 +122,33 @@ export default function TechEdgeSection() {
             </div>
           ))}
         </div>
+
+        {/* OrchestrateOS product */}
+        <div
+          className={`mt-14 glass-card rounded-2xl p-8 lg:p-10 border-[#8B5CF6]/20 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 transition-all duration-700 ${
+            isInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+          }`}
+          style={{ transitionDelay: "500ms" }}
+        >
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#8B5CF6] mb-2 font-[Montserrat]">
+              Product · resume_engine
+            </p>
+            <h3 className="text-xl sm:text-2xl font-bold text-white font-[Montserrat] mb-2">
+              OrchestrateOS — deterministic workflow resume
+            </h3>
+            <p className="text-white/45 text-sm max-w-xl leading-relaxed">
+              When a 50-step agent pipeline fails at step 47, resume from step 47 — not step 1.
+              Framework-agnostic checkpoints for LangGraph, CrewAI, and plain Python.
+            </p>
+          </div>
+          <a
+            href="https://orchestrateos.aitechpros.ai"
+            className="shrink-0 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#8B5CF6] to-[#3B82F6] text-white text-sm font-semibold font-[Montserrat] hover:opacity-90 transition-opacity"
+          >
+            Explore OrchestrateOS
+          </a>
+        </div>
       </div>
 
       {/* Bottom divider */}

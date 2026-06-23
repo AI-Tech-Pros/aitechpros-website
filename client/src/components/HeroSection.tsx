@@ -148,14 +148,12 @@ export default function HeroSection() {
               </svg>
             </a>
             <a
-              href="#tech-edge"
-              onClick={(e) => {
-                e.preventDefault();
-                document.querySelector("#tech-edge")?.scrollIntoView({ behavior: "smooth" });
-              }}
+              href="https://calendly.com/aitechpros/15min"
+              target="_blank"
+              rel="noopener noreferrer"
               className="glass-card text-white/80 hover:text-white font-medium px-8 py-4 rounded-lg text-base inline-flex items-center justify-center gap-2 transition-all duration-300"
             >
-              View Runtime Architecture
+              Request an Executive Technical Briefing
             </a>
           </div>
 

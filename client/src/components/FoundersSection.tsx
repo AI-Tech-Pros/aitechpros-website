@@ -169,7 +169,9 @@ export default function FoundersSection() {
                     </p>
                   </div>
                   <a
-                    href="#contact"
+                    href="https://calendly.com/aitechpros/15min"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="glow-btn px-6 py-3 rounded-lg text-white font-semibold text-sm font-[Montserrat] text-center inline-block"
                   >
                     Request Strategic Partnership →

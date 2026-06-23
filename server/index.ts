@@ -16,6 +16,8 @@ async function startServer() {
       ? path.resolve(__dirname, "public")
       : path.resolve(__dirname, "..", "dist", "public");
 
+  // Same static bundle serves aitechpros.ai and orchestrateos.aitechpros.ai.
+  // DNS: point orchestrateos CNAME to the same host as the main site.
   app.use(express.static(staticPath));
 
   // Handle client-side routing - serve index.html for all routes

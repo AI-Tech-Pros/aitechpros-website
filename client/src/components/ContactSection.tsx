@@ -9,6 +9,8 @@ import { useInView } from "@/hooks/useInView";
 import { Mail, MapPin, Phone, Send, ArrowRight, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 
+const CALENDLY_URL = "https://calendly.com/aitechpros/15min";
+
 export default function ContactSection() {
   const { ref, isInView } = useInView({ threshold: 0.05 });
   const [formData, setFormData] = useState({
@@ -26,32 +28,19 @@ export default function ContactSection() {
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // Send form data via mailto link as a fallback
-      const subject = encodeURIComponent(`Executive Technical Briefing Request: ${formData.company}`);
-      const body = encodeURIComponent(
-        `New Executive Technical Briefing Request\n\n` +
-        `Name: ${formData.name}\n` +
-        `Email: ${formData.email}\n` +
-        `Company: ${formData.company}\n` +
-        `Role: ${formData.role}\n` +
-        `Stage: ${formData.stage}\n\n` +
-        `AI Challenge:\n${formData.message}`
-      );
-      window.open(`mailto:henry.jenkins@aitechpros.ai?subject=${subject}&body=${body}`, '_blank');
+      window.open(CALENDLY_URL, "_blank", "noopener,noreferrer");
       setFormSubmitted(true);
-      toast.success("Briefing request received. An enterprise engineer will follow up within 48 hours.");
+      toast.success("Great. Your strategy call booking page is now open.");
     } catch {
-      toast.error("Something went wrong. Please email support@aitechpros.ai directly.");
+      toast.error("Something went wrong. Please use the Calendly link directly.");
     }
   };
 
   const handleNewsletterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const subject = encodeURIComponent('Newsletter Subscription: AITechPros Technical Deep-Dives');
-    const body = encodeURIComponent(`Please add ${newsletterEmail} to the AITechPros Technical Deep-Dives newsletter.`);
-    window.open(`mailto:henry.jenkins@aitechpros.ai?subject=${subject}&body=${body}`, '_blank');
+    window.open(CALENDLY_URL, "_blank", "noopener,noreferrer");
     setNewsletterSubmitted(true);
-    toast.success("Welcome! You'll receive our next technical deep-dive.");
+    toast.success("Thanks. Use the booking page to connect with the team.");
   };
 
   return (

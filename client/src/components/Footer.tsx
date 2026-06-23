@@ -10,6 +10,7 @@ import { MapPin, Mail } from "lucide-react";
 
 const footerLinks = {
   Platform: [
+    { label: "OrchestrateOS", href: "https://orchestrateos.aitechpros.ai" },
     { label: "AI Dilemma", href: "#partners" },
     { label: "Runtime Engine", href: "#tech-edge" },
     { label: "Product Roadmap", href: "#roadmap" },
@@ -17,7 +18,7 @@ const footerLinks = {
   Company: [
     { label: "Production Workflows", href: "#trust" },
     { label: "Schedule a Strategy Call", href: "https://calendly.com/aitechpros/15min" },
-    { label: "Newsletter", href: "#contact" },
+    { label: "Newsletter", href: "https://calendly.com/aitechpros/15min" },
   ],
   Resources: [
     { label: "Engineering Blog", href: "#" },

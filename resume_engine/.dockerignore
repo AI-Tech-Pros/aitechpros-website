@@ -1,0 +1,18 @@
+# Git ignore for Docker build context (repo root)
+node_modules/
+dist/
+.git/
+.github/
+.manus-logs/
+*.log
+*.db
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+client/
+server/
+attached_assets/
+*.md
+!resume_engine/README.md

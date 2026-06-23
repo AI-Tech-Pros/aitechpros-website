@@ -179,7 +179,17 @@ export default defineConfig({
       ".manusvm.computer",
       "localhost",
       "127.0.0.1",
+      "orchestrateos.aitechpros.ai",
+      "api.orchestrateos.aitechpros.ai",
+      ".aitechpros.ai",
     ],
+    proxy: {
+      "/orchestrateos-api": {
+        target: "http://127.0.0.1:8000",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/orchestrateos-api/, ""),
+      },
+    },
     fs: {
       strict: true,
       deny: ["**/.*"],
