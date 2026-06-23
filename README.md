@@ -29,52 +29,44 @@ python -m pytest resume_engine/tests -q
 
 ---
 
-## Hosting architecture (verified)
+## Hosting architecture
 
 | Layer | Provider |
 |-------|----------|
-| **DNS nameservers** | Registrar (`pdns*.registrar-servers.com`) |
-| **Site origin** | [Manus](https://manus.im) (`cname.manus.space`, `manus-runtime` in production HTML) |
-| **Edge CDN** | Cloudflare (proxied A/CNAME records) |
+| **Domain registrar / DNS** | Namecheap |
+| **Web hosting** | Namecheap Stellar (`public_html` via cPanel) |
+| **CI/CD** | GitHub Actions → FTPS deploy on push to `main` |
+| **Edge CDN** | Cloudflare (optional, if proxied) |
 
-The marketing site is **not** GitHub Pages or Vercel. Redeploy the site through your **Manus project publish flow** after pushing to `main`.
+The marketing site deploys as a **static SPA** (`dist/public`) — no Node process required on shared hosting. See [docs/namecheap-deploy.md](docs/namecheap-deploy.md) for FTP secrets and DNS cutover.
+
+**OrchestrateOS API** remains a separate Docker/Cloud Run deploy (`resume_engine/`).
 
 ---
 
-## Deploy checklist (before DNS changes)
+## Deploy checklist
 
-Do these first; add subdomains last.
+### 1. Website (automatic on push to `main`)
 
-### 1. Redeploy site on Manus
+Add GitHub secrets: `NAMECHEAP_FTP_SERVER`, `NAMECHEAP_FTP_USERNAME`, `NAMECHEAP_FTP_PASSWORD`.  
+Optional environment: `namecheap-production`.
 
 ```powershell
-npm run build
-# Publish dist/ via Manus dashboard (connects to this repo)
+npm run build   # local verify
+git push origin main   # triggers .github/workflows/deploy-website.yml
 ```
 
-Verify: https://aitechpros.ai/orchestrateos shows the OrchestrateOS page and gate explorer.
-
-### 2. Deploy API (Cloud Run or Docker host)
+### 2. API (Cloud Run or Docker)
 
 ```powershell
 docker compose -f resume_engine/docker-compose.yml up --build
 # Or: resume_engine/scripts/deploy_cloud_run.ps1 -ProjectId YOUR_GCP_PROJECT
 ```
 
-Smoke test:
+### 3. DNS (when cutting over from Manus)
 
-```powershell
-.\resume_engine\scripts\smoke_test_api.ps1 -BaseUrl http://127.0.0.1:8000
-```
-
-CI builds the API Docker image on push to `main` (`.github/workflows/orchestrateos-api.yml`).
-
-### 3. DNS (last step — not required for initial testing)
-
-When ready:
-
-- `orchestrateos.aitechpros.ai` → CNAME `cname.manus.space` (or Manus-provided target)
-- `api.orchestrateos.aitechpros.ai` → Cloud Run URL or API host
+Point `@` A record to your Namecheap server IP (cPanel → Server Information).  
+Subdomains last: `orchestrateos`, `api.orchestrateos`.
 
 ---
 
@@ -82,8 +74,8 @@ When ready:
 
 - **Frontend:** React 19 + TypeScript
 - **Styling:** Tailwind CSS 4 + shadcn/ui
-- **Build:** Vite + Express static server (`npm run build` / `npm start`)
-- **Hosting:** Manus origin, Cloudflare edge, registrar DNS
+- **Build:** Vite (static) + optional Express for local preview
+- **Hosting:** Namecheap Stellar, deployed via GitHub Actions FTPS
 
 ## Connect
 

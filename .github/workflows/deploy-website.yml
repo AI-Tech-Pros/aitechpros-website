@@ -1,0 +1,92 @@
+name: Deploy Website
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "client/**"
+      - "server/**"
+      - "shared/**"
+      - "attached_assets/**"
+      - "patches/**"
+      - "package.json"
+      - "package-lock.json"
+      - "vite.config.ts"
+      - "tsconfig*.json"
+      - ".github/workflows/deploy-website.yml"
+  pull_request:
+    paths:
+      - "client/**"
+      - "server/**"
+      - "shared/**"
+      - "attached_assets/**"
+      - "patches/**"
+      - "package.json"
+      - "package-lock.json"
+      - "vite.config.ts"
+      - "tsconfig*.json"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-website-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build static site
+        env:
+          VITE_ORCHESTRATEOS_API_URL: ${{ vars.VITE_ORCHESTRATEOS_API_URL }}
+          VITE_ANALYTICS_ENDPOINT: ${{ vars.VITE_ANALYTICS_ENDPOINT }}
+          VITE_ANALYTICS_WEBSITE_ID: ${{ vars.VITE_ANALYTICS_WEBSITE_ID }}
+        run: npm run build
+
+      - name: Verify build output
+        run: |
+          test -f dist/public/index.html
+          test -d dist/public/assets
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-public
+          path: dist/public
+          retention-days: 7
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: namecheap-production
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist-public
+          path: dist/public
+
+      - name: Deploy to Namecheap (FTPS)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+        with:
+          server: ${{ secrets.NAMECHEAP_FTP_SERVER }}
+          username: ${{ secrets.NAMECHEAP_FTP_USERNAME }}
+          password: ${{ secrets.NAMECHEAP_FTP_PASSWORD }}
+          protocol: ftps
+          port: 21
+          local-dir: ./dist/public/
+          server-dir: /public_html/
+          dangerous-clean-slate: false
+
+      - name: Smoke test live site
+        run: |
+          curl -fsSI "https://aitechpros.ai/" | head -n 1
+          curl -fsS "https://aitechpros.ai/" | grep -q "<!doctype html"
