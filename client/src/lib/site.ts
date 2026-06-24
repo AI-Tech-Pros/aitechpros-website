@@ -59,6 +59,12 @@ export function mainSiteUrl(path = "/"): string {
   return `${MAIN_SITE_URL}${suffix}`;
 }
 
+/** Optional demo operator API key for gate explorer write actions (Bearer). */
+export function orchestrateOSApiKey(): string | undefined {
+  const key = import.meta.env.VITE_ORCHESTRATEOS_DEMO_KEY as string | undefined;
+  return key?.trim() || undefined;
+}
+
 /** OpenAPI docs URL for the control plane API. */
 export function orchestrateOSApiDocsUrl(): string {
   return `${orchestrateOSApiBaseUrl()}/docs`;

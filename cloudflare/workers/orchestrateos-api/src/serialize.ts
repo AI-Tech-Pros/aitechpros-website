@@ -4,6 +4,7 @@ export type RunRow = {
   run_id: string;
   workflow_name: string;
   status: string;
+  environment: string;
   created_at: string;
   updated_at: string;
   metadata_json: string;
@@ -54,6 +55,7 @@ export function runToApi(run: RunRow, steps: StepRow[]) {
     run_id: run.run_id,
     workflow_name: run.workflow_name,
     status: run.status,
+    environment: run.environment ?? "dev",
     created_at: run.created_at,
     updated_at: run.updated_at,
     metadata: parseMetadata(run.metadata_json),

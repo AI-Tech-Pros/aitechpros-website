@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS runs (
   run_id TEXT PRIMARY KEY,
   workflow_name TEXT NOT NULL,
   status TEXT NOT NULL,
+  environment TEXT NOT NULL DEFAULT 'dev',
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
   metadata_json TEXT NOT NULL DEFAULT '{}'
@@ -28,3 +29,15 @@ CREATE TABLE IF NOT EXISTS step_records (
 
 CREATE INDEX IF NOT EXISTS idx_step_records_run_id ON step_records(run_id);
 CREATE INDEX IF NOT EXISTS idx_step_records_idempotency ON step_records(idempotency_key);
+
+CREATE TABLE IF NOT EXISTS audit_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  run_id TEXT,
+  event_type TEXT NOT NULL,
+  actor TEXT,
+  payload_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_events_run_id ON audit_events(run_id);
+CREATE INDEX IF NOT EXISTS idx_audit_events_created_at ON audit_events(created_at);

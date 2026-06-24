@@ -62,12 +62,41 @@ Worker endpoints used by the SDK:
 
 Gate metadata: permanent failures accept both `metadata.gates.human_approval` (Python SDK) and `metadata.gates.approvals[key]` (gate explorer UI).
 
+### Phase 3 — Governance (auth, audit, deployment environments)
+
+**API authentication (optional, off by default):** set `API_AUTH_ENABLED=true` on the Worker and configure secrets:
+
+| Secret | Purpose |
+|--------|---------|
+| `API_KEYS_JSON` | `{"<runner-key>":"runner","<operator-key>":"operator"}` |
+| `DEMO_OPERATOR_KEY` | Scoped operator key for gate explorer demo runs only |
+
+Roles: `auditor` (read), `runner` (start/steps/resume), `operator` (+ compensate/approve/prod ack).
+
+**Deployment environments:** `environment` on runs (`dev` \| `staging` \| `prod`). Prod runs require `POST /runs/{id}/ack_prod_resume` even for transient failures.
+
+**Immutable audit:** `GET /runs/{id}/audit_events` — append-only governance log (compensate, approve, step recorded, etc.).
+
+**Deterministic replay:** `GET /runs/{id}/replay` — completed steps for SDK replay mode.
+
+Gate explorer writes use `VITE_ORCHESTRATEOS_DEMO_KEY` when auth is enabled (set in `.env.orchestrateos` / Pages build env).
+
+```powershell
+# Enable auth (one-time, via wrangler)
+cd cloudflare/workers/orchestrateos-api
+npx wrangler secret put API_KEYS_JSON
+npx wrangler secret put DEMO_OPERATOR_KEY
+# Then set API_AUTH_ENABLED = "true" in wrangler.toml and redeploy
+```
+
 ### GitHub secrets (required)
 
 | Secret | Value |
 |--------|-------|
 | `CLOUDFLARE_API_TOKEN` | API token with Workers, Pages, D1 edit |
 | `CLOUDFLARE_ACCOUNT_ID` | `365965a7234fe266200abe63be3b63ba` |
+| `ORCHESTRATEOS_API_KEY` | Runner-role key (CI smoke tests + SDK) |
+| `ORCHESTRATEOS_DEMO_KEY` | Demo operator key (`VITE_ORCHESTRATEOS_DEMO_KEY` at build) |
 
 ### Build profiles
 

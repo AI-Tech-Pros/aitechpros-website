@@ -14,9 +14,12 @@ from resume_engine.core.step_record import StepRecord
 class RemoteCheckpointStore(CheckpointStore):
   """Persist runs and steps via the OrchestrateOS control plane Worker + D1."""
 
-  def __init__(self, api_url: str, *, timeout: float = 30.0) -> None:
+  def __init__(self, api_url: str, *, api_key: str | None = None, timeout: float = 30.0) -> None:
       self._base = api_url.rstrip("/")
-      self._client = httpx.Client(base_url=self._base, timeout=timeout)
+      headers: dict[str, str] = {}
+      if api_key:
+          headers["Authorization"] = f"Bearer {api_key}"
+      self._client = httpx.Client(base_url=self._base, timeout=timeout, headers=headers)
 
   def close(self) -> None:
       """Release the HTTP client."""
@@ -29,10 +32,12 @@ class RemoteCheckpointStore(CheckpointStore):
       self.close()
 
   def create_run(self, run: Run) -> None:
+      environment = run.metadata.get("environment", "dev")
       payload: dict[str, Any] = {
           "workflow_name": run.workflow_name,
           "run_id": run.run_id,
           "metadata": run.metadata,
+          "environment": environment,
       }
       resp = self._client.post("/start_run", json=payload)
       if resp.status_code == 409:

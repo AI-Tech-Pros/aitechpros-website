@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { DEMO_RUN_CATALOG } from "@/lib/orchestrateos-demo";
 import {
+  ackProdResume,
   fetchApiHealth,
   fetchResumeBlockers,
   grantApproval,
@@ -23,7 +24,7 @@ import {
   resetDemoRuns,
   type ResumeBlocker,
 } from "@/lib/orchestrateos-api";
-import { orchestrateOSApiBaseUrl, orchestrateOSApiDocsUrl } from "@/lib/site";
+import { orchestrateOSApiBaseUrl, orchestrateOSApiDocsUrl, orchestrateOSApiKey } from "@/lib/site";
 
 type DemoScenario = "transient" | "partial" | "permanent";
 
@@ -39,7 +40,7 @@ const SCENARIO_META: Record<
   transient: {
     label: "Transient",
     color: "text-[#06B6D4]",
-    description: "Network timeout — resume immediately, no gates.",
+    description: "Prod run — transient failure still needs operator acknowledgment.",
   },
   partial: {
     label: "Partial",
@@ -55,17 +56,24 @@ const SCENARIO_META: Record<
 
 function BlockerCard({ blocker }: { blocker: ResumeBlocker }) {
   const isCompensation = blocker.required_action === "compensation";
+  const isProdAck = blocker.required_action === "prod_resume_ack";
   return (
     <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
       <div className="flex items-start gap-3">
         {isCompensation ? (
           <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+        ) : isProdAck ? (
+          <Lock className="w-5 h-5 text-[#06B6D4] shrink-0 mt-0.5" />
         ) : (
           <Lock className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
         )}
         <div className="min-w-0">
           <p className="text-sm font-semibold text-white font-[Montserrat]">
-            {isCompensation ? "Compensation required" : "Human approval required"}
+            {isCompensation
+              ? "Compensation required"
+              : isProdAck
+                ? "Production resume acknowledgment required"
+                : "Human approval required"}
           </p>
           <p className="text-xs text-white/45 mt-1">
             Step {blocker.step_index + 1}:{" "}
@@ -120,6 +128,7 @@ export default function OrchestrateOSGatePanel() {
   const [liveError, setLiveError] = useState<string | null>(null);
   const [approver, setApprover] = useState("ops@example.com");
   const [actionLoading, setActionLoading] = useState(false);
+  const hasDemoApiKey = Boolean(orchestrateOSApiKey());
 
   const checkHealth = useCallback(async () => {
     try {
@@ -201,18 +210,46 @@ export default function OrchestrateOSGatePanel() {
     }
   };
 
+  const handleProdAck = async () => {
+    if (!activeRunId || !approver.trim()) return;
+    setActionLoading(true);
+    setLiveError(null);
+    try {
+      await ackProdResume(activeRunId, {
+        acknowledged_by: approver.trim(),
+        note: "Demo prod resume acknowledgment via gate explorer",
+      });
+      await lookupRun(activeRunId);
+    } catch (err) {
+      setLiveError(err instanceof Error ? err.message : "Production acknowledgment failed");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const resetPreview = (next: DemoScenario) => {
     setScenario(next);
     setDemoState({ compensated: false, approved: false });
   };
 
   const previewCanResume =
-    scenario === "transient" ||
+    (scenario === "transient" && demoState.approved) ||
     (scenario === "partial" && demoState.compensated) ||
     (scenario === "permanent" && demoState.approved);
 
   const previewBlockers: ResumeBlocker[] = (() => {
-    if (scenario === "transient") return [];
+    if (scenario === "transient" && !demoState.approved) {
+      return [
+        {
+          classification: "transient",
+          step_index: 6,
+          step_name: "call_llm",
+          failure_key: "6:6",
+          message: "Production resume requires operator acknowledgment",
+          required_action: "prod_resume_ack",
+        },
+      ];
+    }
     if (scenario === "partial" && !demoState.compensated) {
       return [
         {
@@ -242,6 +279,8 @@ export default function OrchestrateOSGatePanel() {
 
   const needsCompensation = liveBlockers?.some((b) => b.required_action === "compensation");
   const needsApproval = liveBlockers?.some((b) => b.required_action === "human_approval");
+  const needsProdAck = liveBlockers?.some((b) => b.required_action === "prod_resume_ack");
+  const writeActionsNeedKey = !hasDemoApiKey;
 
   return (
     <div className="glass-card rounded-2xl border-[#8B5CF6]/15 overflow-hidden">
@@ -313,6 +352,12 @@ export default function OrchestrateOSGatePanel() {
                 {orchestrateOSApiBaseUrl().replace("https://", "")}
               </a>
               . Load a scenario, clear gates via the API, then reset demos to try again.
+              {writeActionsNeedKey && (
+                <span className="block mt-2 text-amber-300/80">
+                  Write actions require <code className="text-[#06B6D4]">VITE_ORCHESTRATEOS_DEMO_KEY</code>{" "}
+                  when API auth is enabled.
+                </span>
+              )}
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -364,7 +409,7 @@ export default function OrchestrateOSGatePanel() {
               <button
                 type="button"
                 onClick={handleResetDemos}
-                disabled={actionLoading || apiOnline === false}
+                disabled={actionLoading || apiOnline === false || writeActionsNeedKey}
                 className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-white/[0.1] text-white/70 text-sm hover:bg-white/[0.04] disabled:opacity-50"
               >
                 <RotateCcw className="w-4 h-4" />
@@ -394,7 +439,7 @@ export default function OrchestrateOSGatePanel() {
                   <button
                     type="button"
                     onClick={handleCompensate}
-                    disabled={actionLoading}
+                    disabled={actionLoading || writeActionsNeedKey}
                     className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-200 text-sm font-semibold hover:bg-amber-500/25 transition-colors disabled:opacity-50"
                   >
                     {actionLoading ? (
@@ -418,7 +463,7 @@ export default function OrchestrateOSGatePanel() {
                     <button
                       type="button"
                       onClick={handleApprove}
-                      disabled={actionLoading || !approver.trim()}
+                      disabled={actionLoading || !approver.trim() || writeActionsNeedKey}
                       className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-200 text-sm font-semibold hover:bg-red-500/20 transition-colors disabled:opacity-50"
                     >
                       {actionLoading ? (
@@ -427,6 +472,31 @@ export default function OrchestrateOSGatePanel() {
                         <UserCheck className="w-4 h-4" />
                       )}
                       Grant approval (API)
+                    </button>
+                  </div>
+                )}
+
+                {needsProdAck && (
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <input
+                      type="text"
+                      value={approver}
+                      onChange={(e) => setApprover(e.target.value)}
+                      placeholder="acknowledged_by"
+                      className="flex-1 px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-sm font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleProdAck}
+                      disabled={actionLoading || !approver.trim() || writeActionsNeedKey}
+                      className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#06B6D4]/10 border border-[#06B6D4]/25 text-[#06B6D4] text-sm font-semibold hover:bg-[#06B6D4]/20 transition-colors disabled:opacity-50"
+                    >
+                      {actionLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <UserCheck className="w-4 h-4" />
+                      )}
+                      Acknowledge prod resume (API)
                     </button>
                   </div>
                 )}
@@ -464,6 +534,17 @@ export default function OrchestrateOSGatePanel() {
             {previewBlockers.map((b) => (
               <BlockerCard key={b.failure_key} blocker={b} />
             ))}
+
+            {scenario === "transient" && !demoState.approved && (
+              <button
+                type="button"
+                onClick={() => setDemoState((s) => ({ ...s, approved: true }))}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#06B6D4]/10 border border-[#06B6D4]/25 text-[#06B6D4] text-sm font-semibold hover:bg-[#06B6D4]/20 transition-colors"
+              >
+                <UserCheck className="w-4 h-4" />
+                Simulate prod acknowledgment
+              </button>
+            )}
 
             {scenario === "partial" && !demoState.compensated && (
               <button

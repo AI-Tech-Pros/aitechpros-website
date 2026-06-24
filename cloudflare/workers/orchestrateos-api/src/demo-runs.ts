@@ -18,7 +18,7 @@ export const DEMO_RUN_CATALOG: {
     scenario: "transient",
     run_id: DEMO_RUN_IDS.transient,
     label: "Transient failure",
-    description: "Network timeout at step 6 — resume immediately, no gates.",
+    description: "Prod run — transient failure still requires operator acknowledgment before resume.",
   },
   {
     scenario: "partial",

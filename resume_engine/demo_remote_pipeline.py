@@ -5,6 +5,7 @@ Requires: pip install -e ".[remote]"
 
 Environment:
   ORCHESTRATEOS_API_URL — default https://orchestrateos-api.nevaquit.workers.dev
+  ORCHESTRATEOS_API_KEY — Bearer token when API auth is enabled (runner role)
 
 After a transient failure at step 7, prints the run ID for lookup in the gate explorer:
   https://orchestrateos.pages.dev/#gates
@@ -50,7 +51,7 @@ def main() -> None:
     workflow = build_workflow()
     failure_index = FAILURE_STEP - 1
 
-    with RemoteCheckpointStore(api_url) as store:
+    with RemoteCheckpointStore(api_url, api_key=os.environ.get("ORCHESTRATEOS_API_KEY")) as store:
         engine = ResumeEngine(store)
         run = engine.start_run(
             "remote_demo_pipeline",

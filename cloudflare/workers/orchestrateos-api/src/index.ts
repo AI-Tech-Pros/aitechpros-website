@@ -5,6 +5,8 @@
 
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { actorLabel, enforceAuth, type AuthContext } from "./auth";
+import { auditEventToApi, listAuditEvents, recordAuditEvent } from "./audit";
 import { DEMO_RUN_CATALOG } from "./demo-runs";
 import { seedDemoRuns } from "./demo-seed";
 import { DOCS_HTML, OPENAPI_SPEC } from "./docs";
@@ -19,6 +21,13 @@ import {
 export type Env = {
   DB: D1Database;
   CORS_ORIGINS?: string;
+  API_AUTH_ENABLED?: string;
+  API_KEYS_JSON?: string;
+  DEMO_OPERATOR_KEY?: string;
+};
+
+type AppVariables = {
+  auth: AuthContext;
 };
 
 type ResumeBlocker = {
@@ -27,7 +36,7 @@ type ResumeBlocker = {
   step_name: string;
   failure_key: string;
   message: string;
-  required_action: string;
+  required_action: "compensation" | "human_approval" | "prod_resume_ack";
 };
 
 type RecordStepBody = {
@@ -42,16 +51,22 @@ type RecordStepBody = {
   idempotency_key?: string;
 };
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
 app.use("*", async (c, next) => {
   const origins = (c.env.CORS_ORIGINS ?? "").split(",").map((o) => o.trim()).filter(Boolean);
   return cors({
     origin: origins.length ? origins : "*",
     allowMethods: ["GET", "POST", "PATCH", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Accept"],
+    allowHeaders: ["Content-Type", "Accept", "Authorization"],
     credentials: true,
   })(c, next);
+});
+
+app.use("*", async (c, next) => {
+  const denied = await enforceAuth(c);
+  if (denied) return denied;
+  return next();
 });
 
 app.get("/health", (c) =>
@@ -77,6 +92,7 @@ app.get("/demo/runs", (c) => c.json({ runs: DEMO_RUN_CATALOG }));
 
 app.post("/demo/reset", async (c) => {
   const result = await seedDemoRuns(c.env.DB);
+  await recordAuditEvent(c.env.DB, null, "demo.reset", actorLabel(c.get("auth")), result);
   return c.json({ message: "Demo runs reset", ...result });
 });
 
@@ -85,20 +101,29 @@ app.post("/start_run", async (c) => {
     workflow_name: string;
     run_id?: string;
     metadata?: Record<string, unknown>;
+    environment?: "dev" | "staging" | "prod";
   }>();
   const runId = body.run_id ?? crypto.randomUUID();
+  const environment = body.environment ?? "dev";
+  if (!["dev", "staging", "prod"].includes(environment)) {
+    return c.json({ detail: "environment must be dev, staging, or prod" }, 400);
+  }
   const now = new Date().toISOString();
   const existing = await getRun(c.env.DB, runId);
   if (existing) {
     return c.json({ detail: `Run already exists: ${runId}` }, 409);
   }
   await c.env.DB.prepare(
-    `INSERT INTO runs (run_id, workflow_name, status, created_at, updated_at, metadata_json)
-     VALUES (?, ?, 'running', ?, ?, ?)`,
+    `INSERT INTO runs (run_id, workflow_name, status, environment, created_at, updated_at, metadata_json)
+     VALUES (?, ?, 'running', ?, ?, ?, ?)`,
   )
-    .bind(runId, body.workflow_name, now, now, JSON.stringify(body.metadata ?? {}))
+    .bind(runId, body.workflow_name, environment, now, now, JSON.stringify(body.metadata ?? {}))
     .run();
-  return c.json({ run_id: runId, status: "running" });
+  await recordAuditEvent(c.env.DB, runId, "run.started", actorLabel(c.get("auth")), {
+    workflow_name: body.workflow_name,
+    environment,
+  });
+  return c.json({ run_id: runId, status: "running", environment });
 });
 
 app.get("/runs/:runId", async (c) => {
@@ -125,6 +150,9 @@ app.patch("/runs/:runId", async (c) => {
     .run();
   const updated = await getRun(c.env.DB, runId);
   const steps = await getSteps(c.env.DB, runId);
+  await recordAuditEvent(c.env.DB, runId, "run.updated", actorLabel(c.get("auth")), {
+    status,
+  });
   return c.json(runToApi(updated!, steps));
 });
 
@@ -195,6 +223,12 @@ app.post("/runs/:runId/steps", async (c) => {
   const updated = await getRun(c.env.DB, runId);
   const updatedSteps = await getSteps(c.env.DB, runId);
   const blockers = getResumeBlockers(updated!, updatedSteps);
+  await recordAuditEvent(c.env.DB, runId, "step.recorded", actorLabel(c.get("auth")), {
+    step_name: body.step_name,
+    step_index: body.step_index,
+    status: body.status,
+    failure_classification: body.failure_classification ?? null,
+  });
   return c.json(runStatusResponse(updated!, updatedSteps, blockers), 201);
 });
 
@@ -225,6 +259,7 @@ app.post("/resume", async (c) => {
   if (blockers.length > 0) {
     return c.json({ message: "Resume blocked by failure gates", blockers }, 409);
   }
+  await recordAuditEvent(c.env.DB, body.run_id, "run.resume_validated", actorLabel(c.get("auth")), {});
   return c.json(runStatusResponse(run, steps, []));
 });
 
@@ -247,6 +282,9 @@ app.post("/runs/:runId/compensate", async (c) => {
   const updated = await getRun(c.env.DB, runId);
   const updatedSteps = await getSteps(c.env.DB, runId);
   const blockers = getResumeBlockers(updated!, updatedSteps);
+  await recordAuditEvent(c.env.DB, runId, "gate.compensated", actorLabel(c.get("auth")), {
+    failure_key: key,
+  });
   return c.json(runStatusResponse(updated!, updatedSteps, blockers));
 });
 
@@ -284,6 +322,40 @@ app.post("/runs/:runId/approve", async (c) => {
   const updated = await getRun(c.env.DB, runId);
   const updatedSteps = await getSteps(c.env.DB, runId);
   const blockers = getResumeBlockers(updated!, updatedSteps);
+  await recordAuditEvent(c.env.DB, runId, "gate.approved", actorLabel(c.get("auth")), {
+    failure_key: key,
+    approved_by: body.approved_by,
+  });
+  return c.json(runStatusResponse(updated!, updatedSteps, blockers));
+});
+
+app.post("/runs/:runId/ack_prod_resume", async (c) => {
+  const runId = c.req.param("runId");
+  const body = await c.req.json<{ acknowledged_by: string; note?: string }>();
+  if (!body.acknowledged_by?.trim()) {
+    return c.json({ detail: "acknowledged_by is required" }, 400);
+  }
+  const run = await getRun(c.env.DB, runId);
+  if (!run) return c.json({ detail: `Run not found: ${runId}` }, 404);
+  if ((run.environment ?? "dev") !== "prod") {
+    return c.json({ detail: "Production acknowledgment only applies to prod runs" }, 400);
+  }
+  const metadata = parseMetadata(run.metadata_json);
+  metadata.gates = metadata.gates ?? {};
+  const ackAt = new Date().toISOString();
+  metadata.gates.prod_resume_ack = {
+    granted: true,
+    acknowledged_by: body.acknowledged_by,
+    acknowledged_at: ackAt,
+    note: body.note ?? null,
+  };
+  await updateRunMetadata(c.env.DB, runId, metadata);
+  const updated = await getRun(c.env.DB, runId);
+  const updatedSteps = await getSteps(c.env.DB, runId);
+  const blockers = getResumeBlockers(updated!, updatedSteps);
+  await recordAuditEvent(c.env.DB, runId, "gate.prod_resume_ack", actorLabel(c.get("auth")), {
+    acknowledged_by: body.acknowledged_by,
+  });
   return c.json(runStatusResponse(updated!, updatedSteps, blockers));
 });
 
@@ -300,6 +372,34 @@ app.get("/runs/:runId/audit_log", async (c) => {
     )
     .join("\n");
   return c.json({ run_id: runId, audit_trace: trace || "(no steps recorded)" });
+});
+
+app.get("/runs/:runId/audit_events", async (c) => {
+  const runId = c.req.param("runId");
+  const run = await getRun(c.env.DB, runId);
+  if (!run) return c.json({ detail: `Run not found: ${runId}` }, 404);
+  const events = await listAuditEvents(c.env.DB, runId);
+  return c.json({
+    run_id: runId,
+    events: events.map(auditEventToApi),
+  });
+});
+
+app.get("/runs/:runId/replay", async (c) => {
+  const runId = c.req.param("runId");
+  const run = await getRun(c.env.DB, runId);
+  if (!run) return c.json({ detail: `Run not found: ${runId}` }, 404);
+  const steps = await getSteps(c.env.DB, runId);
+  const replayable = steps.filter(
+    (s) => s.status === "completed" || s.status === "skipped_replay",
+  );
+  return c.json({
+    run_id: runId,
+    workflow_name: run.workflow_name,
+    environment: run.environment ?? "dev",
+    replay_from_index: 0,
+    steps: replayable.map(stepToApi),
+  });
 });
 
 export default app;
@@ -351,43 +451,54 @@ function getResumeBlockers(run: RunRow, steps: StepRow[]): ResumeBlocker[] {
 
   const classification = failed.failure_classification;
   const key = failureKey(failed);
-  const gates = parseMetadata(run.metadata_json).gates ?? {};
-
-  if (classification === "transient") return [];
+  const gates = (parseMetadata(run.metadata_json).gates ?? {}) as Record<string, unknown>;
+  const blockers: ResumeBlocker[] = [];
 
   if (classification === "partial") {
-    if (gates.compensations?.[key]) return [];
-    return [
-      {
+    if (!gates.compensations || !(gates.compensations as Record<string, unknown>)[key]) {
+      blockers.push({
         classification,
         step_index: failed.step_index,
         step_name: failed.step_name,
         failure_key: key,
         message: failed.error_message ?? "Partial failure requires compensation",
         required_action: "compensation",
-      },
-    ];
-  }
-
-  if (classification === "permanent") {
-    if (gates.approvals?.[key]) return [];
+      });
+    }
+  } else if (classification === "permanent") {
     const human = gates.human_approval as
       | { failure_key?: string; granted?: boolean }
       | undefined;
-    if (human?.failure_key === key && human?.granted) return [];
-    return [
-      {
+    const hasApproval =
+      (gates.approvals as Record<string, unknown> | undefined)?.[key] ||
+      (human?.failure_key === key && human?.granted);
+    if (!hasApproval) {
+      blockers.push({
         classification,
         step_index: failed.step_index,
         step_name: failed.step_name,
         failure_key: key,
         message: failed.error_message ?? "Permanent failure requires human approval",
         required_action: "human_approval",
-      },
-    ];
+      });
+    }
   }
 
-  return [];
+  if (blockers.length === 0 && (run.environment ?? "dev") === "prod" && failed) {
+    const prodAck = gates.prod_resume_ack as { granted?: boolean } | undefined;
+    if (!prodAck?.granted) {
+      blockers.push({
+        classification,
+        step_index: failed.step_index,
+        step_name: failed.step_name,
+        failure_key: key,
+        message: "Production resume requires operator acknowledgment",
+        required_action: "prod_resume_ack",
+      });
+    }
+  }
+
+  return blockers;
 }
 
 function runStatusResponse(run: RunRow, steps: StepRow[], blockers: ResumeBlocker[]) {
@@ -399,6 +510,7 @@ function runStatusResponse(run: RunRow, steps: StepRow[], blockers: ResumeBlocke
     run_id: run.run_id,
     workflow_name: run.workflow_name,
     status: run.status,
+    environment: run.environment ?? "dev",
     steps_completed: completed.length,
     last_completed_step: lastCompleted,
     resume_from_index: resumeFrom,

@@ -2,7 +2,7 @@
  * Client for the OrchestrateOS resume_engine control plane API.
  */
 
-import { orchestrateOSApiBaseUrl } from "@/lib/site";
+import { orchestrateOSApiBaseUrl, orchestrateOSApiKey } from "@/lib/site";
 
 export type ResumeBlocker = {
   classification: "transient" | "partial" | "permanent";
@@ -10,7 +10,7 @@ export type ResumeBlocker = {
   step_name: string;
   failure_key: string;
   message: string;
-  required_action: "compensation" | "human_approval";
+  required_action: "compensation" | "human_approval" | "prod_resume_ack";
 };
 
 export type ResumeBlockersResponse = {
@@ -23,6 +23,7 @@ export type RunStatusResponse = {
   run_id: string;
   workflow_name: string;
   status: string;
+  environment?: "dev" | "staging" | "prod";
   steps_completed: number;
   last_completed_step: number | null;
   resume_from_index: number;
@@ -50,12 +51,18 @@ function baseUrl(): string {
   return orchestrateOSApiBaseUrl();
 }
 
+function writeHeaders(): Record<string, string> {
+  const key = orchestrateOSApiKey();
+  return key ? { Authorization: `Bearer ${key}` } : {};
+}
+
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${baseUrl()}${path}`, {
     ...init,
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
+      ...writeHeaders(),
       ...init?.headers,
     },
   });
@@ -110,6 +117,19 @@ export async function grantApproval(
   });
 }
 
+export async function ackProdResume(
+  runId: string,
+  body: { acknowledged_by: string; note?: string }
+): Promise<RunStatusResponse> {
+  return apiFetch<RunStatusResponse>(
+    `/runs/${encodeURIComponent(runId)}/ack_prod_resume`,
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    }
+  );
+}
+
 export const API_ENDPOINTS = [
   { method: "GET", path: "/health", description: "Load balancer health check" },
   { method: "GET", path: "/docs", description: "API reference (HTML)" },
@@ -123,8 +143,15 @@ export const API_ENDPOINTS = [
   },
   { method: "POST", path: "/runs/{run_id}/compensate", description: "Record partial-failure compensation" },
   { method: "POST", path: "/runs/{run_id}/approve", description: "Grant human approval (permanent failures)" },
+  {
+    method: "POST",
+    path: "/runs/{run_id}/ack_prod_resume",
+    description: "Acknowledge production resume (prod environment)",
+  },
   { method: "POST", path: "/resume", description: "Validate resume readiness (409 if gated)" },
   { method: "GET", path: "/runs/{run_id}/audit_log", description: "Deterministic audit trace" },
+  { method: "GET", path: "/runs/{run_id}/audit_events", description: "Immutable governance audit events" },
+  { method: "GET", path: "/runs/{run_id}/replay", description: "Deterministic replay payload" },
   { method: "GET", path: "/demo/runs", description: "Seeded demo run catalog" },
   { method: "POST", path: "/demo/reset", description: "Reset demo runs to initial gate state" },
 ] as const;

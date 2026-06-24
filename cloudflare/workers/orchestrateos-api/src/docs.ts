@@ -2,9 +2,9 @@ export const OPENAPI_SPEC = {
   openapi: "3.0.3",
   info: {
     title: "OrchestrateOS Control Plane API",
-    version: "0.1.0",
+    version: "0.2.0",
     description:
-      "Cloudflare Worker + D1 API for run lifecycle, resume gates, compensation, and audit logs.",
+      "Cloudflare Worker + D1 API for run lifecycle, resume gates, RBAC, audit events, and replay.",
   },
   servers: [{ url: "https://orchestrateos-api.nevaquit.workers.dev" }],
   paths: {
@@ -23,6 +23,7 @@ export const OPENAPI_SPEC = {
                   workflow_name: { type: "string" },
                   run_id: { type: "string", format: "uuid" },
                   metadata: { type: "object" },
+                  environment: { type: "string", enum: ["dev", "staging", "prod"] },
                 },
                 required: ["workflow_name"],
               },
@@ -55,6 +56,15 @@ export const OPENAPI_SPEC = {
     },
     "/runs/{run_id}/approve": {
       post: { summary: "Grant human approval for permanent failure" },
+    },
+    "/runs/{run_id}/ack_prod_resume": {
+      post: { summary: "Acknowledge production resume (prod environment)" },
+    },
+    "/runs/{run_id}/replay": {
+      get: { summary: "Deterministic replay payload from completed steps" },
+    },
+    "/runs/{run_id}/audit_events": {
+      get: { summary: "Immutable governance audit event log" },
     },
     "/resume": {
       post: { summary: "Validate resume readiness (409 if gated)" },
@@ -111,6 +121,9 @@ export const DOCS_HTML = `<!DOCTYPE html>
       <tr><td>GET</td><td><code>/runs/{run_id}/resume_blockers</code></td><td>List active gates</td></tr>
       <tr><td>POST</td><td><code>/runs/{run_id}/compensate</code></td><td>Record partial-failure compensation</td></tr>
       <tr><td>POST</td><td><code>/runs/{run_id}/approve</code></td><td>Grant human approval (permanent failures)</td></tr>
+      <tr><td>POST</td><td><code>/runs/{run_id}/ack_prod_resume</code></td><td>Production resume acknowledgment</td></tr>
+      <tr><td>GET</td><td><code>/runs/{run_id}/replay</code></td><td>Replay payload (completed steps)</td></tr>
+      <tr><td>GET</td><td><code>/runs/{run_id}/audit_events</code></td><td>Immutable governance audit log</td></tr>
       <tr><td>POST</td><td><code>/resume</code></td><td>Validate resume (409 if gated)</td></tr>
       <tr><td>GET</td><td><code>/runs/{run_id}/audit_log</code></td><td>Deterministic audit trace</td></tr>
       <tr><td>GET</td><td><code>/demo/runs</code></td><td>Seeded demo run catalog</td></tr>

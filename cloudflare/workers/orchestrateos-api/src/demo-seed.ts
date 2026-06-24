@@ -101,21 +101,24 @@ const DEMO_STEPS: Record<string, StepSeed[]> = {
   ],
 };
 
-const DEMO_RUNS: { run_id: string; workflow_name: string; status: string }[] = [
+const DEMO_RUNS: { run_id: string; workflow_name: string; status: string; environment: string }[] = [
   {
     run_id: DEMO_RUN_IDS.transient,
     workflow_name: "demo_transient_gate",
     status: "failed",
+    environment: "prod",
   },
   {
     run_id: DEMO_RUN_IDS.partial,
     workflow_name: "demo_partial_gate",
     status: "failed",
+    environment: "dev",
   },
   {
     run_id: DEMO_RUN_IDS.permanent,
     workflow_name: "demo_permanent_gate",
     status: "failed",
+    environment: "dev",
   },
 ];
 
@@ -154,10 +157,10 @@ export async function seedDemoRuns(db: D1Database): Promise<{ seeded: number }> 
   for (const run of DEMO_RUNS) {
     await db
       .prepare(
-        `INSERT INTO runs (run_id, workflow_name, status, created_at, updated_at, metadata_json)
-         VALUES (?, ?, ?, ?, ?, '{}')`,
+        `INSERT INTO runs (run_id, workflow_name, status, environment, created_at, updated_at, metadata_json)
+         VALUES (?, ?, ?, ?, ?, ?, '{}')`,
       )
-      .bind(run.run_id, run.workflow_name, run.status, TS, TS)
+      .bind(run.run_id, run.workflow_name, run.status, run.environment, TS, TS)
       .run();
 
     for (const step of DEMO_STEPS[run.run_id] ?? []) {
