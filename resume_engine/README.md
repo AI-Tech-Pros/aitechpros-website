@@ -2,7 +2,9 @@
 
 **Deterministic execution for multi-step agent workflows.**
 
-`resume_engine` is the core execution layer behind [OrchestrateOS](https://orchestrateos.aitechpros.ai) — a framework-agnostic library that wraps LangChain, LangGraph, CrewAI, or plain Python workflows and guarantees that a failed run resumes from its last completed step instead of restarting from zero.
+`resume_engine` is the core execution layer behind [OrchestrateOS](https://orchestrateos.pages.dev) — a framework-agnostic library that wraps LangChain, LangGraph, CrewAI, or plain Python workflows and guarantees that a failed run resumes from its last completed step instead of restarting from zero.
+
+**Docs:** [User guide](../docs/orchestrateos/user-guide.md) · [Troubleshooting](../docs/orchestrateos/troubleshooting.md) · [Deploy](../docs/cloudflare-deploy.md)
 
 ## The Problem
 

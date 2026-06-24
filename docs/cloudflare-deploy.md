@@ -1,5 +1,7 @@
 # Cloudflare deployment (Pages + Workers + D1)
 
+**User documentation:** [User guide](./orchestrateos/user-guide.md) · [Troubleshooting](./orchestrateos/troubleshooting.md)
+
 Production uses **Cloudflare default domains** — no custom domain required.
 
 | Service | URL |
