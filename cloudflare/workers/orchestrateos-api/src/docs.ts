@@ -21,6 +21,7 @@ export const OPENAPI_SPEC = {
                 type: "object",
                 properties: {
                   workflow_name: { type: "string" },
+                  run_id: { type: "string", format: "uuid" },
                   metadata: { type: "object" },
                 },
                 required: ["workflow_name"],
@@ -29,6 +30,13 @@ export const OPENAPI_SPEC = {
           },
         },
       },
+    },
+    "/runs/{run_id}": {
+      get: { summary: "Full run with step audit trail (Python SDK shape)" },
+      patch: { summary: "Update run status and metadata" },
+    },
+    "/idempotency/{key}": {
+      get: { summary: "Lookup completed step by idempotency key" },
     },
     "/runs/{run_id}/steps": {
       post: {
@@ -94,7 +102,10 @@ export const DOCS_HTML = `<!DOCTYPE html>
     <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
     <tbody>
       <tr><td>GET</td><td><code>/health</code></td><td>Load balancer health check</td></tr>
-      <tr><td>POST</td><td><code>/start_run</code></td><td>Create a new workflow run</td></tr>
+      <tr><td>POST</td><td><code>/start_run</code></td><td>Create a new workflow run (optional <code>run_id</code>)</td></tr>
+      <tr><td>GET</td><td><code>/runs/{run_id}</code></td><td>Full run + steps (Python SDK)</td></tr>
+      <tr><td>PATCH</td><td><code>/runs/{run_id}</code></td><td>Update status / metadata</td></tr>
+      <tr><td>GET</td><td><code>/idempotency/{key}</code></td><td>Idempotent step lookup</td></tr>
       <tr><td>POST</td><td><code>/runs/{run_id}/steps</code></td><td>Record step completion or failure</td></tr>
       <tr><td>GET</td><td><code>/runs/{run_id}/status</code></td><td>Run status + gate summary</td></tr>
       <tr><td>GET</td><td><code>/runs/{run_id}/resume_blockers</code></td><td>List active gates</td></tr>

@@ -8,35 +8,17 @@ import { cors } from "hono/cors";
 import { DEMO_RUN_CATALOG } from "./demo-runs";
 import { seedDemoRuns } from "./demo-seed";
 import { DOCS_HTML, OPENAPI_SPEC } from "./docs";
+import {
+  parseMetadata,
+  runToApi,
+  stepToApi,
+  type RunRow,
+  type StepRow,
+} from "./serialize";
 
 export type Env = {
   DB: D1Database;
   CORS_ORIGINS?: string;
-};
-
-type RunRow = {
-  run_id: string;
-  workflow_name: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
-  metadata_json: string;
-};
-
-type StepRow = {
-  id: number;
-  run_id: string;
-  step_name: string;
-  step_index: number;
-  input_json: string;
-  input_hash: string;
-  output_json: string | null;
-  status: string;
-  idempotency_key: string;
-  timestamp: string;
-  failure_classification: string | null;
-  error_message: string | null;
-  sequence: number;
 };
 
 type ResumeBlocker = {
@@ -57,6 +39,7 @@ type RecordStepBody = {
   failure_classification?: "transient" | "partial" | "permanent" | null;
   error_message?: string | null;
   sequence?: number;
+  idempotency_key?: string;
 };
 
 const app = new Hono<{ Bindings: Env }>();
@@ -65,7 +48,7 @@ app.use("*", async (c, next) => {
   const origins = (c.env.CORS_ORIGINS ?? "").split(",").map((o) => o.trim()).filter(Boolean);
   return cors({
     origin: origins.length ? origins : "*",
-    allowMethods: ["GET", "POST", "OPTIONS"],
+    allowMethods: ["GET", "POST", "PATCH", "OPTIONS"],
     allowHeaders: ["Content-Type", "Accept"],
     credentials: true,
   })(c, next);
@@ -98,9 +81,17 @@ app.post("/demo/reset", async (c) => {
 });
 
 app.post("/start_run", async (c) => {
-  const body = await c.req.json<{ workflow_name: string; metadata?: Record<string, unknown> }>();
-  const runId = crypto.randomUUID();
+  const body = await c.req.json<{
+    workflow_name: string;
+    run_id?: string;
+    metadata?: Record<string, unknown>;
+  }>();
+  const runId = body.run_id ?? crypto.randomUUID();
   const now = new Date().toISOString();
+  const existing = await getRun(c.env.DB, runId);
+  if (existing) {
+    return c.json({ detail: `Run already exists: ${runId}` }, 409);
+  }
   await c.env.DB.prepare(
     `INSERT INTO runs (run_id, workflow_name, status, created_at, updated_at, metadata_json)
      VALUES (?, ?, 'running', ?, ?, ?)`,
@@ -108,6 +99,48 @@ app.post("/start_run", async (c) => {
     .bind(runId, body.workflow_name, now, now, JSON.stringify(body.metadata ?? {}))
     .run();
   return c.json({ run_id: runId, status: "running" });
+});
+
+app.get("/runs/:runId", async (c) => {
+  const runId = c.req.param("runId");
+  const run = await getRun(c.env.DB, runId);
+  if (!run) return c.json({ detail: `Run not found: ${runId}` }, 404);
+  const steps = await getSteps(c.env.DB, runId);
+  return c.json(runToApi(run, steps));
+});
+
+app.patch("/runs/:runId", async (c) => {
+  const runId = c.req.param("runId");
+  const body = await c.req.json<{ status?: string; metadata?: Record<string, unknown> }>();
+  const run = await getRun(c.env.DB, runId);
+  if (!run) return c.json({ detail: `Run not found: ${runId}` }, 404);
+  const status = body.status ?? run.status;
+  const metadata =
+    body.metadata !== undefined ? body.metadata : parseMetadata(run.metadata_json);
+  const now = new Date().toISOString();
+  await c.env.DB.prepare(
+    "UPDATE runs SET status = ?, metadata_json = ?, updated_at = ? WHERE run_id = ?",
+  )
+    .bind(status, JSON.stringify(metadata), now, runId)
+    .run();
+  const updated = await getRun(c.env.DB, runId);
+  const steps = await getSteps(c.env.DB, runId);
+  return c.json(runToApi(updated!, steps));
+});
+
+app.get("/idempotency/:key", async (c) => {
+  const key = c.req.param("key");
+  const row = await c.env.DB.prepare(
+    `SELECT * FROM step_records
+     WHERE idempotency_key = ?
+       AND status IN ('completed', 'skipped_replay')
+     ORDER BY sequence DESC
+     LIMIT 1`,
+  )
+    .bind(key)
+    .first<StepRow>();
+  if (!row) return c.json({ detail: "Idempotency key not found" }, 404);
+  return c.json(stepToApi(row));
 });
 
 app.post("/runs/:runId/steps", async (c) => {
@@ -123,7 +156,8 @@ app.post("/runs/:runId/steps", async (c) => {
   const outputJson =
     body.output_json === undefined ? null : JSON.stringify(body.output_json);
   const now = new Date().toISOString();
-  const idempotencyKey = `${runId}:${body.step_index}:${sequence}`;
+  const idempotencyKey =
+    body.idempotency_key ?? `${runId}:${body.step_index}:${sequence}`;
 
   await c.env.DB.prepare(
     `INSERT INTO step_records (
@@ -233,10 +267,18 @@ app.post("/runs/:runId/approve", async (c) => {
   const key = failureKey(failed);
   metadata.gates = metadata.gates ?? {};
   metadata.gates.approvals = metadata.gates.approvals ?? {};
+  const approvedAt = new Date().toISOString();
   metadata.gates.approvals[key] = {
     approved_by: body.approved_by,
     note: body.note ?? null,
-    at: new Date().toISOString(),
+    at: approvedAt,
+  };
+  metadata.gates.human_approval = {
+    granted: true,
+    failure_key: key,
+    approved_by: body.approved_by,
+    approved_at: approvedAt,
+    note: body.note ?? null,
   };
   await updateRunMetadata(c.env.DB, runId, metadata);
   const updated = await getRun(c.env.DB, runId);
@@ -291,14 +333,6 @@ async function updateRunMetadata(
     .run();
 }
 
-function parseMetadata(json: string): Record<string, any> {
-  try {
-    return JSON.parse(json) as Record<string, any>;
-  } catch {
-    return {};
-  }
-}
-
 function failureKey(step: StepRow): string {
   return `${step.step_index}:${step.sequence}`;
 }
@@ -337,6 +371,10 @@ function getResumeBlockers(run: RunRow, steps: StepRow[]): ResumeBlocker[] {
 
   if (classification === "permanent") {
     if (gates.approvals?.[key]) return [];
+    const human = gates.human_approval as
+      | { failure_key?: string; granted?: boolean }
+      | undefined;
+    if (human?.failure_key === key && human?.granted) return [];
     return [
       {
         classification,

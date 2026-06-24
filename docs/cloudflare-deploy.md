@@ -40,6 +40,28 @@ Fixed run IDs seeded on every deploy (`cloudflare/d1/seed.sql`):
 
 Reset after testing: `POST /demo/reset` · Catalog: `GET /demo/runs` · Docs: `/docs`
 
+### Phase 2 — Python SDK → Worker (remote checkpoint store)
+
+The `RemoteCheckpointStore` persists runs and steps to the Worker API so real Python workflows appear in D1 and the gate explorer.
+
+```powershell
+pip install -e ".[remote]"
+$env:ORCHESTRATEOS_API_URL = "https://orchestrateos-api.nevaquit.workers.dev"
+python resume_engine/demo_remote_pipeline.py
+```
+
+Worker endpoints used by the SDK:
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `POST` | `/start_run` | Create run (optional `run_id`, `metadata`) |
+| `GET` | `/runs/{id}` | Full run + steps (`Run.from_dict` shape) |
+| `PATCH` | `/runs/{id}` | Update `status` / `metadata` |
+| `POST` | `/runs/{id}/steps` | Append step (passes `idempotency_key`) |
+| `GET` | `/idempotency/{key}` | Idempotent step lookup |
+
+Gate metadata: permanent failures accept both `metadata.gates.human_approval` (Python SDK) and `metadata.gates.approvals[key]` (gate explorer UI).
+
 ### GitHub secrets (required)
 
 | Secret | Value |
@@ -98,4 +120,5 @@ cd cloudflare/workers/orchestrateos-api && npm run dev
 |----------|--------|
 | Gate explorer UI | Worker + D1 |
 | LangGraph / CrewAI in your apps | `pip install -e .` locally |
+| Python → live control plane (D1) | `pip install -e ".[remote]"` + `RemoteCheckpointStore` |
 | Full Python FastAPI on Cloudflare | [Cloudflare Containers](https://developers.cloudflare.com/containers/) (paid)

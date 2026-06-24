@@ -120,3 +120,7 @@ jobs:
           curl -fsS "${{ env.WORKER_API_URL }}/health"
           curl -fsS "${{ env.WORKER_API_URL }}/docs" | grep -qi "OrchestrateOS"
           curl -fsS "${{ env.WORKER_API_URL }}/demo/runs" | grep -qi "demo_partial_gate"
+          RUN_ID=$(curl -fsS -X POST "${{ env.WORKER_API_URL }}/start_run" \
+            -H "Content-Type: application/json" \
+            -d '{"workflow_name":"ci_smoke_sdk","metadata":{"ci":true}}' | grep -oE '"run_id":"[^"]+"' | cut -d'"' -f4)
+          curl -fsS "${{ env.WORKER_API_URL }}/runs/${RUN_ID}" | grep -qi "ci_smoke_sdk"

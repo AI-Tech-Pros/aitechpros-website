@@ -34,6 +34,31 @@ pip install -e ".[langgraph,crewai]"
 
 # Development
 pip install -e ".[dev]"
+
+# Remote checkpoint store (Python SDK → Cloudflare Worker + D1)
+pip install -e ".[remote]"
+```
+
+## Quickstart — Remote control plane
+
+Persist runs to the live OrchestrateOS API (same D1 database as the gate explorer):
+
+```python
+from resume_engine.core.checkpoint_store import ResumeEngine
+from resume_engine.storage.remote_backend import RemoteCheckpointStore
+
+API_URL = "https://orchestrateos-api.nevaquit.workers.dev"
+
+with RemoteCheckpointStore(API_URL) as store:
+    engine = ResumeEngine(store)
+    run = engine.start_run("my_pipeline")
+    # execute_step / execute_workflow / resume — same API as SQLite
+```
+
+Demo script (injects transient failure, resumes, prints run ID for the gate explorer):
+
+```bash
+python resume_engine/demo_remote_pipeline.py
 ```
 
 ## Quickstart — Plain Python
