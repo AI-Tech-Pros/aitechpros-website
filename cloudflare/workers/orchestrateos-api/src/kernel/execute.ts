@@ -1,15 +1,10 @@
 import { recordAuditEvent } from "../audit";
+import type { LlmEnv } from "../llm/env";
 import { KERNEL_AGENTS, KERNEL_MODEL, stepNameForAgent, type KernelAgentId } from "./agents";
 import { runKernelLlm } from "./llm";
 
-export type KernelEnv = {
+export type KernelEnv = LlmEnv & {
   DB: D1Database;
-  AI?: {
-    run(
-      model: string,
-      inputs: { messages: { role: string; content: string }[]; max_tokens?: number },
-    ): Promise<{ response?: string } | string>;
-  };
 };
 
 export type KernelAgentResult = {
@@ -51,7 +46,8 @@ export async function executeKernelPipeline(
         ? context[0]
         : `Prior agent outputs:\n${context.slice(1).join("\n\n")}\n\nContinue for goal: ${goal}`;
 
-    const output = await runKernelLlm(env.AI, agent.systemPrompt, userContent);
+    const llm = await runKernelLlm(env, agent.systemPrompt, userContent);
+    const output = llm.text;
     context.push(`${agent.name}: ${output}`);
 
     const inputJson = JSON.stringify({ goal, prior_context_count: context.length - 2 });
@@ -72,7 +68,7 @@ export async function executeKernelPipeline(
         index,
         inputJson,
         inputHash,
-        JSON.stringify({ agent: agent.id, model: KERNEL_MODEL, response: output }),
+        JSON.stringify({ agent: agent.id, model: llm.model, provider: llm.provider, response: output }),
         idempotencyKey,
         now,
         index,
@@ -80,7 +76,8 @@ export async function executeKernelPipeline(
       .run();
 
     await recordAuditEvent(env.DB, runId, `kernel.${agent.id}`, actor, {
-      model: KERNEL_MODEL,
+      model: llm.model,
+      provider: llm.provider,
       step_index: index,
     });
 
@@ -89,7 +86,7 @@ export async function executeKernelPipeline(
       name: agent.name,
       step_index: index,
       output,
-      model: KERNEL_MODEL,
+      model: llm.model,
     });
   }
 
@@ -107,21 +104,21 @@ export async function executeKernelPipeline(
     run_id: runId,
     workflow_name: "kernel_nine_agent",
     status: "completed",
-    model: KERNEL_MODEL,
+    model: agentResults[0]?.model ?? KERNEL_MODEL,
     agents: agentResults,
   };
 }
 
-export function kernelAgentCatalog(aiAvailable: boolean) {
+export function kernelAgentCatalog(llmAvailable: boolean) {
   return {
     model: KERNEL_MODEL,
-    ai_available: aiAvailable,
+    ai_available: llmAvailable,
     agents: KERNEL_AGENTS.map((a) => ({
       id: a.id,
       name: a.name,
       role: a.role,
       status: "live" as const,
-      runtime: "workers-ai",
+      runtime: "llm-router",
       step_name: stepNameForAgent(a.id),
     })),
   };

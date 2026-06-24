@@ -15,6 +15,10 @@ API_AUTH_ENABLED = "true"
 SITE_URL = "https://orchestrateos.pages.dev"
 # Set via wrangler secret: SESSION_SECRET, RESEND_API_KEY, NOTIFY_EMAIL, ADMIN_EMAILS, CRON_SECRET
 
+LLM_PRIMARY_PROVIDER = "workers-ai"
+# Optional secrets: OPENAI_API_KEY, ANTHROPIC_API_KEY, AI_GATEWAY_URL
+# Optional: LLM_FALLBACK_PROVIDER, LLM_DEFAULT_MODEL
+
 [ai]
 binding = "AI"
 

@@ -76,6 +76,26 @@ export type KernelRunResponse = {
   }[];
 };
 
+export type LlmProviderInfo = {
+  id: string;
+  available: boolean;
+  default_model: string;
+};
+
+export type LlmStatusResponse = {
+  primary_provider: string | null;
+  provider_chain: string[];
+  providers: LlmProviderInfo[];
+  ai_gateway: boolean;
+  default_model: string | null;
+};
+
+export type LlmCompleteResponse = {
+  text: string;
+  provider: string;
+  model: string;
+};
+
 function baseUrl(): string {
   return orchestrateOSApiBaseUrl();
 }
@@ -121,6 +141,25 @@ export async function runKernelAgents(goal: string): Promise<KernelRunResponse> 
   return apiFetch<KernelRunResponse>("/kernel/run", {
     method: "POST",
     body: JSON.stringify({ goal }),
+  });
+}
+
+export async function fetchLlmStatus(): Promise<LlmStatusResponse> {
+  return apiFetch<LlmStatusResponse>("/llm/status");
+}
+
+export async function completeLlm(
+  messages: { role: "system" | "user" | "assistant"; content: string }[],
+  options?: {
+    model?: string;
+    max_tokens?: number;
+    temperature?: number;
+    provider?: "workers-ai" | "openai" | "anthropic" | "auto";
+  },
+): Promise<LlmCompleteResponse> {
+  return apiFetch<LlmCompleteResponse>("/llm/complete", {
+    method: "POST",
+    body: JSON.stringify({ messages, ...options }),
   });
 }
 
@@ -177,6 +216,8 @@ export const API_ENDPOINTS = [
   { method: "POST", path: "/start_run", description: "Create a new workflow run" },
   { method: "GET", path: "/kernel/agents", description: "Nine-agent LLM kernel catalog" },
   { method: "POST", path: "/kernel/run", description: "Run all nine LLM agents on a goal" },
+  { method: "GET", path: "/llm/status", description: "LLM provider availability and routing" },
+  { method: "POST", path: "/llm/complete", description: "Unified LLM completion with provider failover" },
   { method: "POST", path: "/runs/{run_id}/steps", description: "Record step completion or failure" },
   { method: "GET", path: "/runs/{run_id}/status", description: "Run status + gate summary" },
   {

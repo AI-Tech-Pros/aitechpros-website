@@ -13,6 +13,8 @@ import { DOCS_HTML, OPENAPI_SPEC } from "./docs";
 import { platformApp } from "./platform/routes";
 import { runNurtureTick } from "./platform/nurture/service";
 import { executeKernelPipeline, kernelAgentCatalog } from "./kernel/execute";
+import { completeLlm, llmStatus } from "./llm/router";
+import type { LlmEnv } from "./llm/env";
 import {
   readSessionCookie,
   verifySession,
@@ -29,14 +31,8 @@ import {
   type StepRow,
 } from "./serialize";
 
-export type Env = {
+export type Env = LlmEnv & {
   DB: D1Database;
-  AI?: {
-    run(
-      model: string,
-      inputs: { messages: { role: string; content: string }[]; max_tokens?: number },
-    ): Promise<{ response?: string } | string>;
-  };
   CORS_ORIGINS?: string;
   API_AUTH_ENABLED?: string;
   API_KEYS_JSON?: string;
@@ -119,15 +115,40 @@ app.get("/", (c) =>
 
 app.get("/demo/runs", (c) => c.json({ runs: DEMO_RUN_CATALOG }));
 
-app.get("/kernel/agents", (c) => c.json(kernelAgentCatalog(Boolean(c.env.AI))));
+app.get("/kernel/agents", (c) => c.json(kernelAgentCatalog(llmStatus(c.env).primary_provider !== null)));
+
+app.get("/llm/status", (c) => c.json(llmStatus(c.env)));
+
+app.post("/llm/complete", async (c) => {
+  const body = await c.req.json<{
+    messages: { role: "system" | "user" | "assistant"; content: string }[];
+    model?: string;
+    max_tokens?: number;
+    temperature?: number;
+    provider?: "workers-ai" | "openai" | "anthropic" | "auto";
+  }>();
+
+  try {
+    const result = await completeLlm(c.env, body);
+    await recordAuditEvent(c.env.DB, null, "llm.complete", actorLabel(c.get("auth")), {
+      provider: result.provider,
+      model: result.model,
+      message_count: body.messages?.length ?? 0,
+    });
+    return c.json(result);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "LLM completion failed";
+    return c.json({ detail: message }, 503);
+  }
+});
 
 app.post("/kernel/run", async (c) => {
   const body = await c.req.json<{ goal: string; environment?: "dev" | "staging" | "prod" }>();
   if (!body.goal?.trim()) {
     return c.json({ detail: "goal is required" }, 400);
   }
-  if (!c.env.AI) {
-    return c.json({ detail: "Workers AI binding not configured on this deployment" }, 503);
+  if (llmStatus(c.env).primary_provider === null) {
+    return c.json({ detail: "No LLM providers configured on this deployment" }, 503);
   }
 
   const runId = crypto.randomUUID();

@@ -6,9 +6,11 @@ import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import {
   fetchKernelAgents,
+  fetchLlmStatus,
   runKernelAgents,
   type KernelAgentInfo,
   type KernelRunResponse,
+  type LlmStatusResponse,
 } from "@/lib/orchestrateos-api";
 
 const statusStyle = "bg-emerald-500/15 text-emerald-400 border-emerald-500/25";
@@ -16,18 +18,18 @@ const statusStyle = "bg-emerald-500/15 text-emerald-400 border-emerald-500/25";
 export default function OrchestrateOSNineAgentKernel() {
   const [agents, setAgents] = useState<KernelAgentInfo[]>([]);
   const [model, setModel] = useState("");
-  const [aiAvailable, setAiAvailable] = useState(false);
+  const [llmStatus, setLlmStatus] = useState<LlmStatusResponse | null>(null);
   const [goal, setGoal] = useState("Summarize a partner onboarding workflow with governance gates.");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastRun, setLastRun] = useState<KernelRunResponse | null>(null);
 
   useEffect(() => {
-    fetchKernelAgents()
-      .then((data) => {
-        setAgents(data.agents);
-        setModel(data.model);
-        setAiAvailable(data.ai_available);
+    Promise.all([fetchKernelAgents(), fetchLlmStatus()])
+      .then(([agentsData, statusData]) => {
+        setAgents(agentsData.agents);
+        setModel(agentsData.model);
+        setLlmStatus(statusData);
       })
       .catch(() => setError("Could not load kernel agents from the Worker API."));
   }, []);
@@ -48,15 +50,24 @@ export default function OrchestrateOSNineAgentKernel() {
   return (
     <div className="space-y-6">
       <p className="text-white/55 text-sm leading-relaxed">
-        All nine agents run as <strong className="text-white/75">LLM calls on Cloudflare Workers AI</strong>{" "}
-        ({model || "@cf/meta/llama-3.1-8b-instruct"}). Each agent writes a checkpointed step to D1 —
-        orchestration, gates, and audit stay on the same control plane.
+        All nine agents run as <strong className="text-white/75">LLM calls</strong> via the control
+        plane router ({model || "@cf/meta/llama-3.1-8b-instruct"} default). Each agent writes a
+        checkpointed step to D1 — orchestration, gates, and audit stay on the same Worker.
       </p>
 
-      {!aiAvailable && (
+      {llmStatus && (
+        <p className="text-white/45 text-xs font-mono">
+          Primary provider: {llmStatus.primary_provider ?? "none"} · chain:{" "}
+          {llmStatus.provider_chain.join(" → ")}
+          {llmStatus.ai_gateway ? " · AI Gateway" : ""}
+        </p>
+      )}
+
+      {llmStatus && !llmStatus.primary_provider && (
         <p className="text-amber-400/90 text-xs border border-amber-500/25 rounded-lg px-3 py-2 bg-amber-500/10">
-          Workers AI binding not detected on this deployment. Deploy the Worker with{" "}
-          <code className="text-amber-200/80">[ai] binding = &quot;AI&quot;</code> in wrangler.toml.
+          No LLM providers configured. Add Workers AI binding and/or set{" "}
+          <code className="text-amber-200/80">OPENAI_API_KEY</code> /{" "}
+          <code className="text-amber-200/80">ANTHROPIC_API_KEY</code> secrets on the Worker.
         </p>
       )}
 
