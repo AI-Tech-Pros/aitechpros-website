@@ -12,7 +12,14 @@ import { seedDemoRuns } from "./demo-seed";
 import { DOCS_HTML, OPENAPI_SPEC } from "./docs";
 import { platformApp } from "./platform/routes";
 import {
+  readSessionCookie,
+  verifySession,
+  type SessionPayload,
+} from "./platform/session";
+import { assertRunAccess } from "./tenant-access";
+import {
   parseMetadata,
+  parseRunMetadata,
   runToApi,
   stepToApi,
   type RunRow,
@@ -34,6 +41,7 @@ export type Env = {
 
 type AppVariables = {
   auth: AuthContext;
+  session: SessionPayload | null;
 };
 
 type ResumeBlocker = {
@@ -67,6 +75,18 @@ app.use("*", async (c, next) => {
     allowHeaders: ["Content-Type", "Accept", "Authorization"],
     credentials: true,
   })(c, next);
+});
+
+app.use("*", async (c, next) => {
+  let session: SessionPayload | null = null;
+  if (c.env.SESSION_SECRET) {
+    const token = readSessionCookie(c.req.header("Cookie"));
+    if (token) {
+      session = await verifySession(token, c.env.SESSION_SECRET);
+    }
+  }
+  c.set("session", session);
+  return next();
 });
 
 app.use("*", async (c, next) => {
@@ -148,6 +168,8 @@ app.get("/runs/:runId", async (c) => {
   const runId = c.req.param("runId");
   const run = await getRun(c.env.DB, runId);
   if (!run) return c.json({ detail: `Run not found: ${runId}` }, 404);
+  const denied = assertRunAccess(c, run);
+  if (denied) return denied;
   const steps = await getSteps(c.env.DB, runId);
   return c.json(runToApi(run, steps));
 });
@@ -157,6 +179,8 @@ app.patch("/runs/:runId", async (c) => {
   const body = await c.req.json<{ status?: string; metadata?: Record<string, unknown> }>();
   const run = await getRun(c.env.DB, runId);
   if (!run) return c.json({ detail: `Run not found: ${runId}` }, 404);
+  const denied = assertRunAccess(c, run);
+  if (denied) return denied;
   const status = body.status ?? run.status;
   const metadata =
     body.metadata !== undefined ? body.metadata : parseMetadata(run.metadata_json);
@@ -186,6 +210,10 @@ app.get("/idempotency/:key", async (c) => {
     .bind(key)
     .first<StepRow>();
   if (!row) return c.json({ detail: "Idempotency key not found" }, 404);
+  const run = await getRun(c.env.DB, row.run_id);
+  if (!run) return c.json({ detail: "Idempotency key not found" }, 404);
+  const denied = assertRunAccess(c, run);
+  if (denied) return denied;
   return c.json(stepToApi(row));
 });
 
@@ -194,6 +222,8 @@ app.post("/runs/:runId/steps", async (c) => {
   const body = await c.req.json<RecordStepBody>();
   const run = await getRun(c.env.DB, runId);
   if (!run) return c.json({ detail: `Run not found: ${runId}` }, 404);
+  const denied = assertRunAccess(c, run);
+  if (denied) return denied;
 
   const steps = await getSteps(c.env.DB, runId);
   const sequence = body.sequence ?? steps.length;
@@ -254,6 +284,8 @@ app.get("/runs/:runId/status", async (c) => {
   const runId = c.req.param("runId");
   const run = await getRun(c.env.DB, runId);
   if (!run) return c.json({ detail: `Run not found: ${runId}` }, 404);
+  const denied = assertRunAccess(c, run);
+  if (denied) return denied;
   const steps = await getSteps(c.env.DB, runId);
   const blockers = getResumeBlockers(run, steps);
   return c.json(runStatusResponse(run, steps, blockers));
@@ -263,6 +295,8 @@ app.get("/runs/:runId/resume_blockers", async (c) => {
   const runId = c.req.param("runId");
   const run = await getRun(c.env.DB, runId);
   if (!run) return c.json({ detail: `Run not found: ${runId}` }, 404);
+  const denied = assertRunAccess(c, run);
+  if (denied) return denied;
   const steps = await getSteps(c.env.DB, runId);
   const blockers = getResumeBlockers(run, steps);
   return c.json({ run_id: runId, can_resume: blockers.length === 0, blockers });
@@ -272,6 +306,8 @@ app.post("/resume", async (c) => {
   const body = await c.req.json<{ run_id: string }>();
   const run = await getRun(c.env.DB, body.run_id);
   if (!run) return c.json({ detail: `Run not found: ${body.run_id}` }, 404);
+  const denied = assertRunAccess(c, run);
+  if (denied) return denied;
   const steps = await getSteps(c.env.DB, body.run_id);
   const blockers = getResumeBlockers(run, steps);
   if (blockers.length > 0) {
@@ -286,12 +322,14 @@ app.post("/runs/:runId/compensate", async (c) => {
   const body = await c.req.json<{ result?: Record<string, unknown>; note?: string }>();
   const run = await getRun(c.env.DB, runId);
   if (!run) return c.json({ detail: `Run not found: ${runId}` }, 404);
+  const denied = assertRunAccess(c, run);
+  if (denied) return denied;
   const steps = await getSteps(c.env.DB, runId);
   const failed = lastFailedStep(steps);
   if (!failed || failed.failure_classification !== "partial") {
     return c.json({ detail: "No partial failure awaiting compensation" }, 400);
   }
-  const metadata = parseMetadata(run.metadata_json);
+  const metadata = parseRunMetadata(run.metadata_json);
   const key = failureKey(failed);
   metadata.gates = metadata.gates ?? {};
   metadata.gates.compensations = metadata.gates.compensations ?? {};
@@ -314,12 +352,14 @@ app.post("/runs/:runId/approve", async (c) => {
   }
   const run = await getRun(c.env.DB, runId);
   if (!run) return c.json({ detail: `Run not found: ${runId}` }, 404);
+  const denied = assertRunAccess(c, run);
+  if (denied) return denied;
   const steps = await getSteps(c.env.DB, runId);
   const failed = lastFailedStep(steps);
   if (!failed || failed.failure_classification !== "permanent") {
     return c.json({ detail: "No permanent failure awaiting approval" }, 400);
   }
-  const metadata = parseMetadata(run.metadata_json);
+  const metadata = parseRunMetadata(run.metadata_json);
   const key = failureKey(failed);
   metadata.gates = metadata.gates ?? {};
   metadata.gates.approvals = metadata.gates.approvals ?? {};
@@ -355,10 +395,12 @@ app.post("/runs/:runId/ack_prod_resume", async (c) => {
   }
   const run = await getRun(c.env.DB, runId);
   if (!run) return c.json({ detail: `Run not found: ${runId}` }, 404);
+  const denied = assertRunAccess(c, run);
+  if (denied) return denied;
   if ((run.environment ?? "dev") !== "prod") {
     return c.json({ detail: "Production acknowledgment only applies to prod runs" }, 400);
   }
-  const metadata = parseMetadata(run.metadata_json);
+  const metadata = parseRunMetadata(run.metadata_json);
   metadata.gates = metadata.gates ?? {};
   const ackAt = new Date().toISOString();
   metadata.gates.prod_resume_ack = {
@@ -381,6 +423,8 @@ app.get("/runs/:runId/audit_log", async (c) => {
   const runId = c.req.param("runId");
   const run = await getRun(c.env.DB, runId);
   if (!run) return c.json({ detail: `Run not found: ${runId}` }, 404);
+  const denied = assertRunAccess(c, run);
+  if (denied) return denied;
   const steps = await getSteps(c.env.DB, runId);
   const trace = steps
     .map(
@@ -396,6 +440,8 @@ app.get("/runs/:runId/audit_events", async (c) => {
   const runId = c.req.param("runId");
   const run = await getRun(c.env.DB, runId);
   if (!run) return c.json({ detail: `Run not found: ${runId}` }, 404);
+  const denied = assertRunAccess(c, run);
+  if (denied) return denied;
   const events = await listAuditEvents(c.env.DB, runId);
   return c.json({
     run_id: runId,
@@ -407,6 +453,8 @@ app.get("/runs/:runId/replay", async (c) => {
   const runId = c.req.param("runId");
   const run = await getRun(c.env.DB, runId);
   if (!run) return c.json({ detail: `Run not found: ${runId}` }, 404);
+  const denied = assertRunAccess(c, run);
+  if (denied) return denied;
   const steps = await getSteps(c.env.DB, runId);
   const replayable = steps.filter(
     (s) => s.status === "completed" || s.status === "skipped_replay",

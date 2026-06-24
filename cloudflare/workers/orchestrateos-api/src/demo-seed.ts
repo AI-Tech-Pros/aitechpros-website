@@ -157,8 +157,8 @@ export async function seedDemoRuns(db: D1Database): Promise<{ seeded: number }> 
   for (const run of DEMO_RUNS) {
     await db
       .prepare(
-        `INSERT INTO runs (run_id, workflow_name, status, environment, created_at, updated_at, metadata_json)
-         VALUES (?, ?, ?, ?, ?, ?, '{}')`,
+        `INSERT INTO runs (run_id, workflow_name, status, environment, tenant_id, created_at, updated_at, metadata_json)
+         VALUES (?, ?, ?, ?, 'demo', ?, ?, '{}')`,
       )
       .bind(run.run_id, run.workflow_name, run.status, run.environment, TS, TS)
       .run();

@@ -59,6 +59,7 @@ function writeHeaders(): Record<string, string> {
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${baseUrl()}${path}`, {
     ...init,
+    credentials: "include",
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",

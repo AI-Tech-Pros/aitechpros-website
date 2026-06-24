@@ -151,7 +151,18 @@ export function actorLabel(ctx: AuthContext): string {
   return `${ctx.role}:${ctx.token.slice(0, 8)}`;
 }
 
-export async function enforceAuth(c: Context<{ Bindings: AuthEnv; Variables: { auth: AuthContext } }>) {
+type AuthMiddlewareContext = {
+  env: AuthEnv;
+  req: {
+    method: string;
+    path: string;
+    header(name: string): string | undefined;
+  };
+  set(key: "auth", value: AuthContext): void;
+  json: Context["json"];
+};
+
+export async function enforceAuth(c: AuthMiddlewareContext) {
   const defaultAuth: AuthContext = {
     authenticated: false,
     role: null,

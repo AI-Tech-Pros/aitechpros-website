@@ -206,6 +206,30 @@ export default defineConfig({
         target: "http://127.0.0.1:8787",
         changeOrigin: true,
       },
+      "/runs": {
+        target: "http://127.0.0.1:8787",
+        changeOrigin: true,
+      },
+      "/demo": {
+        target: "http://127.0.0.1:8787",
+        changeOrigin: true,
+      },
+      "/health": {
+        target: "http://127.0.0.1:8787",
+        changeOrigin: true,
+      },
+      "/resume": {
+        target: "http://127.0.0.1:8787",
+        changeOrigin: true,
+      },
+      "/idempotency": {
+        target: "http://127.0.0.1:8787",
+        changeOrigin: true,
+      },
+      "/start_run": {
+        target: "http://127.0.0.1:8787",
+        changeOrigin: true,
+      },
       "/orchestrateos-api": {
         target: "http://127.0.0.1:8000",
         changeOrigin: true,

@@ -31,8 +31,9 @@ AITechPros builds a governance-first agent orchestration layer (`resume_engine` 
 | **2** | `RemoteCheckpointStore` — Python SDK → Worker + D1 | ✅ Shipped |
 | **3** | API auth/RBAC, `audit_events`, prod gates, replay | ✅ Shipped (`API_AUTH_ENABLED=true`) |
 | **4** | GTM pages, PyPI publish workflow, `resume_engine` **0.2.0** on PyPI | ✅ Shipped |
-| **5** | Platform layer: leads, magic-link auth, partner portal — [spec](docs/orchestrateos/phase-5-platform.md) | 🚧 5a shipped; 5b–5g planned |
+| **5** | Platform layer: leads, magic-link auth, partner portal — [spec](docs/orchestrateos/phase-5-platform.md) | 🚧 5a–5b shipped; 5c–5g planned |
 | **5a** | Lead form, magic-link auth, partner dashboard, `/api` proxy | ✅ Shipped (set Worker secrets) |
+| **5b** | Tenant isolation, scoped GET on non-demo runs, same-origin API proxy | ✅ Shipped |
 
 ---
 

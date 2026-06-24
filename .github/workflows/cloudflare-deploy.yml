@@ -128,6 +128,15 @@ jobs:
           workingDirectory: cloudflare/workers/orchestrateos-api
           command: d1 execute orchestrateos --remote --file=../../d1/migrations/0005_tenant.sql
 
+      - name: Apply D1 tenant backfill (remote)
+        continue-on-error: true
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: cloudflare/workers/orchestrateos-api
+          command: d1 execute orchestrateos --remote --file=../../d1/migrations/0006_tenant_backfill.sql
+
       - name: Seed D1 demo runs
         uses: cloudflare/wrangler-action@v3
         with:
@@ -155,5 +164,7 @@ jobs:
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${ORCHESTRATEOS_API_KEY}" \
             -d '{"workflow_name":"ci_smoke_sdk","metadata":{"ci":true}}' | grep -oE '"run_id":"[^"]+"' | cut -d'"' -f4)
-          curl -fsS "${{ env.WORKER_API_URL }}/runs/${RUN_ID}" | grep -qi "ci_smoke_sdk"
-          curl -fsS "${{ env.WORKER_API_URL }}/runs/${RUN_ID}/replay" | grep -qi "replay_from_index"
+          curl -fsS -H "Authorization: Bearer ${ORCHESTRATEOS_API_KEY}" \
+            "${{ env.WORKER_API_URL }}/runs/${RUN_ID}" | grep -qi "ci_smoke_sdk"
+          curl -fsS -H "Authorization: Bearer ${ORCHESTRATEOS_API_KEY}" \
+            "${{ env.WORKER_API_URL }}/runs/${RUN_ID}/replay" | grep -qi "replay_from_index"

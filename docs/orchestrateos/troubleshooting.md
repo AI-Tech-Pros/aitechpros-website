@@ -203,6 +203,31 @@ pip install "resume_engine[remote]"
 
 **Fix:** Confirm `POST /start_run` succeeded; copy exact UUID.
 
+### `401 Authentication required` on GET /runs/{id} (non-demo)
+
+**Symptoms:** `GET /runs/{uuid}` returns 401 when `API_AUTH_ENABLED=true`.
+
+**Cause:** Phase 5b tenant isolation — non-demo runs require auth (API key or partner session cookie).
+
+**Fix:**
+
+1. Add `Authorization: Bearer <runner-key>` header matching the run's tenant
+2. Or browse from `orchestrateos.pages.dev` with a valid partner session (same-origin proxy sends cookies)
+3. Demo runs (`d0000001`–`d0000003`) remain public — no auth needed
+
+### `403 Access denied for this tenant`
+
+**Symptoms:** Authenticated request but wrong tenant scope.
+
+**Causes & fixes:**
+
+| Cause | Fix |
+|-------|-----|
+| Runner key tenant ≠ run `tenant_id` | Use key with matching `tenant` in `API_KEYS_JSON` v2 |
+| Legacy key (no tenant) on non-default run | Legacy keys only access `tenant_id = 'default'` |
+| Partner session for different slug | Log in as the partner who owns the run |
+| Demo operator key on non-demo run | Use full operator/runner key, or stick to demo UUIDs |
+
 ### `GET /idempotency/{key}` 404
 
 **Cause:** No **completed** step with that key yet (failed/running steps are not returned).

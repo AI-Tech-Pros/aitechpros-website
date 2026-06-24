@@ -35,6 +35,19 @@ export function parseMetadata(json: string): Record<string, unknown> {
   }
 }
 
+export type RunMetadata = Record<string, unknown> & {
+  gates?: {
+    compensations?: Record<string, unknown>;
+    approvals?: Record<string, unknown>;
+    human_approval?: Record<string, unknown>;
+    prod_resume_ack?: Record<string, unknown>;
+  };
+};
+
+export function parseRunMetadata(json: string): RunMetadata {
+  return parseMetadata(json) as RunMetadata;
+}
+
 export function stepToApi(step: StepRow) {
   return {
     step_name: step.step_name,

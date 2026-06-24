@@ -170,12 +170,22 @@ Demo runs keep `tenant_id = 'demo'` (public gate explorer). Partner runs use `te
 
 ### Phase 5b — Tenant isolation (security prerequisite for multi-partner)
 
+**Status:** ✅ Shipped
+
 | Item | Detail |
 |------|--------|
 | `runs.tenant_id` | Set on `POST /start_run` from API key → tenant map |
 | `API_KEYS_JSON` v2 | `{"key": {"role":"runner","tenant":"acme"}}` (backward compatible with string roles) |
 | Scoped GET | Non-demo `/runs/{id}` requires session or API key with matching tenant |
 | Demo runs | `tenant_id = 'demo'` — still public read for gate explorer |
+
+**Acceptance criteria (5b):**
+
+- [x] Non-demo `GET /runs/{id}` without auth when `API_AUTH_ENABLED=true` → 401
+- [x] Wrong tenant API key/session → 403
+- [x] Demo run IDs (`d0000001`–`3`) still work without auth
+- [x] `start_run` with tenant-scoped runner key sets matching `tenant_id`
+- [x] CI smoke tests pass with Bearer on authenticated GETs
 
 ### Phase 5c — Admin: capture + design partners
 
@@ -299,7 +309,7 @@ Existing secrets unchanged: `API_KEYS_JSON`, `DEMO_OPERATOR_KEY`, `ORCHESTRATEOS
 
 | Change | File |
 |--------|------|
-| D1 migrate `0004_platform.sql`, `0005_tenant.sql` | `cloudflare-deploy.yml` |
+| D1 migrate `0004_platform.sql`, `0005_tenant.sql`, `0006_tenant_backfill.sql` | `cloudflare-deploy.yml` |
 | Smoke: `POST /api/leads` test lead + cleanup | `cloudflare-deploy.yml` or `sales_demo_smoke.ps1` |
 | New secrets documented | `docs/cloudflare-deploy.md`, root `README.md` |
 
@@ -313,7 +323,7 @@ Existing secrets unchanged: `API_KEYS_JSON`, `DEMO_OPERATOR_KEY`, `ORCHESTRATEOS
 5a  [ ] Resend integration for magic link + lead notify
 5a  [ ] Pages: lead form, /login, /auth/verify, /partner/dashboard
 5a  [ ] Session middleware + partner route guard
-5b  [ ] tenant_id on start_run + scoped GET
+5b  [x] tenant_id on start_run + scoped GET
 5c  [ ] /admin/capture, /admin/partners
 5d  [ ] /onboarding flow
 5e  [ ] Welcome + post-demo sequences + cron

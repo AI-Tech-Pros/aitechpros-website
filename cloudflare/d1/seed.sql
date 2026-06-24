@@ -12,10 +12,10 @@ DELETE FROM runs WHERE run_id IN (
   'd0000003-0000-4000-8000-000000000003'
 );
 
-INSERT INTO runs (run_id, workflow_name, status, environment, created_at, updated_at, metadata_json) VALUES
-  ('d0000001-0000-4000-8000-000000000001', 'demo_transient_gate', 'failed', 'prod', '2026-06-24T12:00:00.000Z', '2026-06-24T12:00:00.000Z', '{}'),
-  ('d0000002-0000-4000-8000-000000000002', 'demo_partial_gate', 'failed', 'dev', '2026-06-24T12:00:00.000Z', '2026-06-24T12:00:00.000Z', '{}'),
-  ('d0000003-0000-4000-8000-000000000003', 'demo_permanent_gate', 'failed', 'dev', '2026-06-24T12:00:00.000Z', '2026-06-24T12:00:00.000Z', '{}');
+INSERT INTO runs (run_id, workflow_name, status, environment, tenant_id, created_at, updated_at, metadata_json) VALUES
+  ('d0000001-0000-4000-8000-000000000001', 'demo_transient_gate', 'failed', 'prod', 'demo', '2026-06-24T12:00:00.000Z', '2026-06-24T12:00:00.000Z', '{}'),
+  ('d0000002-0000-4000-8000-000000000002', 'demo_partial_gate', 'failed', 'dev', 'demo', '2026-06-24T12:00:00.000Z', '2026-06-24T12:00:00.000Z', '{}'),
+  ('d0000003-0000-4000-8000-000000000003', 'demo_permanent_gate', 'failed', 'dev', 'demo', '2026-06-24T12:00:00.000Z', '2026-06-24T12:00:00.000Z', '{}');
 
 -- Transient: steps 0-5 completed, step 6 failed transient
 INSERT INTO step_records (run_id, step_name, step_index, input_json, input_hash, output_json, status, idempotency_key, timestamp, failure_classification, error_message, sequence) VALUES
