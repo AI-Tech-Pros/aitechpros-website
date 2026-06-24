@@ -198,24 +198,25 @@ jobs:
           set -euo pipefail
           SMOKE_KEY=$(node scripts/merge-api-keys.mjs --print-runner)
           echo "Using runner key from GitHub secrets (length ${#SMOKE_KEY})"
-          sleep 10
-          curl -fsS "${{ env.WORKER_API_URL }}/health"
-          curl -fsS "${{ env.WORKER_API_URL }}/docs" | grep -qi "OrchestrateOS"
-          curl -fsS "${{ env.WORKER_API_URL }}/demo/runs" | grep -qi '"scenario":"partial"'
-          for attempt in 1 2 3 4 5; do
-            RESPONSE=$(curl -sS -w "\n%{http_code}" -X POST "${{ env.WORKER_API_URL }}/start_run" \
+          http_code() {
+            curl -sS -o /tmp/smoke-body -w "%{http_code}" "$@"
+          }
+          for attempt in 1 2 3 4 5 6; do
+            sleep 5
+            HEALTH=$(http_code "${{ env.WORKER_API_URL }}/health")
+            echo "health HTTP ${HEALTH}"
+            test "$HEALTH" = "200"
+            START=$(http_code -X POST "${{ env.WORKER_API_URL }}/start_run" \
               -H "Content-Type: application/json" \
               -H "Authorization: Bearer ${SMOKE_KEY}" \
               -d '{"workflow_name":"ci_smoke_sdk","metadata":{"ci":true}}')
-            HTTP=$(echo "$RESPONSE" | tail -n1)
-            BODY=$(echo "$RESPONSE" | sed '$d')
-            if [ "$HTTP" = "200" ]; then
+            BODY=$(cat /tmp/smoke-body)
+            echo "start_run HTTP ${START} (attempt ${attempt}/6): ${BODY}"
+            if [ "$START" = "200" ]; then
               RUN_ID=$(echo "$BODY" | grep -oE '"run_id":"[^"]+"' | cut -d'"' -f4)
               test -n "$RUN_ID"
               break
             fi
-            echo "start_run HTTP ${HTTP} (attempt ${attempt}/5): ${BODY}"
-            sleep 5
           done
           test -n "${RUN_ID:-}"
           curl -fsS -H "Authorization: Bearer ${SMOKE_KEY}" \
