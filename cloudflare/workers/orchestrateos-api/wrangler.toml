@@ -15,5 +15,8 @@ API_AUTH_ENABLED = "true"
 SITE_URL = "https://orchestrateos.pages.dev"
 # Set via wrangler secret: SESSION_SECRET, RESEND_API_KEY, NOTIFY_EMAIL, ADMIN_EMAILS, CRON_SECRET
 
+[ai]
+binding = "AI"
+
 [triggers]
 crons = ["0 14 * * *"]

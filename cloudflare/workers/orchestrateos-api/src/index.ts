@@ -12,6 +12,7 @@ import { seedDemoRuns } from "./demo-seed";
 import { DOCS_HTML, OPENAPI_SPEC } from "./docs";
 import { platformApp } from "./platform/routes";
 import { runNurtureTick } from "./platform/nurture/service";
+import { executeKernelPipeline, kernelAgentCatalog } from "./kernel/execute";
 import {
   readSessionCookie,
   verifySession,
@@ -30,6 +31,12 @@ import {
 
 export type Env = {
   DB: D1Database;
+  AI?: {
+    run(
+      model: string,
+      inputs: { messages: { role: string; content: string }[]; max_tokens?: number },
+    ): Promise<{ response?: string } | string>;
+  };
   CORS_ORIGINS?: string;
   API_AUTH_ENABLED?: string;
   API_KEYS_JSON?: string;
@@ -111,6 +118,64 @@ app.get("/", (c) =>
 );
 
 app.get("/demo/runs", (c) => c.json({ runs: DEMO_RUN_CATALOG }));
+
+app.get("/kernel/agents", (c) => c.json(kernelAgentCatalog(Boolean(c.env.AI))));
+
+app.post("/kernel/run", async (c) => {
+  const body = await c.req.json<{ goal: string; environment?: "dev" | "staging" | "prod" }>();
+  if (!body.goal?.trim()) {
+    return c.json({ detail: "goal is required" }, 400);
+  }
+  if (!c.env.AI) {
+    return c.json({ detail: "Workers AI binding not configured on this deployment" }, 503);
+  }
+
+  const runId = crypto.randomUUID();
+  const environment = body.environment ?? "dev";
+  if (!["dev", "staging", "prod"].includes(environment)) {
+    return c.json({ detail: "environment must be dev, staging, or prod" }, 400);
+  }
+
+  const auth = c.get("auth");
+  const tenantId = auth.tenant ?? "default";
+  const now = new Date().toISOString();
+
+  await c.env.DB.prepare(
+    `INSERT INTO runs (run_id, workflow_name, status, environment, tenant_id, created_at, updated_at, metadata_json)
+     VALUES (?, 'kernel_nine_agent', 'running', ?, ?, ?, ?, ?)`,
+  )
+    .bind(
+      runId,
+      environment,
+      tenantId,
+      now,
+      now,
+      JSON.stringify({ goal: body.goal.trim(), kernel: true }),
+    )
+    .run();
+
+  await recordAuditEvent(c.env.DB, runId, "kernel.started", actorLabel(auth), {
+    goal: body.goal.trim(),
+  });
+
+  try {
+    const result = await executeKernelPipeline(
+      c.env,
+      runId,
+      body.goal.trim(),
+      tenantId,
+      actorLabel(auth),
+    );
+    return c.json(result, 201);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Kernel execution failed";
+    await c.env.DB.prepare("UPDATE runs SET status = ?, updated_at = ? WHERE run_id = ?")
+      .bind("failed", new Date().toISOString(), runId)
+      .run();
+    await recordAuditEvent(c.env.DB, runId, "kernel.failed", actorLabel(auth), { error: message });
+    return c.json({ detail: message, run_id: runId }, 500);
+  }
+});
 
 app.post("/demo/reset", async (c) => {
   const result = await seedDemoRuns(c.env.DB);

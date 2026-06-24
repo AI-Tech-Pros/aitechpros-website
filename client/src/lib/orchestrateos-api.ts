@@ -47,6 +47,35 @@ export type DemoRunsResponse = {
   runs: DemoRunCatalogEntry[];
 };
 
+export type KernelAgentInfo = {
+  id: string;
+  name: string;
+  role: string;
+  status: "live";
+  runtime: string;
+  step_name: string;
+};
+
+export type KernelAgentsResponse = {
+  model: string;
+  ai_available: boolean;
+  agents: KernelAgentInfo[];
+};
+
+export type KernelRunResponse = {
+  run_id: string;
+  workflow_name: string;
+  status: string;
+  model: string;
+  agents: {
+    id: string;
+    name: string;
+    step_index: number;
+    output: string;
+    model: string;
+  }[];
+};
+
 function baseUrl(): string {
   return orchestrateOSApiBaseUrl();
 }
@@ -82,6 +111,17 @@ export async function fetchApiHealth(): Promise<ApiHealthResponse> {
 
 export async function fetchDemoRuns(): Promise<DemoRunsResponse> {
   return apiFetch<DemoRunsResponse>("/demo/runs");
+}
+
+export async function fetchKernelAgents(): Promise<KernelAgentsResponse> {
+  return apiFetch<KernelAgentsResponse>("/kernel/agents");
+}
+
+export async function runKernelAgents(goal: string): Promise<KernelRunResponse> {
+  return apiFetch<KernelRunResponse>("/kernel/run", {
+    method: "POST",
+    body: JSON.stringify({ goal }),
+  });
 }
 
 export async function resetDemoRuns(): Promise<{ message: string; seeded: number }> {
@@ -135,6 +175,8 @@ export const API_ENDPOINTS = [
   { method: "GET", path: "/health", description: "Load balancer health check" },
   { method: "GET", path: "/docs", description: "API reference (HTML)" },
   { method: "POST", path: "/start_run", description: "Create a new workflow run" },
+  { method: "GET", path: "/kernel/agents", description: "Nine-agent LLM kernel catalog" },
+  { method: "POST", path: "/kernel/run", description: "Run all nine LLM agents on a goal" },
   { method: "POST", path: "/runs/{run_id}/steps", description: "Record step completion or failure" },
   { method: "GET", path: "/runs/{run_id}/status", description: "Run status + gate summary" },
   {

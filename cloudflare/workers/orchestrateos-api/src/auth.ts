@@ -123,6 +123,7 @@ export function requiredRole(method: string, path: string): ApiRole {
   }
   if (
     path === "/start_run" ||
+    path === "/kernel/run" ||
     path.includes("/steps") ||
     path === "/resume" ||
     method === "PATCH"
