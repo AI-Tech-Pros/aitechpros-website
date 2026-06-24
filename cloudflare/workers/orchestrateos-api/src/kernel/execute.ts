@@ -5,6 +5,7 @@ export {
   kernelAgentCatalog,
   extractGoalFromPayload,
   recordIngressEvent,
+  drainIngressQueue,
   type KernelEnv,
   type KernelAgentResult,
   type KernelRunResult,

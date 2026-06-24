@@ -183,11 +183,34 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           ORCHESTRATEOS_DEMO_KEY: ${{ secrets.ORCHESTRATEOS_DEMO_KEY }}
+          # Kernel ingress webhook: POST /ingress/webhook with X-Ingress-Secret header
+          INGRESS_WEBHOOK_SECRET: ${{ secrets.INGRESS_WEBHOOK_SECRET }}
+          # Cron auth for nurture tick + manual queue drain; also used by scheduled queue drain
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          # LLM failover (Workers AI is primary; keys enable openai/anthropic in provider chain)
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          AI_GATEWAY_URL: ${{ secrets.AI_GATEWAY_URL }}
         run: |
           set -euo pipefail
           npx wrangler secret put API_KEYS_JSON < .api-keys.json
           if [ -n "${ORCHESTRATEOS_DEMO_KEY:-}" ]; then
             printf '%s' "$ORCHESTRATEOS_DEMO_KEY" | npx wrangler secret put DEMO_OPERATOR_KEY
+          fi
+          if [ -n "${INGRESS_WEBHOOK_SECRET:-}" ]; then
+            printf '%s' "$INGRESS_WEBHOOK_SECRET" | npx wrangler secret put INGRESS_WEBHOOK_SECRET
+          fi
+          if [ -n "${CRON_SECRET:-}" ]; then
+            printf '%s' "$CRON_SECRET" | npx wrangler secret put CRON_SECRET
+          fi
+          if [ -n "${OPENAI_API_KEY:-}" ]; then
+            printf '%s' "$OPENAI_API_KEY" | npx wrangler secret put OPENAI_API_KEY
+          fi
+          if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
+            printf '%s' "$ANTHROPIC_API_KEY" | npx wrangler secret put ANTHROPIC_API_KEY
+          fi
+          if [ -n "${AI_GATEWAY_URL:-}" ]; then
+            printf '%s' "$AI_GATEWAY_URL" | npx wrangler secret put AI_GATEWAY_URL
           fi
 
       - name: Deploy API worker

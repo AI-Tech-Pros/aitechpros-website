@@ -285,7 +285,7 @@ async function runAgent(
 
     case "executor": {
       const toolList = KERNEL_TOOLS.join(", ");
-      const execPrompt = `${agent.systemPrompt}\nAvailable tools: ${toolList}. Reply JSON: {"tool":"echo|http_get|health_probe","args":{...}}`;
+      const execPrompt = `${agent.systemPrompt}\nAvailable tools: ${toolList}. Reply JSON: {"tool":"<tool_name>","args":{...}}`;
       const llm = await callAgentLlm(env, tenantId, runId, agentId, execPrompt, userContent);
       const parsed = parseJsonFromLlm<{ tool?: string; args?: Record<string, unknown> }>(llm.text);
       const toolName = parsed?.tool ?? "health_probe";
@@ -462,6 +462,47 @@ export async function resumeKernelPipeline(
 
   await updateRunMetadata(env.DB, runId, metadata, "running");
   return executeKernelPipeline(env, runId, goal, tenantId, actor, { startAgentIndex: nextIndex });
+}
+
+export async function drainIngressQueue(
+  env: KernelEnv,
+  limit = 5,
+): Promise<{ processed: number; run_ids: string[] }> {
+  const { results } = await env.DB.prepare(
+    `SELECT * FROM ingress_events WHERE status = 'pending' AND source = 'queue'
+     ORDER BY created_at ASC LIMIT ?`,
+  )
+    .bind(limit)
+    .all<{ id: string; tenant_id: string; payload_json: string }>();
+
+  const processed: string[] = [];
+  for (const row of results ?? []) {
+    await env.DB.prepare(`UPDATE ingress_events SET status = 'processing' WHERE id = ?`)
+      .bind(row.id)
+      .run();
+
+    const payload = JSON.parse(row.payload_json) as Record<string, unknown>;
+    const goal = extractGoalFromPayload(payload);
+    const runId = crypto.randomUUID();
+    const now = new Date().toISOString();
+    await env.DB.prepare(
+      `INSERT INTO runs (run_id, workflow_name, status, environment, tenant_id, created_at, updated_at, metadata_json)
+       VALUES (?, 'kernel_nine_agent', 'running', 'dev', ?, ?, ?, ?)`,
+    )
+      .bind(runId, row.tenant_id, now, now, JSON.stringify({ goal, kernel: true, kernel_next_agent: 0 }))
+      .run();
+    try {
+      await executeKernelPipeline(env, runId, goal, row.tenant_id, "ingress:queue", {
+        ingressEventId: row.id,
+        ingressSource: "queue",
+        ingressPayload: payload,
+      });
+      processed.push(runId);
+    } catch {
+      await markIngressProcessed(env, row.id, runId, "failed");
+    }
+  }
+  return { processed: processed.length, run_ids: processed };
 }
 
 export { extractGoalFromPayload, recordIngressEvent };

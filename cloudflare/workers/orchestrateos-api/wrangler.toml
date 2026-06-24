@@ -14,6 +14,7 @@ CORS_ORIGINS = "https://orchestrateos.pages.dev,https://aitechpros-website.pages
 API_AUTH_ENABLED = "true"
 SITE_URL = "https://orchestrateos.pages.dev"
 # Set via wrangler secret: SESSION_SECRET, RESEND_API_KEY, NOTIFY_EMAIL, ADMIN_EMAILS, CRON_SECRET
+# CI sync (GitHub secrets): INGRESS_WEBHOOK_SECRET, CRON_SECRET, OPENAI_API_KEY, ANTHROPIC_API_KEY, AI_GATEWAY_URL
 
 LLM_PRIMARY_PROVIDER = "workers-ai"
 LLM_BUDGET_USD_PER_RUN = "0.10"
@@ -24,4 +25,5 @@ LLM_BUDGET_USD_PER_RUN = "0.10"
 binding = "AI"
 
 [triggers]
-crons = ["0 14 * * *"]
+# Daily nurture at 14:00 UTC; ingress queue drain every 10 minutes
+crons = ["0 14 * * *", "*/10 * * * *"]

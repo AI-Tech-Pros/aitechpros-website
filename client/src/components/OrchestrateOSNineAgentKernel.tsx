@@ -108,7 +108,12 @@ export default function OrchestrateOSNineAgentKernel() {
         Kernel <strong className="text-white/75">v2</strong> runs all nine agents with real ingress, tool
         execution (<code className="text-[#06B6D4] text-xs">echo</code>,{" "}
         <code className="text-[#06B6D4] text-xs">http_get</code>,{" "}
-        <code className="text-[#06B6D4] text-xs">health_probe</code>), enforced resume gates, and a per-run
+        <code className="text-[#06B6D4] text-xs">health_probe</code>,{" "}
+        <code className="text-[#06B6D4] text-xs">json_validate</code>,{" "}
+        <code className="text-[#06B6D4] text-xs">hash_sha256</code>,{" "}
+        <code className="text-[#06B6D4] text-xs">fetch_run_status</code>,{" "}
+        <code className="text-[#06B6D4] text-xs">slack_notify</code>,{" "}
+        <code className="text-[#06B6D4] text-xs">delay_ms</code>), enforced resume gates, and a per-run
         LLM cost breaker ({model || "@cf/meta/llama-3.1-8b-instruct"}).
       </p>
 

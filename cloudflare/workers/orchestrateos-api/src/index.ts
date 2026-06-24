@@ -12,7 +12,7 @@ import { seedDemoRuns } from "./demo-seed";
 import { DOCS_HTML, OPENAPI_SPEC } from "./docs";
 import { platformApp } from "./platform/routes";
 import { runNurtureTick } from "./platform/nurture/service";
-import { executeKernelPipeline, resumeKernelPipeline, kernelAgentCatalog, extractGoalFromPayload } from "./kernel/pipeline";
+import { executeKernelPipeline, resumeKernelPipeline, kernelAgentCatalog, drainIngressQueue } from "./kernel/pipeline";
 import { completeLlm, llmStatus } from "./llm/router";
 import type { LlmEnv } from "./llm/env";
 import {
@@ -278,30 +278,8 @@ app.post("/ingress/queue/process", async (c) => {
   const isRunner = auth.authenticated;
   if (!isCron && !isRunner) return c.json({ detail: "Forbidden" }, 403);
 
-  const { results } = await c.env.DB.prepare(
-    `SELECT * FROM ingress_events WHERE status = 'pending' AND source = 'queue' ORDER BY created_at ASC LIMIT 5`,
-  ).all<{ id: string; tenant_id: string; payload_json: string }>();
-
-  const processed: string[] = [];
-  for (const row of results ?? []) {
-    const payload = JSON.parse(row.payload_json) as Record<string, unknown>;
-    const goal = extractGoalFromPayload(payload);
-    const runId = crypto.randomUUID();
-    const now = new Date().toISOString();
-    await c.env.DB.prepare(
-      `INSERT INTO runs (run_id, workflow_name, status, environment, tenant_id, created_at, updated_at, metadata_json)
-       VALUES (?, 'kernel_nine_agent', 'running', 'dev', ?, ?, ?, ?)`,
-    )
-      .bind(runId, row.tenant_id, now, now, JSON.stringify({ goal, kernel: true, kernel_next_agent: 0 }))
-      .run();
-    await executeKernelPipeline(c.env, runId, goal, row.tenant_id, "ingress:queue", {
-      ingressEventId: row.id,
-      ingressSource: "queue",
-      ingressPayload: payload,
-    });
-    processed.push(runId);
-  }
-  return c.json({ processed: processed.length, run_ids: processed });
+  const { processed, run_ids } = await drainIngressQueue(c.env);
+  return c.json({ processed, run_ids });
 });
 
 app.post("/kernel/runs/:runId/resume", async (c) => {
@@ -703,10 +681,16 @@ app.post("/internal/nurture/tick", async (c) => {
   return c.json({ ok: true, ...result });
 });
 
+const NURTURE_CRON = "0 14 * * *";
+
 export default {
   fetch: app.fetch,
-  async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
-    ctx.waitUntil(runNurtureTick(env));
+  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
+    if (event.cron === NURTURE_CRON) {
+      ctx.waitUntil(runNurtureTick(env));
+    } else {
+      ctx.waitUntil(drainIngressQueue(env));
+    }
   },
 };
 

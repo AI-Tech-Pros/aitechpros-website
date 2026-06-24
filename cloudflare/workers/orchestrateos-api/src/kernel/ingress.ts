@@ -33,31 +33,6 @@ export async function markIngressProcessed(
     .run();
 }
 
-export async function processIngressQueue(
-  env: KernelEnv,
-  limit = 5,
-): Promise<{ processed: number; run_ids: string[] }> {
-  const { results } = await env.DB.prepare(
-    `SELECT * FROM ingress_events WHERE status = 'pending' AND source = 'queue'
-     ORDER BY created_at ASC LIMIT ?`,
-  )
-    .bind(limit)
-    .all<{
-      id: string;
-      tenant_id: string;
-      payload_json: string;
-    }>();
-
-  const runIds: string[] = [];
-  for (const row of results ?? []) {
-    await env.DB.prepare(`UPDATE ingress_events SET status = 'processing' WHERE id = ?`)
-      .bind(row.id)
-      .run();
-    runIds.push(row.id);
-  }
-  return { processed: runIds.length, run_ids: runIds };
-}
-
 export function extractGoalFromPayload(payload: Record<string, unknown>): string {
   const goal = payload.goal ?? payload.message ?? payload.intent;
   if (typeof goal === "string" && goal.trim()) return goal.trim();
