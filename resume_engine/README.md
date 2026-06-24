@@ -192,16 +192,16 @@ Smoke test after deploy:
 
 CI builds and pushes to GHCR on every push to `main` via `.github/workflows/orchestrateos-api.yml`.
 
-**Production DNS (do this last)**
+**Production (Cloudflare — no custom domain required)**
 
-| Host | Purpose |
-|------|---------|
-| `orchestrateos.aitechpros.ai` | Product landing (gate explorer + docs) |
-| `api.orchestrateos.aitechpros.ai` | FastAPI control plane |
+| URL | Purpose |
+|-----|---------|
+| https://orchestrateos.pages.dev | Product landing (gate explorer + docs) |
+| https://orchestrateos-api.nevaquit.workers.dev | Control plane API (Workers + D1) |
 
-Set `CORS_ORIGINS` so the landing page can call the API from the browser (see `.env.example`).
+Set `CORS_ORIGINS` on the Worker so the landing page can call the API from the browser (see `cloudflare/workers/orchestrateos-api/wrangler.toml`).
 
-Until DNS is configured, use https://aitechpros.ai/orchestrateos and point the gate explorer at your API URL via `VITE_ORCHESTRATEOS_API_URL`.
+Override locally with `VITE_ORCHESTRATEOS_API_URL` and `VITE_SITE_URL` (see `.env.example`).
 
 ## Storage Backends
 

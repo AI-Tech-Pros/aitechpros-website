@@ -7,6 +7,8 @@
     "dev": "vite --host",
     "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "build:pages": "vite build",
+    "build:orchestrateos": "vite build --mode orchestrateos",
+    "dev:orchestrateos": "vite --mode orchestrateos --host",
     "start": "NODE_ENV=production node dist/index.js",
     "preview": "vite preview --host",
     "check": "tsc --noEmit",

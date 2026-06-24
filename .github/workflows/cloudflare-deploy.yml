@@ -10,6 +10,7 @@ on:
       - "package-lock.json"
       - ".npmrc"
       - "vite.config.ts"
+      - ".env.orchestrateos"
       - ".github/workflows/cloudflare-deploy.yml"
   workflow_dispatch:
 
@@ -18,16 +19,17 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  PAGES_URL: https://aitechpros-website.pages.dev
+  MAIN_PAGES_URL: https://aitechpros-website.pages.dev
+  ORCHESTRATEOS_PAGES_URL: https://orchestrateos.pages.dev
   WORKER_API_URL: https://orchestrateos-api.nevaquit.workers.dev
 
 jobs:
-  pages:
+  pages-main:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       deployments: write
-    name: Deploy Pages
+    name: Deploy main site (Pages)
     steps:
       - uses: actions/checkout@v4
 
@@ -40,7 +42,6 @@ jobs:
       - run: npm run build:pages
         env:
           VITE_SITE_URL: https://aitechpros-website.pages.dev
-          VITE_ORCHESTRATEOS_API_URL: https://orchestrateos-api.nevaquit.workers.dev
 
       - name: Publish to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
@@ -48,6 +49,33 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy dist/public --project-name=aitechpros-website
+
+  pages-orchestrateos:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    name: Deploy OrchestrateOS (Pages)
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build:orchestrateos
+
+      - name: Publish OrchestrateOS to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist/public --project-name=orchestrateos
+
+      - name: Smoke test OrchestrateOS site
+        run: curl -fsS "${{ env.ORCHESTRATEOS_PAGES_URL }}/" | grep -qi "<!doctype html"
 
   worker:
     runs-on: ubuntu-latest

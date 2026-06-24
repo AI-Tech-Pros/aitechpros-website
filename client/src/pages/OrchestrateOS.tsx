@@ -1,11 +1,12 @@
 /*
- * OrchestrateOS product landing — orchestrateos.aitechpros.ai
- * Deterministic execution layer for multi-step agent workflows (resume_engine)
+ * OrchestrateOS product landing — https://orchestrateos.pages.dev
+ * Governance-first deterministic execution (resume_engine competitive positioning)
  */
 import { useEffect } from "react";
 import { Link } from "wouter";
 import OrchestrateOSNavbar from "@/components/OrchestrateOSNavbar";
 import OrchestrateOSApiSection from "@/components/OrchestrateOSApiSection";
+import OrchestrateOSComparison from "@/components/OrchestrateOSComparison";
 import OrchestrateOSGatePanel from "@/components/OrchestrateOSGatePanel";
 import { useInView } from "@/hooks/useInView";
 import {
@@ -22,6 +23,7 @@ import {
   mainSiteUrl,
   orchestrateOSApiBaseUrl,
   orchestrateOSApiDocsUrl,
+  siteOrigin,
 } from "@/lib/site";
 
 const CALENDLY_URL = "https://calendly.com/aitechpros/15min";
@@ -29,16 +31,19 @@ const GITHUB_URL = "https://github.com/AI-Tech-Pros";
 
 const competitors = [
   {
-    name: "CrewAI",
-    issue: "Restarts the entire workflow from step 1 after any mid-run failure.",
+    name: "LangChain / LangSmith",
+    issue:
+      "Strong observability after deploy — but LangSmith does not govern what ships or gate resume paths. Trace data sits on LangChain cloud unless you pay Enterprise.",
   },
   {
-    name: "LangChain",
-    issue: "No built-in checkpointing unless you manually adopt LangGraph yourself.",
+    name: "CrewAI",
+    issue:
+      "Fast multi-agent prototyping, but no built-in checkpointing on failure and execution caps that surprise production teams. Workflows restart instead of resume.",
   },
   {
     name: "Microsoft Agent Framework",
-    issue: "Session state exists, but is locked to Azure infrastructure.",
+    issue:
+      "AutoGen is maintenance-only; Agent Framework is pre-GA. Governance is mature inside Azure, but buyers inherit ecosystem lock-in and migration risk.",
   },
 ];
 
@@ -101,6 +106,7 @@ except Exception:
 export default function OrchestrateOS() {
   const hero = useInView({ threshold: 0.05 });
   const problem = useInView({ threshold: 0.05 });
+  const compare = useInView({ threshold: 0.05 });
   const primitivesView = useInView({ threshold: 0.05 });
   const benchmark = useInView({ threshold: 0.05 });
   const gates = useInView({ threshold: 0.05 });
@@ -112,11 +118,11 @@ export default function OrchestrateOS() {
     if (meta) {
       meta.setAttribute(
         "content",
-        "Framework-agnostic deterministic execution for LangGraph, CrewAI, and Python workflows. Resume from the last completed step — never restart from zero."
+        "Governance-first agent orchestration: approval gates, audit trails, and deterministic resume for LangGraph, CrewAI, and Python — without Azure or LangSmith lock-in."
       );
     }
     return () => {
-      document.title = "AITechPros.ai — Premier AI Consultancy & Solutions";
+      document.title = `${new URL(siteOrigin()).hostname} — AI Consultancy`;
     };
   }, []);
 
@@ -149,9 +155,9 @@ export default function OrchestrateOS() {
             </h1>
 
             <p className="text-lg sm:text-xl text-white/55 leading-relaxed max-w-2xl mb-10">
-              OrchestrateOS wraps LangGraph, CrewAI, or plain Python pipelines with a
-              deterministic execution layer. When step 47 fails, you re-run step 47 — not
-              steps 1 through 50.
+              Developer frameworks bolt on enterprise features. OrchestrateOS makes governance,
+              auditability, and deterministic resume first-class — when step 47 fails, you
+              re-run step 47 with operator gates, not a blind restart from step 1.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
@@ -239,11 +245,70 @@ export default function OrchestrateOS() {
             style={{ transitionDelay: "500ms" }}
           >
             <p className="text-white/80 text-lg leading-relaxed text-center max-w-3xl mx-auto">
-              <strong className="text-white font-[Montserrat]">OrchestrateOS</strong> adds a
-              durable checkpoint after every step, idempotent side effects, and a single{" "}
-              <code className="text-[#06B6D4] text-base">resume(run_id)</code> call — without
-              replacing your existing LangGraph or CrewAI definitions.
+              The gap between &ldquo;agents running in production&rdquo; and{" "}
+              <strong className="text-white font-[Montserrat]">auditable, governed, deterministic workflows</strong>{" "}
+              is where OrchestrateOS competes — checkpoints, idempotency, compensation gates, and
+              human approval before resume.
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Governance comparison */}
+      <section id="compare" className="relative py-20 lg:py-28 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0B0D17] via-[#0E1225] to-[#0B0D17]" />
+        <div className="container relative z-10" ref={compare.ref}>
+          <div
+            className={`text-center mb-12 transition-all duration-700 ${
+              compare.isInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+            }`}
+          >
+            <span className="text-sm font-medium text-[#06B6D4] tracking-widest uppercase font-[Montserrat] mb-4 block">
+              Competitive intel
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white font-[Montserrat] mb-4">
+              The <span className="gradient-text">governance gap</span> in agent frameworks
+            </h2>
+            <p className="text-white/45 max-w-2xl mx-auto">
+              LangSmith monitors. CrewAI restarts. Azure governs — if you stay on Foundry.
+              OrchestrateOS ships deployment governance, audit trails, and resume gates as core
+              primitives, not a $60K+ enterprise add-on.
+            </p>
+          </div>
+          <div
+            className={`transition-all duration-700 ${
+              compare.isInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+            }`}
+            style={{ transitionDelay: "150ms" }}
+          >
+            <OrchestrateOSComparison />
+          </div>
+          <div
+            className={`mt-10 grid grid-cols-1 md:grid-cols-2 gap-6 transition-all duration-700 ${
+              compare.isInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+            }`}
+            style={{ transitionDelay: "300ms" }}
+          >
+            <div className="glass-card rounded-2xl p-6 border-[#8B5CF6]/15">
+              <p className="text-xs uppercase tracking-wider text-[#8B5CF6] font-[Montserrat] mb-2">
+                Healthcare &amp; finance
+              </p>
+              <p className="text-white/55 text-sm leading-relaxed">
+                Regulated teams need data sovereignty, immutable execution logs, and operator
+                approval before retry — without CrewAI Enterprise pricing or LangSmith trace
+                residency tradeoffs.
+              </p>
+            </div>
+            <div className="glass-card rounded-2xl p-6 border-[#06B6D4]/15">
+              <p className="text-xs uppercase tracking-wider text-[#06B6D4] font-[Montserrat] mb-2">
+                Multi-framework buyers
+              </p>
+              <p className="text-white/55 text-sm leading-relaxed">
+                Keep LangGraph or CrewAI definitions. Add OrchestrateOS for the control plane
+                Microsoft buyers get only inside Azure — approval gates, compensation, and
+                deterministic replay across your stack.
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -494,8 +559,9 @@ export default function OrchestrateOS() {
             Ship deterministic agents to production
           </h2>
           <p className="text-white/45 max-w-lg mx-auto mb-8">
-            OrchestrateOS is in early access. Join the design partner cohort or request a
-            technical briefing with the AI Tech Pros engineering team.
+            OrchestrateOS is in early access for teams evaluating LangChain, CrewAI, or Azure
+            agents who need governed, resumable workflows — without custom orchestration
+            engineering.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a

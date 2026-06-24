@@ -4,17 +4,18 @@ Production uses **Cloudflare default domains** — no custom domain required.
 
 | Service | URL |
 |---------|-----|
-| **Website** | https://aitechpros-website.pages.dev |
-| **OrchestrateOS** | https://aitechpros-website.pages.dev/orchestrateos |
+| **Marketing site** | https://aitechpros-website.pages.dev |
+| **OrchestrateOS** | https://orchestrateos.pages.dev |
 | **API** | https://orchestrateos-api.nevaquit.workers.dev |
 
 ## Architecture
 
-| Product | Hosts |
-|---------|-------|
-| **Pages** | React SPA (`dist/public`) |
-| **Workers + D1** | OrchestrateOS control plane API |
-| **Python SDK** | `resume_engine/` — local / CI only |
+| Product | Pages project | Build |
+|---------|---------------|-------|
+| **Marketing site** | `aitechpros-website` | `npm run build:pages` |
+| **OrchestrateOS** | `orchestrateos` | `npm run build:orchestrateos` |
+| **Control plane API** | Worker `orchestrateos-api` + D1 | `wrangler deploy` |
+| **Python SDK** | `resume_engine/` — local / CI only | — |
 
 ## CI/CD (GitHub Actions)
 
@@ -23,8 +24,9 @@ Workflow: `.github/workflows/cloudflare-deploy.yml`
 **Triggers:** push to `main` (paths: `client/`, `cloudflare/`, build config) or manual **Run workflow**.
 
 **Jobs:**
-1. **Pages** — `npm ci` → `npm run build:pages` → `wrangler pages deploy`
-2. **Worker** — D1 schema migrate → `wrangler deploy` → `/health` smoke test
+1. **pages-main** — `npm run build:pages` → deploy `aitechpros-website`
+2. **pages-orchestrateos** — `npm run build:orchestrateos` → deploy `orchestrateos`
+3. **worker** — D1 schema migrate → `wrangler deploy` → `/health` smoke test
 
 ### GitHub secrets (required)
 
@@ -33,15 +35,14 @@ Workflow: `.github/workflows/cloudflare-deploy.yml`
 | `CLOUDFLARE_API_TOKEN` | API token with Workers, Pages, D1 edit |
 | `CLOUDFLARE_ACCOUNT_ID` | `365965a7234fe266200abe63be3b63ba` |
 
-Create token: Cloudflare dashboard → **My Profile → API Tokens → Create Token**  
-Use template *Edit Cloudflare Workers* and add **Cloudflare Pages — Edit** + **D1 — Edit**.
+### Build profiles
 
-### GitHub variables (optional overrides)
+| Profile | Command | Env file |
+|---------|---------|----------|
+| Main site | `npm run build:pages` | `.env.production` (optional) |
+| OrchestrateOS | `npm run build:orchestrateos` | `.env.orchestrateos` |
 
-| Variable | Default |
-|----------|---------|
-| `VITE_SITE_URL` | `https://aitechpros-website.pages.dev` |
-| `VITE_ORCHESTRATEOS_API_URL` | `https://orchestrateos-api.nevaquit.workers.dev` |
+`.env.orchestrateos` sets `VITE_APP=orchestrateos` and `VITE_SITE_URL=https://orchestrateos.pages.dev`.
 
 ## One-time local setup
 
@@ -60,21 +61,18 @@ Pages (from repo root):
 ```powershell
 npm run build:pages
 npx wrangler pages deploy dist/public --project-name=aitechpros-website
+
+npm run build:orchestrateos
+npx wrangler pages deploy dist/public --project-name=orchestrateos
 ```
 
 ## Local development
 
 ```powershell
-npm run dev
+npm run dev                    # main marketing site
+npm run dev:orchestrateos      # OrchestrateOS product at /
 # API worker (separate terminal):
 cd cloudflare/workers/orchestrateos-api && npm run dev
-```
-
-`.env` (optional):
-
-```
-VITE_ORCHESTRATEOS_API_URL=http://127.0.0.1:8787
-VITE_SITE_URL=http://localhost:3001
 ```
 
 ## Legacy hosting

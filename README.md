@@ -2,7 +2,7 @@
 
 **AI Engineers and Cybersecurity experts building autonomous enterprise solutions on Google Cloud.**
 
-🌐 [Website](https://aitechpros-website.pages.dev) · [OrchestrateOS](https://aitechpros-website.pages.dev/orchestrateos)
+🌐 [Website](https://aitechpros-website.pages.dev) · [OrchestrateOS](https://orchestrateos.pages.dev)
 
 ---
 
@@ -17,7 +17,7 @@ Deterministic workflow execution for LangGraph, CrewAI, and plain Python — res
 | Component | Location |
 |-----------|----------|
 | Python package | `resume_engine/` |
-| Product page | https://aitechpros-website.pages.dev/orchestrateos |
+| Product page | https://orchestrateos.pages.dev |
 | API | https://orchestrateos-api.nevaquit.workers.dev |
 
 ```powershell
@@ -33,7 +33,8 @@ python -m pytest resume_engine/tests -q
 
 | Layer | Product | URL |
 |-------|---------|-----|
-| **Frontend** | Pages | https://aitechpros-website.pages.dev |
+| **Marketing site** | Pages (`aitechpros-website`) | https://aitechpros-website.pages.dev |
+| **OrchestrateOS** | Pages (`orchestrateos`) | https://orchestrateos.pages.dev |
 | **API** | Workers + D1 | https://orchestrateos-api.nevaquit.workers.dev |
 | **CI/CD** | GitHub Actions | `.github/workflows/cloudflare-deploy.yml` |
 

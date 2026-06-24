@@ -1,14 +1,34 @@
-/** Hostname and routing helpers — Cloudflare Pages (*.pages.dev) + Workers (*.workers.dev). */
+/** Hostname and routing — main site + OrchestrateOS product on separate Pages projects. */
 
-const DEFAULT_PAGES_URL = "https://aitechpros-website.pages.dev";
+export const MAIN_SITE_URL = "https://aitechpros-website.pages.dev";
+export const ORCHESTRATEOS_SITE_URL = "https://orchestrateos.pages.dev";
 const DEFAULT_API_URL = "https://orchestrateos-api.nevaquit.workers.dev";
 
-/** Public site origin (Pages). */
+const ORCHESTRATEOS_HOST = "orchestrateos.pages.dev";
+
+/** Build-time flag: dedicated OrchestrateOS Pages bundle (root at `/`). */
+export function isOrchestrateOSApp(): boolean {
+  return import.meta.env.VITE_APP === "orchestrateos";
+}
+
+/** Runtime: dedicated OrchestrateOS Pages host or orchestrateos build. */
+export function isOrchestrateOSProductSite(): boolean {
+  if (isOrchestrateOSApp()) return true;
+  if (typeof window === "undefined") return false;
+  return window.location.hostname.toLowerCase() === ORCHESTRATEOS_HOST;
+}
+
+/** @deprecated Use isOrchestrateOSProductSite — legacy path check for redirects only. */
+export function isOrchestrateOSHost(): boolean {
+  return isOrchestrateOSProductSite();
+}
+
+/** Origin for the current app context. */
 export function siteOrigin(): string {
   const env = import.meta.env.VITE_SITE_URL as string | undefined;
   if (env) return env.replace(/\/$/, "");
   if (typeof window !== "undefined") return window.location.origin;
-  return DEFAULT_PAGES_URL;
+  return isOrchestrateOSApp() ? ORCHESTRATEOS_SITE_URL : MAIN_SITE_URL;
 }
 
 /** OrchestrateOS API base URL (Worker). */
@@ -26,24 +46,17 @@ export function orchestrateOSApiBaseUrl(): string {
   return DEFAULT_API_URL;
 }
 
-/** True on OrchestrateOS product routes (/orchestrateos on Pages). */
-export function isOrchestrateOSHost(): boolean {
-  if (typeof window === "undefined") return false;
-  const path = window.location.pathname;
-  return path === "/orchestrateos" || path.startsWith("/orchestrateos/");
-}
-
-/** Product URL — path on Pages in production. */
+/** Canonical OrchestrateOS product URL (always orchestrateos.pages.dev). */
 export function orchestrateOSUrl(path = ""): string {
   const suffix = path.startsWith("/") ? path : path ? `/${path}` : "";
-  const base = `${siteOrigin()}/orchestrateos`;
+  const base = ORCHESTRATEOS_SITE_URL;
   return suffix ? `${base}${suffix}` : base;
 }
 
-/** Main marketing site URL. */
+/** Main marketing site URL (always aitechpros-website.pages.dev). */
 export function mainSiteUrl(path = "/"): string {
   const suffix = path.startsWith("/") ? path : `/${path}`;
-  return `${siteOrigin()}${suffix}`;
+  return `${MAIN_SITE_URL}${suffix}`;
 }
 
 /** OpenAPI docs URL for the control plane API. */

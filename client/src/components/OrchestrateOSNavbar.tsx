@@ -1,5 +1,5 @@
 /*
- * OrchestrateOS product navbar — subdomain landing page header
+ * OrchestrateOS product navbar — orchestrateos.pages.dev
  */
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
@@ -8,6 +8,7 @@ import { mainSiteUrl, orchestrateOSApiDocsUrl } from "@/lib/site";
 
 const navLinks = [
   { label: "Problem", href: "#problem" },
+  { label: "Compare", href: "#compare" },
   { label: "Primitives", href: "#primitives" },
   { label: "Gates", href: "#gates" },
   { label: "API", href: "#api" },
