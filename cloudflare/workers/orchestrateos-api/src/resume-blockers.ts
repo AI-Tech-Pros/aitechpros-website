@@ -1,5 +1,6 @@
 /** Resume gate blocker evaluation — shared by API routes and admin outcomes. */
 
+import { consensusFromMetadata } from "./consensus-gate";
 import { parseMetadata, type RunRow, type StepRow } from "./serialize";
 
 export type ResumeBlocker = {
@@ -8,7 +9,13 @@ export type ResumeBlocker = {
   step_name: string;
   failure_key: string;
   message: string;
-  required_action: "compensation" | "human_approval" | "prod_resume_ack";
+  required_action:
+    | "compensation"
+    | "human_approval"
+    | "consensus_approval"
+    | "prod_resume_ack";
+  consensus_votes?: number;
+  consensus_required?: number;
 };
 
 export function failureKey(step: StepRow): string {
@@ -44,21 +51,42 @@ export function getResumeBlockers(run: RunRow, steps: StepRow[]): ResumeBlocker[
       });
     }
   } else if (classification === "permanent") {
-    const human = gates.human_approval as
-      | { failure_key?: string; granted?: boolean }
-      | undefined;
-    const hasApproval =
-      (gates.approvals as Record<string, unknown> | undefined)?.[key] ||
-      (human?.failure_key === key && human?.granted);
-    if (!hasApproval) {
-      blockers.push({
-        classification,
-        step_index: failed.step_index,
-        step_name: failed.step_name,
-        failure_key: key,
-        message: failed.error_message ?? "Permanent failure requires human approval",
-        required_action: "human_approval",
-      });
+    const metadata = parseMetadata(run.metadata_json);
+    const consensus = consensusFromMetadata(metadata);
+    if (consensus) {
+      const voteCount = Object.keys(consensus.votes ?? {}).length;
+      const minApprovers = consensus.min_approvers;
+      if (voteCount < minApprovers) {
+        blockers.push({
+          classification,
+          step_index: failed.step_index,
+          step_name: failed.step_name,
+          failure_key: key,
+          message:
+            failed.error_message ??
+            `Permanent failure requires ${minApprovers} reviewer approvals (${voteCount}/${minApprovers})`,
+          required_action: "consensus_approval",
+          consensus_votes: voteCount,
+          consensus_required: minApprovers,
+        });
+      }
+    } else {
+      const human = gates.human_approval as
+        | { failure_key?: string; granted?: boolean }
+        | undefined;
+      const hasApproval =
+        (gates.approvals as Record<string, unknown> | undefined)?.[key] ||
+        (human?.failure_key === key && human?.granted);
+      if (!hasApproval) {
+        blockers.push({
+          classification,
+          step_index: failed.step_index,
+          step_name: failed.step_name,
+          failure_key: key,
+          message: failed.error_message ?? "Permanent failure requires human approval",
+          required_action: "human_approval",
+        });
+      }
     }
   }
 

@@ -22,6 +22,7 @@ import {
   grantApproval,
   recordCompensation,
   resetDemoRuns,
+  submitConsensusVote,
   type ResumeBlocker,
 } from "@/lib/orchestrateos-api";
 import { orchestrateOSApiBaseUrl, orchestrateOSApiDocsUrl, orchestrateOSApiKey } from "@/lib/site";
@@ -57,6 +58,7 @@ const SCENARIO_META: Record<
 function BlockerCard({ blocker }: { blocker: ResumeBlocker }) {
   const isCompensation = blocker.required_action === "compensation";
   const isProdAck = blocker.required_action === "prod_resume_ack";
+  const isConsensus = blocker.required_action === "consensus_approval";
   return (
     <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
       <div className="flex items-start gap-3">
@@ -73,7 +75,9 @@ function BlockerCard({ blocker }: { blocker: ResumeBlocker }) {
               ? "Compensation required"
               : isProdAck
                 ? "Production resume acknowledgment required"
-                : "Human approval required"}
+                : isConsensus
+                  ? `Consensus approval required (${blocker.consensus_votes ?? 0}/${blocker.consensus_required ?? 2})`
+                  : "Human approval required"}
           </p>
           <p className="text-xs text-white/45 mt-1">
             Step {blocker.step_index + 1}:{" "}
@@ -218,6 +222,23 @@ export default function OrchestrateOSGatePanel() {
     }
   };
 
+  const handleConsensusVote = async () => {
+    if (!activeRunId || !approver.trim()) return;
+    setActionLoading(true);
+    setLiveError(null);
+    try {
+      await submitConsensusVote(activeRunId, {
+        approved_by: approver.trim(),
+        note: "Consensus vote via gate explorer",
+      });
+      await lookupRun(activeRunId);
+    } catch (err) {
+      setLiveError(err instanceof Error ? err.message : "Consensus vote failed");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleProdAck = async () => {
     if (!activeRunId || !approver.trim()) return;
     setActionLoading(true);
@@ -287,6 +308,7 @@ export default function OrchestrateOSGatePanel() {
 
   const needsCompensation = liveBlockers?.some((b) => b.required_action === "compensation");
   const needsApproval = liveBlockers?.some((b) => b.required_action === "human_approval");
+  const needsConsensus = liveBlockers?.some((b) => b.required_action === "consensus_approval");
   const needsProdAck = liveBlockers?.some((b) => b.required_action === "prod_resume_ack");
   const writeActionsNeedKey = !hasDemoApiKey;
 
@@ -457,6 +479,31 @@ export default function OrchestrateOSGatePanel() {
                     )}
                     Record compensation (API)
                   </button>
+                )}
+
+                {needsConsensus && (
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <input
+                      type="text"
+                      value={approver}
+                      onChange={(e) => setApprover(e.target.value)}
+                      placeholder="reviewer@company.com"
+                      className="flex-1 px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-sm font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleConsensusVote}
+                      disabled={actionLoading || !approver.trim() || writeActionsNeedKey}
+                      className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-violet-500/10 border border-violet-500/25 text-violet-200 text-sm font-semibold hover:bg-violet-500/20 transition-colors disabled:opacity-50"
+                    >
+                      {actionLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <UserCheck className="w-4 h-4" />
+                      )}
+                      Submit consensus vote (API)
+                    </button>
+                  </div>
                 )}
 
                 {needsApproval && (

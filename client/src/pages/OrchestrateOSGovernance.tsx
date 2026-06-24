@@ -80,8 +80,16 @@ export default function OrchestrateOSGovernance() {
             <code className="text-[#06B6D4] text-xs">llm_usage</code> tracking and halt on exceed
           </li>
           <li>
-            <strong className="text-white/70">Optimizer agent</strong> — usage metrics and budget state on
-            every kernel run
+            <strong className="text-white/70">Consensus gate</strong> — multi-reviewer approval on permanent
+            failures when{" "}
+            <code className="text-[#06B6D4] text-xs">consensus_min_approvers</code> is set at{" "}
+            <code className="text-[#06B6D4] text-xs">start_run</code>; votes via{" "}
+            <code className="text-[#06B6D4] text-xs">POST /runs/:id/consensus_vote</code>
+          </li>
+          <li>
+            <strong className="text-white/70">Optimizer metrics</strong> — usage, budget, and circuit-breaker
+            state on every kernel run; advisory retry notes via{" "}
+            <code className="text-[#06B6D4] text-xs">GET /runs/:id/retry_policy</code>
           </li>
           <li>
             <strong className="text-white/70">Executor tools</strong> — real tool bindings (HTTP, health
@@ -93,12 +101,8 @@ export default function OrchestrateOSGovernance() {
       <SubSection title="Roadmap — not shipped yet">
         <ul className="list-disc pl-5 space-y-2 text-white/55 text-sm">
           <li>
-            <strong className="text-white/70">Consensus gate</strong> — multi-reviewer approval for
-            high-risk permanent failures
-          </li>
-          <li>
-            <strong className="text-white/70">Automated retry policy tuning</strong> — optimizer-driven
-            policy changes from audit history (metrics only today)
+            <strong className="text-white/70">Automated retry policy tuning</strong> — apply optimizer
+            recommendations to workflow retry config automatically (metrics and advisory endpoint live today)
           </li>
         </ul>
       </SubSection>

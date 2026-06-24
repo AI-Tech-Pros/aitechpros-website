@@ -11,7 +11,13 @@ export type ResumeBlocker = {
   step_name: string;
   failure_key: string;
   message: string;
-  required_action: "compensation" | "human_approval" | "prod_resume_ack";
+  required_action:
+    | "compensation"
+    | "human_approval"
+    | "consensus_approval"
+    | "prod_resume_ack";
+  consensus_votes?: number;
+  consensus_required?: number;
 };
 
 export type ResumeBlockersResponse = {
@@ -301,6 +307,32 @@ export async function grantApproval(
     method: "POST",
     body: JSON.stringify(body),
   });
+}
+
+export async function submitConsensusVote(
+  runId: string,
+  body: { approved_by: string; note?: string },
+): Promise<
+  RunStatusResponse & {
+    consensus?: { vote_count: number; min_approvers: number; satisfied: boolean };
+  }
+> {
+  return apiFetch(`/runs/${encodeURIComponent(runId)}/consensus_vote`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export type RetryPolicyResponse = {
+  run_id: string;
+  advisory: boolean;
+  auto_apply: boolean;
+  optimizer: Record<string, unknown> | null;
+  message: string;
+};
+
+export async function fetchRetryPolicy(runId: string): Promise<RetryPolicyResponse> {
+  return apiFetch<RetryPolicyResponse>(`/runs/${encodeURIComponent(runId)}/retry_policy`);
 }
 
 export async function ackProdResume(

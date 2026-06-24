@@ -21,6 +21,7 @@ import {
   type SessionPayload,
 } from "./platform/session";
 import { assertRunAccess } from "./tenant-access";
+import { applyConsensusVote, seedConsensusPolicy } from "./consensus-gate";
 import { getResumeBlockers, failureKey, lastFailedStep, type ResumeBlocker } from "./resume-blockers";
 import {
   parseMetadata,
@@ -344,6 +345,7 @@ app.post("/start_run", async (c) => {
   if (existing) {
     return c.json({ detail: `Run already exists: ${runId}` }, 409);
   }
+  const runMetadata = seedConsensusPolicy(body.metadata ?? {});
   await c.env.DB.prepare(
     `INSERT INTO runs (run_id, workflow_name, status, environment, tenant_id, created_at, updated_at, metadata_json)
      VALUES (?, ?, 'running', ?, ?, ?, ?, ?)`,
@@ -355,7 +357,7 @@ app.post("/start_run", async (c) => {
       tenantId,
       now,
       now,
-      JSON.stringify(body.metadata ?? {}),
+      JSON.stringify(runMetadata),
     )
     .run();
   await recordAuditEvent(c.env.DB, runId, "run.started", actorLabel(c.get("auth")), {
@@ -586,6 +588,63 @@ app.post("/runs/:runId/approve", async (c) => {
     approved_by: body.approved_by,
   });
   return c.json(runStatusResponse(updated!, updatedSteps, blockers));
+});
+
+app.post("/runs/:runId/consensus_vote", async (c) => {
+  const runId = c.req.param("runId");
+  const body = await c.req.json<{ approved_by: string; note?: string }>();
+  if (!body.approved_by?.trim()) {
+    return c.json({ detail: "approved_by is required" }, 400);
+  }
+  const run = await getRun(c.env.DB, runId);
+  if (!run) return c.json({ detail: `Run not found: ${runId}` }, 404);
+  const denied = assertRunAccess(c, run);
+  if (denied) return denied;
+  const steps = await getSteps(c.env.DB, runId);
+  const failed = lastFailedStep(steps);
+  if (!failed || failed.failure_classification !== "permanent") {
+    return c.json({ detail: "No permanent failure awaiting consensus" }, 400);
+  }
+  const metadata = parseRunMetadata(run.metadata_json);
+  const key = failureKey(failed);
+  const result = applyConsensusVote(metadata, key, body.approved_by, body.note);
+  await updateRunMetadata(c.env.DB, runId, result.metadata);
+  const updated = await getRun(c.env.DB, runId);
+  const updatedSteps = await getSteps(c.env.DB, runId);
+  const blockers = getResumeBlockers(updated!, updatedSteps);
+  await recordAuditEvent(c.env.DB, runId, "gate.consensus_vote", actorLabel(c.get("auth")), {
+    failure_key: key,
+    approved_by: body.approved_by,
+    vote_count: result.voteCount,
+    min_approvers: result.minApprovers,
+    satisfied: result.satisfied,
+  });
+  return c.json({
+    ...runStatusResponse(updated!, updatedSteps, blockers),
+    consensus: {
+      vote_count: result.voteCount,
+      min_approvers: result.minApprovers,
+      satisfied: result.satisfied,
+    },
+  });
+});
+
+app.get("/runs/:runId/retry_policy", async (c) => {
+  const runId = c.req.param("runId");
+  const run = await getRun(c.env.DB, runId);
+  if (!run) return c.json({ detail: `Run not found: ${runId}` }, 404);
+  const denied = assertRunAccess(c, run);
+  if (denied) return denied;
+  const metadata = parseMetadata(run.metadata_json);
+  const optimizer = metadata.optimizer as Record<string, unknown> | undefined;
+  return c.json({
+    run_id: runId,
+    advisory: true,
+    auto_apply: false,
+    optimizer: optimizer ?? null,
+    message:
+      "Retry policy recommendations are advisory until automated tuning ships. Use optimizer metrics to adjust workflows manually.",
+  });
 });
 
 app.post("/runs/:runId/ack_prod_resume", async (c) => {
