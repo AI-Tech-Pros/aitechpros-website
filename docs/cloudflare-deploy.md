@@ -1,103 +1,91 @@
 # Cloudflare deployment (Pages + Workers + D1)
 
-All-in on Cloudflare for **aitechpros.ai** and **OrchestrateOS**.
+Production uses **Cloudflare default domains** — no custom domain required.
 
-| Product | Hosts | Free tier |
-|---------|-------|-----------|
-| **Pages** | React SPA — `aitechpros.ai`, `/orchestrateos`, `orchestrateos.aitechpros.ai` | Yes |
-| **Workers** | API — `api.orchestrateos.aitechpros.ai` | 100k req/day |
-| **D1** | SQLite DB for runs, steps, gates | 5M reads/day |
+| Service | URL |
+|---------|-----|
+| **Website** | https://aitechpros-website.pages.dev |
+| **OrchestrateOS** | https://aitechpros-website.pages.dev/orchestrateos |
+| **API** | https://orchestrateos-api.nevaquit.workers.dev |
 
-The Python `resume_engine/` package remains in-repo for **SDK use** (LangGraph, CrewAI, local dev). Production API is the TypeScript Worker in `cloudflare/workers/orchestrateos-api/`.
+## Architecture
 
-## One-time setup
+| Product | Hosts |
+|---------|-------|
+| **Pages** | React SPA (`dist/public`) |
+| **Workers + D1** | OrchestrateOS control plane API |
+| **Python SDK** | `resume_engine/` — local / CI only |
 
-### 1. Cloudflare account
+## CI/CD (GitHub Actions)
 
-1. Add **aitechpros.ai** to Cloudflare (DNS → nameservers at Namecheap).
-2. Create API token: **My Profile → API Tokens → Create Token**
-   - Template: *Edit Cloudflare Workers* + *Cloudflare Pages* + *D1*
-3. GitHub secrets:
-   - `CLOUDFLARE_API_TOKEN`
-   - `CLOUDFLARE_ACCOUNT_ID` (dashboard sidebar)
+Workflow: `.github/workflows/cloudflare-deploy.yml`
 
-### 2. D1 database
+**Triggers:** push to `main` (paths: `client/`, `cloudflare/`, build config) or manual **Run workflow**.
 
-```bash
+**Jobs:**
+1. **Pages** — `npm ci` → `npm run build:pages` → `wrangler pages deploy`
+2. **Worker** — D1 schema migrate → `wrangler deploy` → `/health` smoke test
+
+### GitHub secrets (required)
+
+| Secret | Value |
+|--------|-------|
+| `CLOUDFLARE_API_TOKEN` | API token with Workers, Pages, D1 edit |
+| `CLOUDFLARE_ACCOUNT_ID` | `365965a7234fe266200abe63be3b63ba` |
+
+Create token: Cloudflare dashboard → **My Profile → API Tokens → Create Token**  
+Use template *Edit Cloudflare Workers* and add **Cloudflare Pages — Edit** + **D1 — Edit**.
+
+### GitHub variables (optional overrides)
+
+| Variable | Default |
+|----------|---------|
+| `VITE_SITE_URL` | `https://aitechpros-website.pages.dev` |
+| `VITE_ORCHESTRATEOS_API_URL` | `https://orchestrateos-api.nevaquit.workers.dev` |
+
+## One-time local setup
+
+```powershell
 cd cloudflare/workers/orchestrateos-api
 npm install
-npx wrangler d1 create orchestrateos
-```
-
-Copy the `database_id` into `wrangler.toml` (`REPLACE_WITH_D1_DATABASE_ID`).
-
-Apply schema:
-
-```bash
+npx wrangler login
+npx wrangler d1 create orchestrateos   # if not created
+# Set database_id in wrangler.toml
 npx wrangler d1 execute orchestrateos --remote --file=../../d1/schema.sql
+npx wrangler deploy
 ```
 
-### 3. Pages project
+Pages (from repo root):
 
-Dashboard → **Workers & Pages → Create → Pages → Connect to Git**  
-Or let CI create via `pages deploy --project-name=aitechpros-website`.
-
-| Setting | Value |
-|---------|--------|
-| Build command | `npm ci && npm run build:pages` |
-| Output directory | `dist/public` |
-| Env | `VITE_ORCHESTRATEOS_API_URL=https://api.orchestrateos.aitechpros.ai` |
-
-Custom domains: `aitechpros.ai`, `www.aitechpros.ai`, `orchestrateos.aitechpros.ai`
-
-### 4. Worker route
-
-After `wrangler deploy`, add route in dashboard or keep `wrangler.toml` routes:
-
-- `api.orchestrateos.aitechpros.ai/*` → `orchestrateos-api` worker
-
-DNS (automatic if zone is on Cloudflare):
-
-| Type | Name | Target |
-|------|------|--------|
-| CNAME | `api.orchestrateos` | Worker (wrangler sets this) |
-| CNAME | `@` / `www` | Pages project |
-
-### 5. Retire Namecheap / Manus hosting
-
-Once Pages is live on custom domains:
-
-- Remove Namecheap `public_html` deploy workflow (optional)
-- Remove legacy `cname.manus.space` DNS records
-- Cancel unused Namecheap Stellar if no longer needed
+```powershell
+npm run build:pages
+npx wrangler pages deploy dist/public --project-name=aitechpros-website
+```
 
 ## Local development
 
 ```powershell
-# Frontend
 npm run dev
-
-# API worker (separate terminal)
-cd cloudflare/workers/orchestrateos-api
-npm run db:migrate:local
-npm run dev
+# API worker (separate terminal):
+cd cloudflare/workers/orchestrateos-api && npm run dev
 ```
 
-Set `VITE_ORCHESTRATEOS_API_URL=http://127.0.0.1:8787` in `.env` for local gate explorer.
+`.env` (optional):
 
-## CI
+```
+VITE_ORCHESTRATEOS_API_URL=http://127.0.0.1:8787
+VITE_SITE_URL=http://localhost:3001
+```
 
-`.github/workflows/cloudflare-deploy.yml` — on push to `main`:
+## Legacy hosting
 
-1. Build Pages → deploy `dist/public`
-2. Migrate D1 + deploy Worker
+- **Namecheap FTP:** `.github/workflows/deploy-website.yml` — manual only (`workflow_dispatch`)
+- **Manus:** previous host, retired
 
-## Python SDK vs Cloudflare API
+## Python SDK vs Worker API
 
 | Use case | Where |
 |----------|--------|
-| Gate explorer UI | Worker API (D1) |
-| LangGraph / CrewAI in your apps | `pip install resume_engine` (local/CI) |
-| Heavy step execution | Your app process — API stores checkpoints only |
-
-To run the **full Python FastAPI** on Cloudflare instead, use **Cloudflare Containers** (paid) with the existing Docker image — see [Containers docs](https://developers.cloudflare.com/containers/).
+| Gate explorer UI | Worker + D1 |
+| LangGraph / CrewAI in your apps | `pip install -e .` locally |
+| Full Python FastAPI on Cloudflare | [Cloudflare Containers](https://developers.cloudflare.com/containers/) (paid)

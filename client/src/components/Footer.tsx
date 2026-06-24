@@ -7,10 +7,11 @@
 import { Link } from "wouter";
 import { toast } from "sonner";
 import { MapPin, Mail } from "lucide-react";
+import { orchestrateOSUrl } from "@/lib/site";
 
 const footerLinks = {
   Platform: [
-    { label: "OrchestrateOS", href: "https://orchestrateos.aitechpros.ai" },
+    { label: "OrchestrateOS", href: orchestrateOSUrl() },
     { label: "AI Dilemma", href: "#partners" },
     { label: "Runtime Engine", href: "#tech-edge" },
     { label: "Product Roadmap", href: "#roadmap" },

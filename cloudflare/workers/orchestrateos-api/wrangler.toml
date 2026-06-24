@@ -1,22 +1,13 @@
-{
-  "name": "orchestrateos-api",
-  "main": "src/index.ts",
-  "compatibility_date": "2026-06-01",
-  "workers_dev": true,
-  "routes": [
-    {
-      "pattern": "api.orchestrateos.aitechpros.ai/*",
-      "zone_name": "aitechpros.ai"
-    }
-  ],
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "orchestrateos",
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID"
-    }
-  ],
-  "vars": {
-    "CORS_ORIGINS": "https://aitechpros.ai,https://www.aitechpros.ai,https://orchestrateos.aitechpros.ai,http://localhost:3001"
-  }
-}
+name = "orchestrateos-api"
+main = "src/index.ts"
+compatibility_date = "2026-06-01"
+account_id = "365965a7234fe266200abe63be3b63ba"
+workers_dev = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "orchestrateos"
+database_id = "a7443074-33df-40e4-b2dd-c89f40976c8c"
+
+[vars]
+CORS_ORIGINS = "https://aitechpros-website.pages.dev,https://*.pages.dev,http://localhost:3001,http://127.0.0.1:3001"

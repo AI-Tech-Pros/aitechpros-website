@@ -80,7 +80,7 @@ export default function OrchestrateOSNavbar() {
             rel="noopener noreferrer"
             className="text-sm text-white/40 hover:text-white/70 transition-colors inline-flex items-center gap-1"
           >
-            aitechpros.ai
+            {new URL(mainSiteUrl()).hostname}
             <ArrowUpRight className="w-3.5 h-3.5" />
           </a>
           <a

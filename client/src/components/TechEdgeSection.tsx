@@ -5,6 +5,7 @@
  */
 import { useInView } from "@/hooks/useInView";
 import { ShieldCheck, Route, UserCheck } from "lucide-react";
+import { orchestrateOSUrl } from "@/lib/site";
 
 const controlPillars = [
   {
@@ -143,7 +144,7 @@ export default function TechEdgeSection() {
             </p>
           </div>
           <a
-            href="https://orchestrateos.aitechpros.ai"
+            href={orchestrateOSUrl()}
             className="shrink-0 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#8B5CF6] to-[#3B82F6] text-white text-sm font-semibold font-[Montserrat] hover:opacity-90 transition-opacity"
           >
             Explore OrchestrateOS

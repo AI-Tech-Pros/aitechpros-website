@@ -3,11 +3,7 @@
  */
 import { ArrowUpRight, Server } from "lucide-react";
 import { API_ENDPOINTS } from "@/lib/orchestrateos-api";
-import {
-  ORCHESTRATEOS_API_PRODUCTION_HOST,
-  orchestrateOSApiBaseUrl,
-  orchestrateOSApiDocsUrl,
-} from "@/lib/site";
+import { orchestrateOSApiBaseUrl, orchestrateOSApiDocsUrl } from "@/lib/site";
 
 export default function OrchestrateOSApiSection() {
   const apiBase = orchestrateOSApiBaseUrl();
@@ -26,11 +22,11 @@ export default function OrchestrateOSApiSection() {
                 Control plane
               </p>
               <h3 className="text-xl font-bold text-white font-[Montserrat] mb-2">
-                {isProxy ? "Local API (dev proxy)" : ORCHESTRATEOS_API_PRODUCTION_HOST}
+                {isProxy ? "Local API (dev proxy)" : apiBase.replace("https://", "")}
               </h3>
               <p className="text-sm text-white/50 max-w-xl leading-relaxed">
-                FastAPI service for run lifecycle, resume gate inspection, compensation recording,
-                and audit logs. Deploy via Docker to Cloud Run, GKE, or any container host.
+                Cloudflare Worker control plane for run lifecycle, resume gate inspection,
+                compensation recording, and audit logs. Backed by D1.
               </p>
               <p className="mt-3 font-mono text-xs text-white/35 break-all">{apiBase}</p>
             </div>
@@ -46,7 +42,7 @@ export default function OrchestrateOSApiSection() {
               <ArrowUpRight className="w-4 h-4" />
             </a>
             <a
-              href={`${isProxy ? "https://" + ORCHESTRATEOS_API_PRODUCTION_HOST : apiBase}/health`}
+              href={`${apiBase}/health`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl glass-card text-white/70 text-sm hover:text-white transition-colors"
@@ -98,9 +94,9 @@ export default function OrchestrateOSApiSection() {
       </div>
 
       <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 font-mono text-xs text-white/55 overflow-x-auto">
-        <p className="text-white/30 mb-2"># DNS</p>
-        <p>api.orchestrateos.aitechpros.ai → CNAME → your container host</p>
-        <p className="text-white/30 mt-4 mb-2"># Deploy</p>
+        <p className="text-white/30 mb-2"># API (Cloudflare Workers)</p>
+        <p>{orchestrateOSApiBaseUrl()}</p>
+        <p className="text-white/30 mt-4 mb-2"># Local Python SDK</p>
         <p>docker compose -f resume_engine/docker-compose.yml up --build</p>
       </div>
     </div>

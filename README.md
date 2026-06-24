@@ -2,7 +2,7 @@
 
 **AI Engineers and Cybersecurity experts building autonomous enterprise solutions on Google Cloud.**
 
-🌐 [aitechpros.ai](https://aitechpros.ai) · [OrchestrateOS](https://aitechpros.ai/orchestrateos)
+🌐 [Website](https://aitechpros-website.pages.dev) · [OrchestrateOS](https://aitechpros-website.pages.dev/orchestrateos)
 
 ---
 
@@ -17,8 +17,8 @@ Deterministic workflow execution for LangGraph, CrewAI, and plain Python — res
 | Component | Location |
 |-----------|----------|
 | Python package | `resume_engine/` |
-| Product page | `/orchestrateos` (or `orchestrateos.aitechpros.ai` after DNS) |
-| API (separate deploy) | Docker / Cloud Run — see `resume_engine/README.md` |
+| Product page | https://aitechpros-website.pages.dev/orchestrateos |
+| API | https://orchestrateos-api.nevaquit.workers.dev |
 
 ```powershell
 # Local full stack
@@ -29,30 +29,29 @@ python -m pytest resume_engine/tests -q
 
 ---
 
-## Hosting architecture (target: all Cloudflare)
+## Hosting (Cloudflare)
 
-| Layer | Product | Hosts |
-|-------|---------|-------|
-| **Frontend** | [Cloudflare Pages](https://pages.cloudflare.com) | `aitechpros.ai`, `/orchestrateos` |
-| **API** | [Cloudflare Workers](https://workers.cloudflare.com) + [D1](https://developers.cloudflare.com/d1/) | `api.orchestrateos.aitechpros.ai` |
-| **Domain** | Namecheap registrar → Cloudflare DNS | Nameservers on Cloudflare |
+| Layer | Product | URL |
+|-------|---------|-----|
+| **Frontend** | Pages | https://aitechpros-website.pages.dev |
+| **API** | Workers + D1 | https://orchestrateos-api.nevaquit.workers.dev |
+| **CI/CD** | GitHub Actions | `.github/workflows/cloudflare-deploy.yml` |
 
-Full setup: **[docs/cloudflare-deploy.md](docs/cloudflare-deploy.md)**
+Setup: **[docs/cloudflare-deploy.md](docs/cloudflare-deploy.md)**
 
-The Python `resume_engine/` package stays in-repo for SDK/adapters (LangGraph, CrewAI). Production gate-explorer API is the Worker in `cloudflare/workers/orchestrateos-api/`.
+Python `resume_engine/` remains for SDK/adapters (LangGraph, CrewAI). Production gate-explorer API is the Worker in `cloudflare/workers/orchestrateos-api/`.
 
-Legacy Namecheap FTP deploy: [docs/namecheap-deploy.md](docs/namecheap-deploy.md) (optional, superseded by Pages).
+Legacy Namecheap FTP: [docs/namecheap-deploy.md](docs/namecheap-deploy.md) — manual `workflow_dispatch` only.
 
 ---
 
 ## Deploy checklist
 
-### 1. Cloudflare (recommended)
+### 1. Cloudflare CI/CD
 
-1. Add `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` to GitHub secrets
-2. Create D1 database, update `database_id` in `cloudflare/workers/orchestrateos-api/wrangler.toml`
-3. Point domain nameservers to Cloudflare
-4. Push to `main` → `.github/workflows/cloudflare-deploy.yml`
+GitHub secrets: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` (`365965a7234fe266200abe63be3b63ba`)
+
+Push to `main` → `.github/workflows/cloudflare-deploy.yml`
 
 ```powershell
 npm run build:pages   # local verify
@@ -76,7 +75,7 @@ python -m pytest resume_engine/tests -q
 
 ## Connect
 
-- **Website:** [aitechpros.ai](https://aitechpros.ai)
+- **Website:** https://aitechpros-website.pages.dev
 - **LinkedIn:** [AI Tech Pros](https://www.linkedin.com/company/ai-tech-pros)
 - **X/Twitter:** [@AITechProsAI](https://x.com/AITechProsAI)
 - **GitHub:** [AI-Tech-Pros](https://github.com/AI-Tech-Pros)

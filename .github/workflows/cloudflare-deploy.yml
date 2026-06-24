@@ -13,13 +13,21 @@ on:
       - ".github/workflows/cloudflare-deploy.yml"
   workflow_dispatch:
 
+concurrency:
+  group: cloudflare-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PAGES_URL: https://aitechpros-website.pages.dev
+  WORKER_API_URL: https://orchestrateos-api.nevaquit.workers.dev
+
 jobs:
   pages:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       deployments: write
-    name: Deploy Pages (aitechpros.ai)
+    name: Deploy Pages
     steps:
       - uses: actions/checkout@v4
 
@@ -31,7 +39,8 @@ jobs:
       - run: npm ci
       - run: npm run build:pages
         env:
-          VITE_ORCHESTRATEOS_API_URL: https://api.orchestrateos.aitechpros.ai
+          VITE_SITE_URL: https://aitechpros-website.pages.dev
+          VITE_ORCHESTRATEOS_API_URL: https://orchestrateos-api.nevaquit.workers.dev
 
       - name: Publish to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
@@ -42,7 +51,7 @@ jobs:
 
   worker:
     runs-on: ubuntu-latest
-    name: Deploy Worker (OrchestrateOS API)
+    name: Deploy Worker API
     steps:
       - uses: actions/checkout@v4
 
@@ -52,7 +61,7 @@ jobs:
 
       - name: Install worker dependencies
         working-directory: cloudflare/workers/orchestrateos-api
-        run: npm install
+        run: npm ci
 
       - name: Apply D1 schema (remote)
         uses: cloudflare/wrangler-action@v3
@@ -69,3 +78,6 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: cloudflare/workers/orchestrateos-api
           command: deploy
+
+      - name: Smoke test API
+        run: curl -fsS "${{ env.WORKER_API_URL }}/health"

@@ -189,9 +189,7 @@ export default function OrchestrateOS() {
                 rel="noopener noreferrer"
                 className="text-[#06B6D4]/80 hover:text-[#06B6D4] font-mono text-xs"
               >
-                {orchestrateOSApiBaseUrl().startsWith("/")
-                  ? "api.orchestrateos.aitechpros.ai"
-                  : orchestrateOSApiBaseUrl().replace("https://", "")}
+                {orchestrateOSApiBaseUrl().replace("https://", "")}
               </a>
               {" · "}SQLite or Postgres · LangGraph / CrewAI adapters
             </p>
@@ -416,7 +414,7 @@ export default function OrchestrateOS() {
               Control plane
             </span>
             <h2 className="text-3xl sm:text-4xl font-bold text-white font-[Montserrat]">
-              <span className="gradient-text">api.orchestrateos.aitechpros.ai</span>
+              <span className="gradient-text">{orchestrateOSApiBaseUrl().replace("https://", "")}</span>
             </h2>
           </div>
           <div
@@ -513,7 +511,7 @@ export default function OrchestrateOS() {
               href={mainSiteUrl()}
               className="inline-flex items-center justify-center px-8 py-4 rounded-xl glass-card text-white/70 hover:text-white transition-colors"
             >
-              Back to aitechpros.ai
+              Back to {new URL(mainSiteUrl()).hostname}
             </a>
           </div>
         </div>
