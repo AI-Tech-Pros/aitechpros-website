@@ -35,6 +35,17 @@ export type ApiHealthResponse = {
   service: string;
 };
 
+export type DemoRunCatalogEntry = {
+  scenario: "transient" | "partial" | "permanent";
+  run_id: string;
+  label: string;
+  description: string;
+};
+
+export type DemoRunsResponse = {
+  runs: DemoRunCatalogEntry[];
+};
+
 function baseUrl(): string {
   return orchestrateOSApiBaseUrl();
 }
@@ -59,6 +70,14 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 
 export async function fetchApiHealth(): Promise<ApiHealthResponse> {
   return apiFetch<ApiHealthResponse>("/health");
+}
+
+export async function fetchDemoRuns(): Promise<DemoRunsResponse> {
+  return apiFetch<DemoRunsResponse>("/demo/runs");
+}
+
+export async function resetDemoRuns(): Promise<{ message: string; seeded: number }> {
+  return apiFetch("/demo/reset", { method: "POST", body: "{}" });
 }
 
 export async function fetchResumeBlockers(runId: string): Promise<ResumeBlockersResponse> {
@@ -93,7 +112,9 @@ export async function grantApproval(
 
 export const API_ENDPOINTS = [
   { method: "GET", path: "/health", description: "Load balancer health check" },
+  { method: "GET", path: "/docs", description: "API reference (HTML)" },
   { method: "POST", path: "/start_run", description: "Create a new workflow run" },
+  { method: "POST", path: "/runs/{run_id}/steps", description: "Record step completion or failure" },
   { method: "GET", path: "/runs/{run_id}/status", description: "Run status + gate summary" },
   {
     method: "GET",
@@ -104,4 +125,6 @@ export const API_ENDPOINTS = [
   { method: "POST", path: "/runs/{run_id}/approve", description: "Grant human approval (permanent failures)" },
   { method: "POST", path: "/resume", description: "Validate resume readiness (409 if gated)" },
   { method: "GET", path: "/runs/{run_id}/audit_log", description: "Deterministic audit trace" },
+  { method: "GET", path: "/demo/runs", description: "Seeded demo run catalog" },
+  { method: "POST", path: "/demo/reset", description: "Reset demo runs to initial gate state" },
 ] as const;

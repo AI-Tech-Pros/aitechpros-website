@@ -26,7 +26,19 @@ Workflow: `.github/workflows/cloudflare-deploy.yml`
 **Jobs:**
 1. **pages-main** — `npm run build:pages` → deploy `aitechpros-website`
 2. **pages-orchestrateos** — `npm run build:orchestrateos` → deploy `orchestrateos`
-3. **worker** — D1 schema migrate → `wrangler deploy` → `/health` smoke test
+3. **worker** — D1 schema migrate → seed demo runs → `wrangler deploy` → smoke tests
+
+### Demo runs (gate explorer)
+
+Fixed run IDs seeded on every deploy (`cloudflare/d1/seed.sql`):
+
+| Scenario | Run ID |
+|----------|--------|
+| Transient | `d0000001-0000-4000-8000-000000000001` |
+| Partial (compensation gate) | `d0000002-0000-4000-8000-000000000002` |
+| Permanent (approval gate) | `d0000003-0000-4000-8000-000000000003` |
+
+Reset after testing: `POST /demo/reset` · Catalog: `GET /demo/runs` · Docs: `/docs`
 
 ### GitHub secrets (required)
 

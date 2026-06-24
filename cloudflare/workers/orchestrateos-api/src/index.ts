@@ -5,6 +5,9 @@
 
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { DEMO_RUN_CATALOG } from "./demo-runs";
+import { seedDemoRuns } from "./demo-seed";
+import { DOCS_HTML, OPENAPI_SPEC } from "./docs";
 
 export type Env = {
   DB: D1Database;
@@ -45,6 +48,17 @@ type ResumeBlocker = {
   required_action: string;
 };
 
+type RecordStepBody = {
+  step_name: string;
+  step_index: number;
+  status: "completed" | "failed" | "skipped_replay";
+  input_json?: Record<string, unknown>;
+  output_json?: Record<string, unknown> | null;
+  failure_classification?: "transient" | "partial" | "permanent" | null;
+  error_message?: string | null;
+  sequence?: number;
+};
+
 const app = new Hono<{ Bindings: Env }>();
 
 app.use("*", async (c, next) => {
@@ -61,14 +75,27 @@ app.get("/health", (c) =>
   c.json({ status: "ok", service: "orchestrateos-api", platform: "cloudflare-workers" }),
 );
 
+app.get("/docs", (c) => c.html(DOCS_HTML));
+
+app.get("/openapi.json", (c) => c.json(OPENAPI_SPEC));
+
 app.get("/", (c) =>
   c.json({
     product: "OrchestrateOS",
     component: "resume_engine-api",
     platform: "cloudflare-workers",
+    docs: "/docs",
     health: "/health",
+    demo_runs: "/demo/runs",
   }),
 );
+
+app.get("/demo/runs", (c) => c.json({ runs: DEMO_RUN_CATALOG }));
+
+app.post("/demo/reset", async (c) => {
+  const result = await seedDemoRuns(c.env.DB);
+  return c.json({ message: "Demo runs reset", ...result });
+});
 
 app.post("/start_run", async (c) => {
   const body = await c.req.json<{ workflow_name: string; metadata?: Record<string, unknown> }>();
@@ -81,6 +108,60 @@ app.post("/start_run", async (c) => {
     .bind(runId, body.workflow_name, now, now, JSON.stringify(body.metadata ?? {}))
     .run();
   return c.json({ run_id: runId, status: "running" });
+});
+
+app.post("/runs/:runId/steps", async (c) => {
+  const runId = c.req.param("runId");
+  const body = await c.req.json<RecordStepBody>();
+  const run = await getRun(c.env.DB, runId);
+  if (!run) return c.json({ detail: `Run not found: ${runId}` }, 404);
+
+  const steps = await getSteps(c.env.DB, runId);
+  const sequence = body.sequence ?? steps.length;
+  const inputJson = JSON.stringify(body.input_json ?? {});
+  const inputHash = await hashText(inputJson);
+  const outputJson =
+    body.output_json === undefined ? null : JSON.stringify(body.output_json);
+  const now = new Date().toISOString();
+  const idempotencyKey = `${runId}:${body.step_index}:${sequence}`;
+
+  await c.env.DB.prepare(
+    `INSERT INTO step_records (
+      run_id, step_name, step_index, input_json, input_hash, output_json,
+      status, idempotency_key, timestamp, failure_classification, error_message, sequence
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  )
+    .bind(
+      runId,
+      body.step_name,
+      body.step_index,
+      inputJson,
+      inputHash,
+      outputJson,
+      body.status,
+      idempotencyKey,
+      now,
+      body.failure_classification ?? null,
+      body.error_message ?? null,
+      sequence,
+    )
+    .run();
+
+  const runStatus =
+    body.status === "failed"
+      ? "failed"
+      : run.status === "failed"
+        ? run.status
+        : "running";
+
+  await c.env.DB.prepare("UPDATE runs SET status = ?, updated_at = ? WHERE run_id = ?")
+    .bind(runStatus, now, runId)
+    .run();
+
+  const updated = await getRun(c.env.DB, runId);
+  const updatedSteps = await getSteps(c.env.DB, runId);
+  const blockers = getResumeBlockers(updated!, updatedSteps);
+  return c.json(runStatusResponse(updated!, updatedSteps, blockers), 201);
 });
 
 app.get("/runs/:runId/status", async (c) => {
@@ -108,10 +189,7 @@ app.post("/resume", async (c) => {
   const steps = await getSteps(c.env.DB, body.run_id);
   const blockers = getResumeBlockers(run, steps);
   if (blockers.length > 0) {
-    return c.json(
-      { message: "Resume blocked by failure gates", blockers },
-      409,
-    );
+    return c.json({ message: "Resume blocked by failure gates", blockers }, 409);
   }
   return c.json(runStatusResponse(run, steps, []));
 });
@@ -163,7 +241,8 @@ app.post("/runs/:runId/approve", async (c) => {
   await updateRunMetadata(c.env.DB, runId, metadata);
   const updated = await getRun(c.env.DB, runId);
   const updatedSteps = await getSteps(c.env.DB, runId);
-  return c.json(runStatusResponse(updated!, updatedSteps, []));
+  const blockers = getResumeBlockers(updated!, updatedSteps);
+  return c.json(runStatusResponse(updated!, updatedSteps, blockers));
 });
 
 app.get("/runs/:runId/audit_log", async (c) => {
@@ -182,6 +261,12 @@ app.get("/runs/:runId/audit_log", async (c) => {
 });
 
 export default app;
+
+async function hashText(value: string): Promise<string> {
+  const data = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
 
 async function getRun(db: D1Database, runId: string): Promise<RunRow | null> {
   return db.prepare("SELECT * FROM runs WHERE run_id = ?").bind(runId).first<RunRow>();
@@ -269,11 +354,8 @@ function getResumeBlockers(run: RunRow, steps: StepRow[]): ResumeBlocker[] {
 
 function runStatusResponse(run: RunRow, steps: StepRow[], blockers: ResumeBlocker[]) {
   const completed = steps.filter((s) => s.status === "completed");
-  const lastCompleted = completed.length
-    ? completed[completed.length - 1].step_index
-    : null;
-  const resumeFrom =
-    lastCompleted === null ? 0 : lastCompleted + 1;
+  const lastCompleted = completed.length ? completed[completed.length - 1].step_index : null;
+  const resumeFrom = lastCompleted === null ? 0 : lastCompleted + 1;
 
   return {
     run_id: run.run_id,

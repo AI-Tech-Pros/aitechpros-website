@@ -1,5 +1,5 @@
 /*
- * OrchestrateOS gate status explorer — demo scenarios + live API lookup
+ * OrchestrateOS gate status explorer — live API demo runs + offline preview
  */
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -8,14 +8,19 @@ import {
   Loader2,
   Lock,
   RefreshCw,
+  RotateCcw,
   ShieldAlert,
   UserCheck,
   Wifi,
   WifiOff,
 } from "lucide-react";
+import { DEMO_RUN_CATALOG } from "@/lib/orchestrateos-demo";
 import {
   fetchApiHealth,
   fetchResumeBlockers,
+  grantApproval,
+  recordCompensation,
+  resetDemoRuns,
   type ResumeBlocker,
 } from "@/lib/orchestrateos-api";
 import { orchestrateOSApiBaseUrl, orchestrateOSApiDocsUrl } from "@/lib/site";
@@ -25,25 +30,6 @@ type DemoScenario = "transient" | "partial" | "permanent";
 type DemoState = {
   compensated: boolean;
   approved: boolean;
-};
-
-const DEMO_BLOCKERS: Record<Exclude<DemoScenario, "transient">, ResumeBlocker> = {
-  partial: {
-    classification: "partial",
-    step_index: 6,
-    step_name: "send_notification",
-    failure_key: "6:14",
-    message: "Email sent but database write failed",
-    required_action: "compensation",
-  },
-  permanent: {
-    classification: "permanent",
-    step_index: 2,
-    step_name: "validate_credentials",
-    failure_key: "2:8",
-    message: "Invalid API credentials — rotation required",
-    required_action: "human_approval",
-  },
 };
 
 const SCENARIO_META: Record<
@@ -93,16 +79,47 @@ function BlockerCard({ blocker }: { blocker: ResumeBlocker }) {
   );
 }
 
+function ResumeStatusBanner({ canResume }: { canResume: boolean }) {
+  return (
+    <div
+      className={`rounded-xl p-4 flex items-center gap-3 border ${
+        canResume
+          ? "border-emerald-500/25 bg-emerald-500/10"
+          : "border-amber-500/25 bg-amber-500/10"
+      }`}
+    >
+      {canResume ? (
+        <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+      ) : (
+        <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
+      )}
+      <div>
+        <p className="text-sm font-semibold text-white font-[Montserrat]">
+          {canResume ? "Resume allowed" : "Resume blocked"}
+        </p>
+        <p className="text-xs text-white/50 mt-0.5">
+          {canResume
+            ? "All gates cleared — engine.resume(run_id) may proceed."
+            : "Clear the gate below before calling resume()."}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function OrchestrateOSGatePanel() {
   const [apiOnline, setApiOnline] = useState<boolean | null>(null);
-  const [mode, setMode] = useState<"demo" | "live">("demo");
+  const [mode, setMode] = useState<"live" | "preview">("live");
   const [scenario, setScenario] = useState<DemoScenario>("partial");
   const [demoState, setDemoState] = useState<DemoState>({ compensated: false, approved: false });
   const [runId, setRunId] = useState("");
+  const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [liveBlockers, setLiveBlockers] = useState<ResumeBlocker[] | null>(null);
   const [liveCanResume, setLiveCanResume] = useState<boolean | null>(null);
   const [liveLoading, setLiveLoading] = useState(false);
   const [liveError, setLiveError] = useState<string | null>(null);
+  const [approver, setApprover] = useState("ops@example.com");
+  const [actionLoading, setActionLoading] = useState(false);
 
   const checkHealth = useCallback(async () => {
     try {
@@ -117,30 +134,15 @@ export default function OrchestrateOSGatePanel() {
     checkHealth();
   }, [checkHealth]);
 
-  const resetDemo = (next: DemoScenario) => {
-    setScenario(next);
-    setDemoState({ compensated: false, approved: false });
-  };
-
-  const demoCanResume =
-    scenario === "transient" ||
-    (scenario === "partial" && demoState.compensated) ||
-    (scenario === "permanent" && demoState.approved);
-
-  const demoBlockers: ResumeBlocker[] = (() => {
-    if (scenario === "transient") return [];
-    if (scenario === "partial" && !demoState.compensated) return [DEMO_BLOCKERS.partial];
-    if (scenario === "permanent" && !demoState.approved) return [DEMO_BLOCKERS.permanent];
-    return [];
-  })();
-
-  const lookupRun = async () => {
-    const id = runId.trim();
-    if (!id) return;
+  const lookupRun = useCallback(async (id?: string) => {
+    const target = (id ?? runId).trim();
+    if (!target) return;
+    setRunId(target);
+    setActiveRunId(target);
     setLiveLoading(true);
     setLiveError(null);
     try {
-      const data = await fetchResumeBlockers(id);
+      const data = await fetchResumeBlockers(target);
       setLiveBlockers(data.blockers);
       setLiveCanResume(data.can_resume);
     } catch (err) {
@@ -150,11 +152,99 @@ export default function OrchestrateOSGatePanel() {
     } finally {
       setLiveLoading(false);
     }
+  }, [runId]);
+
+  const handleResetDemos = async () => {
+    setActionLoading(true);
+    setLiveError(null);
+    try {
+      await resetDemoRuns();
+      if (activeRunId) await lookupRun(activeRunId);
+    } catch (err) {
+      setLiveError(err instanceof Error ? err.message : "Reset failed");
+    } finally {
+      setActionLoading(false);
+    }
   };
+
+  const handleCompensate = async () => {
+    if (!activeRunId) return;
+    setActionLoading(true);
+    setLiveError(null);
+    try {
+      await recordCompensation(activeRunId, {
+        result: { reversed: true },
+        note: "Demo compensation via gate explorer",
+      });
+      await lookupRun(activeRunId);
+    } catch (err) {
+      setLiveError(err instanceof Error ? err.message : "Compensation failed");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleApprove = async () => {
+    if (!activeRunId || !approver.trim()) return;
+    setActionLoading(true);
+    setLiveError(null);
+    try {
+      await grantApproval(activeRunId, {
+        approved_by: approver.trim(),
+        note: "Demo approval via gate explorer",
+      });
+      await lookupRun(activeRunId);
+    } catch (err) {
+      setLiveError(err instanceof Error ? err.message : "Approval failed");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const resetPreview = (next: DemoScenario) => {
+    setScenario(next);
+    setDemoState({ compensated: false, approved: false });
+  };
+
+  const previewCanResume =
+    scenario === "transient" ||
+    (scenario === "partial" && demoState.compensated) ||
+    (scenario === "permanent" && demoState.approved);
+
+  const previewBlockers: ResumeBlocker[] = (() => {
+    if (scenario === "transient") return [];
+    if (scenario === "partial" && !demoState.compensated) {
+      return [
+        {
+          classification: "partial",
+          step_index: 6,
+          step_name: "send_notification",
+          failure_key: "6:6",
+          message: "Email sent but database write failed",
+          required_action: "compensation",
+        },
+      ];
+    }
+    if (scenario === "permanent" && !demoState.approved) {
+      return [
+        {
+          classification: "permanent",
+          step_index: 2,
+          step_name: "validate_credentials",
+          failure_key: "2:2",
+          message: "Invalid API credentials — rotation required",
+          required_action: "human_approval",
+        },
+      ];
+    }
+    return [];
+  })();
+
+  const needsCompensation = liveBlockers?.some((b) => b.required_action === "compensation");
+  const needsApproval = liveBlockers?.some((b) => b.required_action === "human_approval");
 
   return (
     <div className="glass-card rounded-2xl border-[#8B5CF6]/15 overflow-hidden">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-6 py-4 border-b border-white/[0.06] bg-white/[0.02]">
         <div>
           <p className="text-xs uppercase tracking-wider text-[#8B5CF6] font-[Montserrat] mb-1">
@@ -192,9 +282,8 @@ export default function OrchestrateOSGatePanel() {
         </div>
       </div>
 
-      {/* Mode tabs */}
       <div className="flex border-b border-white/[0.06]">
-        {(["demo", "live"] as const).map((tab) => (
+        {(["live", "preview"] as const).map((tab) => (
           <button
             key={tab}
             type="button"
@@ -205,20 +294,156 @@ export default function OrchestrateOSGatePanel() {
                 : "text-white/40 hover:text-white/70"
             }`}
           >
-            {tab === "demo" ? "Interactive demo" : "Live run lookup"}
+            {tab === "live" ? "Live API demo" : "Offline preview"}
           </button>
         ))}
       </div>
 
       <div className="p-6 lg:p-8">
-        {mode === "demo" ? (
+        {mode === "live" ? (
           <div className="space-y-6">
+            <p className="text-sm text-white/50 leading-relaxed">
+              Seeded runs on{" "}
+              <a
+                href={orchestrateOSApiDocsUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#06B6D4] hover:underline"
+              >
+                {orchestrateOSApiBaseUrl().replace("https://", "")}
+              </a>
+              . Load a scenario, clear gates via the API, then reset demos to try again.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {DEMO_RUN_CATALOG.map((demo) => (
+                <button
+                  key={demo.run_id}
+                  type="button"
+                  onClick={() => lookupRun(demo.run_id)}
+                  disabled={liveLoading}
+                  className={`rounded-xl p-4 text-left border transition-all disabled:opacity-60 ${
+                    activeRunId === demo.run_id
+                      ? "border-[#8B5CF6]/40 bg-[#8B5CF6]/10"
+                      : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12]"
+                  }`}
+                >
+                  <p
+                    className={`text-sm font-semibold font-[Montserrat] ${SCENARIO_META[demo.scenario].color}`}
+                  >
+                    {demo.label}
+                  </p>
+                  <p className="text-xs text-white/45 mt-1 leading-relaxed">{demo.description}</p>
+                  <p className="text-[10px] text-white/25 mt-2 font-mono truncate">{demo.run_id}</p>
+                </button>
+              ))}
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <input
+                type="text"
+                value={runId}
+                onChange={(e) => setRunId(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && lookupRun()}
+                placeholder="Or paste any run UUID"
+                className="flex-1 px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-sm placeholder:text-white/25 focus:outline-none focus:border-[#8B5CF6]/40 font-mono"
+              />
+              <button
+                type="button"
+                onClick={() => lookupRun()}
+                disabled={liveLoading || !runId.trim()}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#8B5CF6] to-[#3B82F6] text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {liveLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4" />
+                )}
+                Check gates
+              </button>
+              <button
+                type="button"
+                onClick={handleResetDemos}
+                disabled={actionLoading || apiOnline === false}
+                className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-white/[0.1] text-white/70 text-sm hover:bg-white/[0.04] disabled:opacity-50"
+              >
+                <RotateCcw className="w-4 h-4" />
+                Reset demos
+              </button>
+            </div>
+
+            {liveError && (
+              <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-300/80">
+                {liveError.includes("Failed to fetch") || liveError.includes("NetworkError")
+                  ? "Could not reach the API. Check deployment or try again shortly."
+                  : liveError}
+              </div>
+            )}
+
+            {liveCanResume !== null && !liveError && activeRunId && (
+              <>
+                <ResumeStatusBanner canResume={liveCanResume} />
+                {liveBlockers?.map((b) => <BlockerCard key={b.failure_key} blocker={b} />)}
+                {liveCanResume && liveBlockers?.length === 0 && (
+                  <p className="text-sm text-white/45">
+                    No active gates on run <code className="text-[#06B6D4]">{activeRunId}</code>.
+                  </p>
+                )}
+
+                {needsCompensation && (
+                  <button
+                    type="button"
+                    onClick={handleCompensate}
+                    disabled={actionLoading}
+                    className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-200 text-sm font-semibold hover:bg-amber-500/25 transition-colors disabled:opacity-50"
+                  >
+                    {actionLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <ShieldAlert className="w-4 h-4" />
+                    )}
+                    Record compensation (API)
+                  </button>
+                )}
+
+                {needsApproval && (
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <input
+                      type="text"
+                      value={approver}
+                      onChange={(e) => setApprover(e.target.value)}
+                      placeholder="approved_by"
+                      className="flex-1 px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-sm font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleApprove}
+                      disabled={actionLoading || !approver.trim()}
+                      className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-200 text-sm font-semibold hover:bg-red-500/20 transition-colors disabled:opacity-50"
+                    >
+                      {actionLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <UserCheck className="w-4 h-4" />
+                      )}
+                      Grant approval (API)
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <p className="text-sm text-white/40">
+              Offline walkthrough — same gate logic without calling the API.
+            </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {(Object.keys(SCENARIO_META) as DemoScenario[]).map((key) => (
                 <button
                   key={key}
                   type="button"
-                  onClick={() => resetDemo(key)}
+                  onClick={() => resetPreview(key)}
                   className={`rounded-xl p-4 text-left border transition-all ${
                     scenario === key
                       ? "border-[#8B5CF6]/40 bg-[#8B5CF6]/10"
@@ -235,32 +460,8 @@ export default function OrchestrateOSGatePanel() {
               ))}
             </div>
 
-            {/* Status banner */}
-            <div
-              className={`rounded-xl p-4 flex items-center gap-3 border ${
-                demoCanResume
-                  ? "border-emerald-500/25 bg-emerald-500/10"
-                  : "border-amber-500/25 bg-amber-500/10"
-              }`}
-            >
-              {demoCanResume ? (
-                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-              ) : (
-                <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
-              )}
-              <div>
-                <p className="text-sm font-semibold text-white font-[Montserrat]">
-                  {demoCanResume ? "Resume allowed" : "Resume blocked"}
-                </p>
-                <p className="text-xs text-white/50 mt-0.5">
-                  {demoCanResume
-                    ? "All gates cleared — engine.resume(run_id) may proceed."
-                    : "Clear the gate below before calling resume()."}
-                </p>
-              </div>
-            </div>
-
-            {demoBlockers.map((b) => (
+            <ResumeStatusBanner canResume={previewCanResume} />
+            {previewBlockers.map((b) => (
               <BlockerCard key={b.failure_key} blocker={b} />
             ))}
 
@@ -268,7 +469,7 @@ export default function OrchestrateOSGatePanel() {
               <button
                 type="button"
                 onClick={() => setDemoState((s) => ({ ...s, compensated: true }))}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-200 text-sm font-semibold hover:bg-amber-500/25 transition-colors"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-200 text-sm font-semibold hover:bg-amber-500/25 transition-colors"
               >
                 <ShieldAlert className="w-4 h-4" />
                 Simulate compensation
@@ -279,84 +480,11 @@ export default function OrchestrateOSGatePanel() {
               <button
                 type="button"
                 onClick={() => setDemoState((s) => ({ ...s, approved: true }))}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-200 text-sm font-semibold hover:bg-red-500/20 transition-colors"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-200 text-sm font-semibold hover:bg-red-500/20 transition-colors"
               >
                 <UserCheck className="w-4 h-4" />
                 Simulate operator approval
               </button>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-6">
-            <p className="text-sm text-white/50 leading-relaxed">
-              Enter a run ID from your{" "}
-              <code className="text-[#06B6D4]">resume_engine</code> deployment to fetch live gate
-              status from{" "}
-              <code className="text-white/60 text-xs">{orchestrateOSApiBaseUrl()}</code>
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-3">
-              <input
-                type="text"
-                value={runId}
-                onChange={(e) => setRunId(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && lookupRun()}
-                placeholder="Run UUID from start_run"
-                className="flex-1 px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-sm placeholder:text-white/25 focus:outline-none focus:border-[#8B5CF6]/40 font-mono"
-              />
-              <button
-                type="button"
-                onClick={lookupRun}
-                disabled={liveLoading || !runId.trim()}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#8B5CF6] to-[#3B82F6] text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {liveLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="w-4 h-4" />
-                )}
-                Check gates
-              </button>
-            </div>
-
-            {liveError && (
-              <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-300/80">
-                {liveError.includes("Failed to fetch") || liveError.includes("NetworkError")
-                  ? "Could not reach the API. Deploy the control plane or run docker compose locally."
-                  : liveError}
-              </div>
-            )}
-
-            {liveCanResume !== null && !liveError && (
-              <>
-                <div
-                  className={`rounded-xl p-4 flex items-center gap-3 border ${
-                    liveCanResume
-                      ? "border-emerald-500/25 bg-emerald-500/10"
-                      : "border-amber-500/25 bg-amber-500/10"
-                  }`}
-                >
-                  {liveCanResume ? (
-                    <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-                  ) : (
-                    <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
-                  )}
-                  <p className="text-sm font-semibold text-white font-[Montserrat]">
-                    {liveCanResume ? "can_resume: true" : "can_resume: false"}
-                  </p>
-                </div>
-                {liveBlockers?.map((b) => <BlockerCard key={b.failure_key} blocker={b} />)}
-                {liveCanResume && liveBlockers?.length === 0 && (
-                  <p className="text-sm text-white/45">No active gates on this run.</p>
-                )}
-              </>
-            )}
-
-            {apiOnline === false && (
-              <p className="text-xs text-white/30">
-                Tip: start the API with{" "}
-                <code className="text-white/45">docker compose -f resume_engine/docker-compose.yml up</code>
-              </p>
             )}
           </div>
         )}

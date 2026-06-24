@@ -99,6 +99,14 @@ jobs:
           workingDirectory: cloudflare/workers/orchestrateos-api
           command: d1 execute orchestrateos --remote --file=../../d1/schema.sql
 
+      - name: Seed D1 demo runs
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: cloudflare/workers/orchestrateos-api
+          command: d1 execute orchestrateos --remote --file=../../d1/seed.sql
+
       - name: Deploy API worker
         uses: cloudflare/wrangler-action@v3
         with:
@@ -108,4 +116,7 @@ jobs:
           command: deploy
 
       - name: Smoke test API
-        run: curl -fsS "${{ env.WORKER_API_URL }}/health"
+        run: |
+          curl -fsS "${{ env.WORKER_API_URL }}/health"
+          curl -fsS "${{ env.WORKER_API_URL }}/docs" | grep -qi "OrchestrateOS"
+          curl -fsS "${{ env.WORKER_API_URL }}/demo/runs" | grep -qi "demo_partial_gate"
