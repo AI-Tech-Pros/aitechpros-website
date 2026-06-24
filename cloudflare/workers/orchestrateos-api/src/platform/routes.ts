@@ -12,6 +12,7 @@ import {
   partnerContactExists,
 } from "./partner-db";
 import { createPartnerFirstWorkflow } from "./partner-first-workflow";
+import { createPartnerStartRun } from "./partner-start-run";
 import { getPartnerJourney } from "./partner-journey";
 import { provisionPartnerRunnerKey, rotatePartnerRunnerKey } from "../tenant-api-keys";
 import { enrollWelcomeSequence, onLeadStageChanged } from "./nurture/service";
@@ -29,6 +30,9 @@ export type PlatformEnv = EmailEnv & {
   DB: D1Database;
   SESSION_SECRET?: string;
   ADMIN_EMAILS?: string;
+  DEMO_OPERATOR_KEY?: string;
+  CRON_SECRET?: string;
+  API_KEYS_JSON?: string;
 };
 
 type PartnerRow = {
@@ -348,6 +352,32 @@ platformApp.post("/partners/me/first-workflow", async (c) => {
 
   const result = await createPartnerFirstWorkflow(c.env.DB, tenantId, session.email);
   return c.json(result, 201);
+});
+
+platformApp.post("/partners/me/start-run", async (c) => {
+  const session = requirePartnerSession(c);
+  if (session instanceof Response) return session;
+
+  const tenantId = session.partnerSlug;
+  if (!tenantId) return c.json({ detail: "Partner tenant not found" }, 400);
+
+  const body = await c.req.json<{
+    workflow_name?: string;
+    environment?: "dev" | "staging" | "prod";
+    metadata?: Record<string, unknown>;
+  }>();
+
+  const workflowName = body.workflow_name?.trim() || "my_pipeline";
+  try {
+    const result = await createPartnerStartRun(c.env.DB, tenantId, session.email, workflowName, {
+      environment: body.environment,
+      metadata: body.metadata,
+    });
+    return c.json(result, 201);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "start_run failed";
+    return c.json({ detail: message }, 400);
+  }
 });
 
 platformApp.post("/partners/onboard", async (c) => {

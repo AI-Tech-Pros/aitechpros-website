@@ -82,6 +82,16 @@ export async function partnerHasActiveRunnerKey(
   return (row?.count ?? 0) > 0;
 }
 
+/** Issue a key only when the partner has none (legacy backfill). */
+export async function ensurePartnerRunnerKey(
+  db: D1Database,
+  partnerId: string,
+  tenantId: string,
+): Promise<{ key: string; hint: string } | null> {
+  if (await partnerHasActiveRunnerKey(db, partnerId)) return null;
+  return provisionPartnerRunnerKey(db, partnerId, tenantId);
+}
+
 export async function lookupTenantApiKey(
   db: D1Database,
   token: string,

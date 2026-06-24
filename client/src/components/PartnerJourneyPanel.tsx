@@ -4,6 +4,7 @@ import type { PartnerJourney } from "@/lib/platform-api";
 const STEP_LABELS: { key: keyof PartnerJourney["steps"]; label: string }[] = [
   { key: "onboarded", label: "Partner workspace created" },
   { key: "runner_key", label: "Runner API key active" },
+  { key: "signed_in", label: "Signed in to partner portal" },
   { key: "first_workflow", label: "Sample workflow completed" },
   { key: "sdk_connected", label: "SDK pipeline synced" },
 ];

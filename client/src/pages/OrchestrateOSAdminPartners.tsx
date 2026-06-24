@@ -5,6 +5,7 @@ import AdminRoute from "@/components/AdminRoute";
 import {
   createAdminPartner,
   fetchAdminPartners,
+  provisionAdminPartnerRunnerKey,
   updateAdminPartner,
   type AdminPartner,
   type PartnerPhase,
@@ -32,6 +33,8 @@ function PartnersContent() {
   const [form, setForm] = useState(emptyForm);
   const [showForm, setShowForm] = useState(false);
   const [keyNote, setKeyNote] = useState("");
+  const [revealedKey, setRevealedKey] = useState("");
+  const [provisioningId, setProvisioningId] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -72,6 +75,24 @@ function PartnersContent() {
     setShowForm(true);
   };
 
+  const provisionKey = async (partner: AdminPartner, rotate = false) => {
+    setError("");
+    setKeyNote("");
+    setRevealedKey("");
+    setProvisioningId(partner.id);
+    try {
+      const result = await provisionAdminPartnerRunnerKey(partner.id, { rotate });
+      if (result.runner_api_key) setRevealedKey(result.runner_api_key);
+      if (result.runner_key_note) setKeyNote(result.runner_key_note);
+      if (result.message && !result.runner_api_key) setKeyNote(result.message);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not provision runner key");
+    } finally {
+      setProvisioningId("");
+    }
+  };
+
   const save = async () => {
     setError("");
     setKeyNote("");
@@ -97,6 +118,7 @@ function PartnersContent() {
           runner_api_key_hint: form.runner_api_key_hint || undefined,
         });
         if (result.runner_key_note) setKeyNote(result.runner_key_note);
+        if (result.runner_api_key) setRevealedKey(result.runner_api_key);
       }
       if (!editing) {
         setShowForm(false);
@@ -213,10 +235,13 @@ function PartnersContent() {
           {keyNote && (
             <p className="text-xs text-[#06B6D4] font-mono bg-black/40 p-3 rounded-lg">{keyNote}</p>
           )}
+          {revealedKey && (
+            <pre className="text-xs text-amber-200 font-mono bg-black/40 p-3 rounded-lg overflow-x-auto whitespace-pre-wrap">
+              {revealedKey}
+            </pre>
+          )}
           <p className="text-xs text-white/30">
-            Issue runner keys via{" "}
-            <code className="text-white/50">wrangler secret put API_KEYS_JSON</code> with tenant
-            matching the partner slug.
+            Runner keys are auto-issued on create. Use &quot;Issue key&quot; to backfill legacy partners.
           </p>
           <div className="flex gap-2">
             <button
@@ -253,6 +278,7 @@ function PartnersContent() {
                   <th className="p-4 font-medium">Phase</th>
                   <th className="p-4 font-medium">Status</th>
                   <th className="p-4 font-medium">Milestone</th>
+                  <th className="p-4 font-medium">Key</th>
                   <th className="p-4 font-medium w-12" />
                 </tr>
               </thead>
@@ -265,6 +291,20 @@ function PartnersContent() {
                     <td className="p-4 capitalize">{partner.phase}</td>
                     <td className="p-4 capitalize">{partner.status}</td>
                     <td className="p-4 text-white/50">{partner.milestone ?? "—"}</td>
+                    <td className="p-4">
+                      {partner.runner_api_key_hint ? (
+                        <code className="text-xs text-white/40">{partner.runner_api_key_hint}</code>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => void provisionKey(partner)}
+                          disabled={provisioningId === partner.id}
+                          className="text-xs text-amber-300 hover:text-amber-200 disabled:opacity-50"
+                        >
+                          {provisioningId === partner.id ? "Issuing…" : "Issue key"}
+                        </button>
+                      )}
+                    </td>
                     <td className="p-4">
                       <button
                         type="button"

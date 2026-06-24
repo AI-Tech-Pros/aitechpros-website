@@ -175,7 +175,11 @@ export async function createAdminPartner(body: {
   status?: PartnerStatus;
   milestone?: string;
   runner_api_key_hint?: string;
-}): Promise<{ partner: AdminPartner; runner_key_note?: string }> {
+}): Promise<{
+  partner: AdminPartner;
+  runner_api_key?: string;
+  runner_key_note?: string;
+}> {
   return adminFetch("/admin/partners", { method: "POST", body: JSON.stringify(body) });
 }
 
@@ -219,11 +223,21 @@ export type PartnerJourney = {
   steps: {
     onboarded: boolean;
     runner_key: boolean;
+    signed_in: boolean;
     first_workflow: boolean;
     sdk_connected: boolean;
   };
   next_action: "issue_runner_key" | "run_sample_workflow" | "wire_sdk" | "explore";
   progress_percent: number;
+};
+
+export type PartnerStartRunResult = {
+  run_id: string;
+  workflow_name: string;
+  status: string;
+  environment: string;
+  tenant_id: string;
+  message: string;
 };
 
 export type RotateApiKeyResult = {
@@ -250,6 +264,59 @@ export async function startPartnerFirstWorkflow(): Promise<FirstWorkflowResult> 
   const data = (await res.json()) as FirstWorkflowResult & { detail?: string };
   if (!res.ok) throw new Error(data.detail ?? `Request failed (${res.status})`);
   return data;
+}
+
+export async function startPartnerSdkRun(options?: {
+  workflow_name?: string;
+  environment?: "dev" | "staging" | "prod";
+  metadata?: Record<string, unknown>;
+}): Promise<PartnerStartRunResult> {
+  const res = await platformFetch("/partners/me/start-run", {
+    method: "POST",
+    body: JSON.stringify({
+      workflow_name: options?.workflow_name,
+      environment: options?.environment,
+      metadata: options?.metadata,
+    }),
+  });
+  const data = (await res.json()) as PartnerStartRunResult & { detail?: string };
+  if (!res.ok) throw new Error(data.detail ?? `Request failed (${res.status})`);
+  return data;
+}
+
+export type PlatformReadiness = {
+  session_secret: boolean;
+  resend_api_key: boolean;
+  demo_operator_key: boolean;
+  admin_emails: boolean;
+  notify_email: boolean;
+  cron_secret: boolean;
+  api_keys_json: boolean;
+  site_url: boolean;
+};
+
+export type ProvisionRunnerKeyResult = {
+  partner: AdminPartner;
+  runner_api_key?: string;
+  runner_key_note?: string;
+  already_exists?: boolean;
+  issued?: boolean;
+  rotated?: boolean;
+  message?: string;
+};
+
+export async function fetchAdminPlatformReadiness(): Promise<PlatformReadiness> {
+  return adminFetch("/admin/platform-readiness");
+}
+
+export async function provisionAdminPartnerRunnerKey(
+  partnerId: string,
+  options?: { rotate?: boolean },
+): Promise<ProvisionRunnerKeyResult> {
+  return adminFetch(`/admin/partners/${encodeURIComponent(partnerId)}/provision-runner-key`, {
+    method: "POST",
+    body: JSON.stringify(options ?? {}),
+  });
 }
 
 export async function submitPartnerOnboard(body: {

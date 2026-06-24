@@ -10,6 +10,7 @@ import {
   fetchPartnerRuns,
   rotatePartnerApiKey,
   startPartnerFirstWorkflow,
+  startPartnerSdkRun,
   type PartnerJourney,
   type PartnerProfile,
   type PartnerRun,
@@ -28,6 +29,7 @@ function DashboardContent() {
   const [tenantId, setTenantId] = useState("");
   const [error, setError] = useState("");
   const [startingWorkflow, setStartingWorkflow] = useState(false);
+  const [startingSdkRun, setStartingSdkRun] = useState(false);
   const [rotatingKey, setRotatingKey] = useState(false);
   const [workflowMessage, setWorkflowMessage] = useState<string | null>(null);
   const [revealedKey, setRevealedKey] = useState<string | null>(null);
@@ -64,6 +66,22 @@ function DashboardContent() {
       setError(err instanceof Error ? err.message : "Could not start sample workflow");
     } finally {
       setStartingWorkflow(false);
+    }
+  }
+
+  async function handleStartSdkWorkflow() {
+    setStartingSdkRun(true);
+    setWorkflowMessage(null);
+    setError("");
+    try {
+      const result = await startPartnerSdkRun({ workflow_name: "my_pipeline" });
+      setWorkflowMessage(result.message);
+      sessionStorage.setItem("orchestrateos_run_id", result.run_id);
+      await refreshDashboard();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not start SDK workflow");
+    } finally {
+      setStartingSdkRun(false);
     }
   }
 
@@ -196,14 +214,26 @@ function DashboardContent() {
             <p className="text-white/50 text-sm mb-4">
               Creates a completed checkpointed run scoped to your tenant — no SDK required.
             </p>
-            <button
-              type="button"
-              onClick={() => void handleFirstWorkflow()}
-              disabled={startingWorkflow}
-              className="px-4 py-2 rounded-lg bg-[#8B5CF6] hover:bg-[#7C3AED] disabled:opacity-50 text-white text-sm font-medium"
-            >
-              {startingWorkflow ? "Creating…" : "Run sample workflow"}
-            </button>
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => void handleFirstWorkflow()}
+                disabled={startingWorkflow || startingSdkRun}
+                className="px-4 py-2 rounded-lg bg-[#8B5CF6] hover:bg-[#7C3AED] disabled:opacity-50 text-white text-sm font-medium"
+              >
+                {startingWorkflow ? "Creating…" : "Run sample workflow"}
+              </button>
+              {journey.steps.runner_key && (
+                <button
+                  type="button"
+                  onClick={() => void handleStartSdkWorkflow()}
+                  disabled={startingWorkflow || startingSdkRun}
+                  className="px-4 py-2 rounded-lg border border-[#06B6D4]/40 text-[#06B6D4] text-sm font-medium disabled:opacity-50"
+                >
+                  {startingSdkRun ? "Starting…" : "Start SDK workflow"}
+                </button>
+              )}
+            </div>
           </section>
         )}
 
@@ -216,9 +246,17 @@ function DashboardContent() {
               <code className="text-[#06B6D4]">{tenantId}</code>.
             </p>
             <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => void handleStartSdkWorkflow()}
+                disabled={startingSdkRun}
+                className="px-4 py-2 rounded-lg bg-[#06B6D4] text-[#0B0D17] text-sm font-medium disabled:opacity-50"
+              >
+                {startingSdkRun ? "Starting…" : "Start SDK workflow"}
+              </button>
               <Link
                 href="/install"
-                className="px-4 py-2 rounded-lg bg-[#06B6D4] text-[#0B0D17] text-sm font-medium"
+                className="px-4 py-2 rounded-lg border border-[#06B6D4]/40 text-[#06B6D4] text-sm font-medium"
               >
                 Open install guide
               </Link>

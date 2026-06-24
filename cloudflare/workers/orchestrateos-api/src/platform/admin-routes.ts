@@ -9,7 +9,7 @@ import {
   type PartnerRow,
   runnerKeyNote,
 } from "./partner-db";
-import { provisionPartnerRunnerKey } from "../tenant-api-keys";
+import { provisionPartnerRunnerKey, rotatePartnerRunnerKey, ensurePartnerRunnerKey } from "../tenant-api-keys";
 import { enrollWelcomeSequence, onLeadStageChanged } from "./nurture/service";
 import type { SessionPayload } from "./session";
 import { runGateSummary } from "../resume-blockers";
@@ -275,6 +275,69 @@ adminApp.put("/partners", async (c) => {
     .first<PartnerRow>();
 
   return c.json({ partner });
+});
+
+adminApp.get("/platform-readiness", (c) => {
+  const denied = requireAdmin(c);
+  if (denied) return denied;
+
+  const env = c.env;
+  return c.json({
+    session_secret: Boolean(env.SESSION_SECRET?.trim()),
+    resend_api_key: Boolean(env.RESEND_API_KEY?.trim()),
+    demo_operator_key: Boolean(env.DEMO_OPERATOR_KEY?.trim()),
+    admin_emails: Boolean(env.ADMIN_EMAILS?.trim()),
+    notify_email: Boolean(env.NOTIFY_EMAIL?.trim()),
+    cron_secret: Boolean(env.CRON_SECRET?.trim()),
+    api_keys_json: Boolean(env.API_KEYS_JSON?.trim()),
+    site_url: Boolean(env.SITE_URL?.trim()),
+  });
+});
+
+adminApp.post("/partners/:id/provision-runner-key", async (c) => {
+  const denied = requireAdmin(c);
+  if (denied) return denied;
+
+  const partnerId = c.req.param("id")?.trim();
+  if (!partnerId) return c.json({ detail: "Partner id is required" }, 400);
+
+  const body = await c.req.json<{ rotate?: boolean }>().catch(() => ({} as { rotate?: boolean }));
+
+  const partner = await c.env.DB.prepare(`SELECT * FROM design_partners WHERE id = ?`)
+    .bind(partnerId)
+    .first<PartnerRow>();
+  if (!partner) return c.json({ detail: "Partner not found" }, 404);
+
+  if (body.rotate) {
+    const { key, hint } = await rotatePartnerRunnerKey(c.env.DB, partner.id, partner.slug);
+    return c.json({
+      partner: { ...partner, runner_api_key_hint: hint },
+      runner_api_key: key,
+      runner_key_note: runnerKeyNote(partner.slug),
+      rotated: true,
+    });
+  }
+
+  const issued = await ensurePartnerRunnerKey(c.env.DB, partner.id, partner.slug);
+  if (!issued) {
+    return c.json({
+      partner,
+      already_exists: true,
+      runner_api_key_hint: partner.runner_api_key_hint,
+      message:
+        "Partner already has an active runner key. Pass { \"rotate\": true } to issue a new one.",
+    });
+  }
+
+  return c.json(
+    {
+      partner: { ...partner, runner_api_key_hint: issued.hint },
+      runner_api_key: issued.key,
+      runner_key_note: runnerKeyNote(partner.slug),
+      issued: true,
+    },
+    201,
+  );
 });
 
 adminApp.get("/outcomes", async (c) => {

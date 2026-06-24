@@ -3,6 +3,7 @@
 export type PartnerJourneySteps = {
   onboarded: boolean;
   runner_key: boolean;
+  signed_in: boolean;
   first_workflow: boolean;
   sdk_connected: boolean;
 };
@@ -59,6 +60,7 @@ export async function getPartnerJourney(
   const steps: PartnerJourneySteps = {
     onboarded: true,
     runner_key: hasRunnerKey,
+    signed_in: true,
     first_workflow: Boolean(firstWorkflow),
     sdk_connected: Boolean(sdkRun),
   };
@@ -71,6 +73,7 @@ export async function getPartnerJourney(
   const completed = [
     steps.onboarded,
     steps.runner_key,
+    steps.signed_in,
     steps.first_workflow,
     steps.sdk_connected,
   ].filter(Boolean).length;
@@ -82,6 +85,6 @@ export async function getPartnerJourney(
     first_workflow_run_id: firstWorkflow?.run_id ?? null,
     steps,
     next_action,
-    progress_percent: Math.round((completed / 4) * 100),
+    progress_percent: Math.round((completed / 5) * 100),
   };
 }

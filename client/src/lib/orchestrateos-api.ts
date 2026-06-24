@@ -3,6 +3,7 @@
  */
 
 import { orchestrateOSApiBaseUrl, orchestrateOSApiKey } from "@/lib/site";
+import { readStashedRunnerKey } from "@/lib/partner-credentials";
 
 export type ResumeBlocker = {
   classification: "transient" | "partial" | "permanent";
@@ -148,6 +149,51 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   return response.json() as Promise<T>;
+}
+
+export type StartRunResponse = {
+  run_id: string;
+  status: string;
+  environment?: string;
+};
+
+function runnerKeyForStartRun(): string {
+  const stashed = readStashedRunnerKey();
+  const key = stashed ?? orchestrateOSApiKey();
+  if (!key) {
+    throw new Error(
+      "No runner API key — save your onboarding key or set VITE_ORCHESTRATEOS_DEMO_KEY",
+    );
+  }
+  return key;
+}
+
+export async function startRun(
+  workflowName = "my_pipeline",
+  options?: {
+    environment?: "dev" | "staging" | "prod";
+    metadata?: Record<string, unknown>;
+  },
+): Promise<StartRunResponse> {
+  const response = await fetch(`${baseUrl()}/start_run`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${runnerKeyForStartRun()}`,
+    },
+    body: JSON.stringify({
+      workflow_name: workflowName,
+      environment: options?.environment ?? "dev",
+      metadata: options?.metadata,
+    }),
+  });
+  const body = (await response.json()) as StartRunResponse & { detail?: string };
+  if (!response.ok) {
+    throw new Error(body.detail ?? `API error ${response.status}`);
+  }
+  return body;
 }
 
 export async function fetchApiHealth(): Promise<ApiHealthResponse> {
