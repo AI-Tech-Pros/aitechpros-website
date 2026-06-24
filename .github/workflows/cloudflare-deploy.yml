@@ -154,6 +154,14 @@ jobs:
           workingDirectory: cloudflare/workers/orchestrateos-api
           command: d1 execute orchestrateos --remote --file=../../d1/seed.sql
 
+      - name: Deploy API worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: cloudflare/workers/orchestrateos-api
+          command: deploy
+
       - name: Sync Worker API secrets
         working-directory: cloudflare/workers/orchestrateos-api
         env:
@@ -173,14 +181,6 @@ jobs:
             printf '%s' "$ORCHESTRATEOS_DEMO_KEY" | npx wrangler secret put DEMO_OPERATOR_KEY
           fi
 
-      - name: Deploy API worker
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: cloudflare/workers/orchestrateos-api
-          command: deploy
-
       - name: Smoke test API
         working-directory: cloudflare/workers/orchestrateos-api
         env:
@@ -189,14 +189,26 @@ jobs:
         run: |
           set -euo pipefail
           SMOKE_KEY=$(node scripts/merge-api-keys.mjs --print-runner)
+          echo "Using runner key from GitHub secrets (length ${#SMOKE_KEY})"
           curl -fsS "${{ env.WORKER_API_URL }}/health"
           curl -fsS "${{ env.WORKER_API_URL }}/docs" | grep -qi "OrchestrateOS"
           curl -fsS "${{ env.WORKER_API_URL }}/demo/runs" | grep -qi '"scenario":"partial"'
-          RUN_ID=$(curl -fsS -X POST "${{ env.WORKER_API_URL }}/start_run" \
-            -H "Content-Type: application/json" \
-            -H "Authorization: Bearer ${SMOKE_KEY}" \
-            -d '{"workflow_name":"ci_smoke_sdk","metadata":{"ci":true}}' | grep -oE '"run_id":"[^"]+"' | cut -d'"' -f4)
-          test -n "$RUN_ID"
+          for attempt in 1 2 3 4 5; do
+            RESPONSE=$(curl -sS -w "\n%{http_code}" -X POST "${{ env.WORKER_API_URL }}/start_run" \
+              -H "Content-Type: application/json" \
+              -H "Authorization: Bearer ${SMOKE_KEY}" \
+              -d '{"workflow_name":"ci_smoke_sdk","metadata":{"ci":true}}')
+            HTTP=$(echo "$RESPONSE" | tail -n1)
+            BODY=$(echo "$RESPONSE" | sed '$d')
+            if [ "$HTTP" = "200" ]; then
+              RUN_ID=$(echo "$BODY" | grep -oE '"run_id":"[^"]+"' | cut -d'"' -f4)
+              test -n "$RUN_ID"
+              break
+            fi
+            echo "start_run HTTP ${HTTP} (attempt ${attempt}/5): ${BODY}"
+            sleep 5
+          done
+          test -n "${RUN_ID:-}"
           curl -fsS -H "Authorization: Bearer ${SMOKE_KEY}" \
             "${{ env.WORKER_API_URL }}/runs/${RUN_ID}" | grep -qi "ci_smoke_sdk"
           curl -fsS -H "Authorization: Bearer ${SMOKE_KEY}" \
