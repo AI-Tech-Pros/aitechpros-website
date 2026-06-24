@@ -184,3 +184,11 @@ pip install "resume_engine[remote]"
 **Internal sales script:** `docs/orchestrateos/sales-displacement-script.md`  
 **Design partner playbook:** `docs/orchestrateos/design-partner-playbook.md`  
 **Pre-demo smoke test:** `resume_engine/scripts/sales_demo_smoke.ps1`
+
+### Phase 5 — Platform layer (leads, auth, portal, admin) 📋
+
+**Spec:** [phase-5-platform.md](./orchestrateos/phase-5-platform.md) — Cloudflare-only (extend Worker + D1 + Pages). No Polsia/Neon.
+
+**First vertical slice (5a):** landing lead form → `POST /api/leads` → magic-link login → read-only `/partner/dashboard` with real `run_id`s from D1.
+
+Planned secrets (5a+): `SESSION_SECRET`, `RESEND_API_KEY`, `NOTIFY_EMAIL`, `ADMIN_EMAILS`.

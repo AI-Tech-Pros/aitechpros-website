@@ -39,4 +39,5 @@ See [Governance guide](https://orchestrateos.pages.dev/governance) on the site f
 
 **Calendly:** https://calendly.com/aitechpros/15min
 
-**Design partner playbook:** [design-partner-playbook.md](./design-partner-playbook.md)
+**Design partner playbook:** [design-partner-playbook.md](./design-partner-playbook.md)  
+**Phase 5 platform (leads, auth, portal, admin):** [phase-5-platform.md](./phase-5-platform.md)
