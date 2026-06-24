@@ -158,7 +158,9 @@ cd cloudflare/workers/orchestrateos-api && npm run dev
 | Self-hosted FastAPI (optional) | `pip install "resume_engine[api]"` + Docker / GHCR image |
 | Full Python on Cloudflare edge | [Cloudflare Containers](https://developers.cloudflare.com/containers/) (paid) |
 
-### Phase 4 — Go-to-market (PyPI + sales content)
+### Phase 4 — Go-to-market (PyPI + sales content) ✅
+
+**PyPI (live):** https://pypi.org/project/resume-engine/ — `resume_engine` **0.2.0** published via `.github/workflows/pypi-publish.yml` (GitHub secret `PYPI_API_TOKEN`).
 
 **Site pages** (orchestrateos.pages.dev):
 
@@ -169,16 +171,16 @@ cd cloudflare/workers/orchestrateos-api && npm run dev
 | `/compliance` | Healthcare/finance audit & RBAC positioning |
 | `/compare` | Printable comparison one-pager (browser → Save as PDF) |
 
-**PyPI publish:** workflow `.github/workflows/pypi-publish.yml`
+**PyPI publish (new versions):** workflow `.github/workflows/pypi-publish.yml`
 
-1. Create PyPI account + API token for `resume_engine`
-2. Add GitHub secret `PYPI_API_TOKEN`
-3. Bump `version` in `pyproject.toml`
-4. Create a GitHub Release, or run workflow **Publish resume_engine to PyPI** manually
+1. Bump `version` in `pyproject.toml`
+2. Create a GitHub Release, or run workflow **Publish resume_engine to PyPI** manually
 
 ```powershell
 pip install resume_engine
 pip install "resume_engine[remote]"
 ```
 
-**Internal sales script:** `docs/orchestrateos/sales-displacement-script.md`
+**Internal sales script:** `docs/orchestrateos/sales-displacement-script.md`  
+**Design partner playbook:** `docs/orchestrateos/design-partner-playbook.md`  
+**Pre-demo smoke test:** `resume_engine/scripts/sales_demo_smoke.ps1`

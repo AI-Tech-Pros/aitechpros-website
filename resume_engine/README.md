@@ -4,6 +4,8 @@
 
 `resume_engine` is the core execution layer behind [OrchestrateOS](https://orchestrateos.pages.dev) — a framework-agnostic library that wraps LangChain, LangGraph, CrewAI, or plain Python workflows and guarantees that a failed run resumes from its last completed step instead of restarting from zero.
 
+**PyPI:** [`resume_engine` 0.2.0](https://pypi.org/project/resume-engine/0.2.0/) · **Install guide:** https://orchestrateos.pages.dev/install
+
 **Docs:** [User guide](../docs/orchestrateos/user-guide.md) · [Troubleshooting](../docs/orchestrateos/troubleshooting.md) · [Deploy](../docs/cloudflare-deploy.md)
 
 ## The Problem
