@@ -196,9 +196,61 @@ export type OnboardResult = {
   tenant_id: string;
   team_count: number;
   magic_link_sent: boolean;
-  runner_key_note: string;
+  runner_api_key: string;
+  runner_api_key_hint: string;
   message: string;
 };
+
+export type FirstWorkflowResult = {
+  run_id: string;
+  workflow_name: string;
+  status: string;
+  tenant_id: string;
+  environment?: string;
+  already_exists?: boolean;
+  message: string;
+};
+
+export type PartnerJourney = {
+  tenant_id: string;
+  runner_api_key_hint: string | null;
+  run_count: number;
+  first_workflow_run_id: string | null;
+  steps: {
+    onboarded: boolean;
+    runner_key: boolean;
+    first_workflow: boolean;
+    sdk_connected: boolean;
+  };
+  next_action: "issue_runner_key" | "run_sample_workflow" | "wire_sdk" | "explore";
+  progress_percent: number;
+};
+
+export type RotateApiKeyResult = {
+  runner_api_key: string;
+  runner_api_key_hint: string;
+  message: string;
+};
+
+export async function fetchPartnerJourney(): Promise<PartnerJourney> {
+  const res = await platformFetch("/partners/me/journey");
+  if (!res.ok) throw new Error("Failed to load partner journey");
+  return res.json() as Promise<PartnerJourney>;
+}
+
+export async function rotatePartnerApiKey(): Promise<RotateApiKeyResult> {
+  const res = await platformFetch("/partners/me/rotate-api-key", { method: "POST", body: "{}" });
+  const data = (await res.json()) as RotateApiKeyResult & { detail?: string };
+  if (!res.ok) throw new Error(data.detail ?? `Request failed (${res.status})`);
+  return data;
+}
+
+export async function startPartnerFirstWorkflow(): Promise<FirstWorkflowResult> {
+  const res = await platformFetch("/partners/me/first-workflow", { method: "POST", body: "{}" });
+  const data = (await res.json()) as FirstWorkflowResult & { detail?: string };
+  if (!res.ok) throw new Error(data.detail ?? `Request failed (${res.status})`);
+  return data;
+}
 
 export async function submitPartnerOnboard(body: {
   company_name: string;

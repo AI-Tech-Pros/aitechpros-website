@@ -9,6 +9,7 @@ import {
   type PartnerRow,
   runnerKeyNote,
 } from "./partner-db";
+import { provisionPartnerRunnerKey } from "../tenant-api-keys";
 import { enrollWelcomeSequence, onLeadStageChanged } from "./nurture/service";
 import type { SessionPayload } from "./session";
 import { runGateSummary } from "../resume-blockers";
@@ -200,8 +201,15 @@ adminApp.post("/partners", async (c) => {
       runner_api_key_hint: body.runner_api_key_hint?.trim() || null,
     });
 
+    const { key: runnerApiKey, hint } = await provisionPartnerRunnerKey(
+      c.env.DB,
+      partner.id,
+      partner.slug,
+    );
+
     return c.json({
-      partner,
+      partner: { ...partner, runner_api_key_hint: hint },
+      runner_api_key: runnerApiKey,
       runner_key_note: runnerKeyNote(partner.slug),
     }, 201);
   } catch (e: unknown) {

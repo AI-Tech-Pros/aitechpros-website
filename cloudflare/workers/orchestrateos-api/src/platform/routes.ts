@@ -10,8 +10,10 @@ import {
   ensureUser,
   parseEmailList,
   partnerContactExists,
-  runnerKeyNote,
 } from "./partner-db";
+import { createPartnerFirstWorkflow } from "./partner-first-workflow";
+import { getPartnerJourney } from "./partner-journey";
+import { provisionPartnerRunnerKey, rotatePartnerRunnerKey } from "../tenant-api-keys";
 import { enrollWelcomeSequence, onLeadStageChanged } from "./nurture/service";
 import {
   clearSessionCookieHeader,
@@ -185,7 +187,10 @@ platformApp.get("/auth/verify", async (c) => {
     JSON.stringify({
       ok: true,
       role: sessionUser.role,
-      redirect: sessionUser.role === "admin" ? "/admin/capture" : "/partner/dashboard",
+      redirect:
+        sessionUser.role === "admin"
+          ? "/admin/capture"
+          : "/partner/dashboard?welcome=1",
     }),
     {
       status: 200,
@@ -273,6 +278,78 @@ platformApp.get("/partners/me/runs", async (c) => {
   return c.json({ runs: results ?? [], tenant_id: tenantId });
 });
 
+platformApp.get("/partners/me/journey", async (c) => {
+  const session = requirePartnerSession(c);
+  if (session instanceof Response) return session;
+
+  if (!session.partnerId || !session.partnerSlug) {
+    return c.json({ detail: "Partner profile not found" }, 400);
+  }
+
+  const partner = await c.env.DB.prepare(`SELECT runner_api_key_hint FROM design_partners WHERE id = ?`)
+    .bind(session.partnerId)
+    .first<{ runner_api_key_hint: string | null }>();
+
+  const journey = await getPartnerJourney(
+    c.env.DB,
+    session.partnerId,
+    session.partnerSlug,
+    partner?.runner_api_key_hint ?? null,
+  );
+  return c.json(journey);
+});
+
+platformApp.post("/partners/me/rotate-api-key", async (c) => {
+  const session = requirePartnerSession(c);
+  if (session instanceof Response) return session;
+
+  if (!session.partnerId || !session.partnerSlug) {
+    return c.json({ detail: "Partner profile not found" }, 400);
+  }
+
+  const { key, hint } = await rotatePartnerRunnerKey(
+    c.env.DB,
+    session.partnerId,
+    session.partnerSlug,
+  );
+
+  return c.json({
+    runner_api_key: key,
+    runner_api_key_hint: hint,
+    message: "New runner API key issued. Previous keys are revoked. Copy this key now — it is shown only once.",
+  });
+});
+
+platformApp.post("/partners/me/first-workflow", async (c) => {
+  const session = requirePartnerSession(c);
+  if (session instanceof Response) return session;
+
+  const tenantId = session.partnerSlug;
+  if (!tenantId) {
+    return c.json({ detail: "Partner tenant not found" }, 400);
+  }
+
+  const existing = await c.env.DB.prepare(
+    `SELECT run_id FROM runs WHERE tenant_id = ? AND workflow_name = 'partner_first_workflow' LIMIT 1`,
+  )
+    .bind(tenantId)
+    .first<{ run_id: string }>();
+
+  if (existing) {
+    return c.json({
+      run_id: existing.run_id,
+      workflow_name: "partner_first_workflow",
+      status: "completed",
+      tenant_id: tenantId,
+      already_exists: true,
+      message: "You already have a sample workflow. Open Gate explorer to view it.",
+    });
+  }
+
+  const result = await createPartnerFirstWorkflow(c.env.DB, tenantId, session.email);
+  return c.json(result, 201);
+});
+
 platformApp.post("/partners/onboard", async (c) => {
   const body = await c.req.json<{
     company_name?: string;
@@ -317,6 +394,12 @@ platformApp.post("/partners/onboard", async (c) => {
       .bind(companyName, now, contactEmail)
       .run();
 
+    const { key: runnerApiKey, hint } = await provisionPartnerRunnerKey(
+      c.env.DB,
+      partner.id,
+      partner.slug,
+    );
+
     const magicLinkSent = await storeAndSendMagicLink(c.env, contactEmail);
 
     return c.json({
@@ -329,10 +412,11 @@ platformApp.post("/partners/onboard", async (c) => {
       tenant_id: partner.slug,
       team_count: teamEmails.length + 1,
       magic_link_sent: magicLinkSent,
-      runner_key_note: runnerKeyNote(partner.slug),
+      runner_api_key: runnerApiKey,
+      runner_api_key_hint: hint,
       message: magicLinkSent
-        ? "Partner workspace created. Check your email for a sign-in link."
-        : "Partner workspace created. Use Partner login to request a sign-in link.",
+        ? "Partner workspace created. Save your runner API key below — it is shown only once. Check your email for a sign-in link."
+        : "Partner workspace created. Save your runner API key below — it is shown only once. Use Partner login to request a sign-in link.",
     }, 201);
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);

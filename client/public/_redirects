@@ -6,3 +6,8 @@
 /resume  https://orchestrateos-api.nevaquit.workers.dev/resume  200
 /idempotency/*  https://orchestrateos-api.nevaquit.workers.dev/idempotency/:splat  200
 /start_run  https://orchestrateos-api.nevaquit.workers.dev/start_run  200
+/kernel/*  https://orchestrateos-api.nevaquit.workers.dev/kernel/:splat  200
+/llm/*  https://orchestrateos-api.nevaquit.workers.dev/llm/:splat  200
+/ingress/*  https://orchestrateos-api.nevaquit.workers.dev/ingress/:splat  200
+/docs  https://orchestrateos-api.nevaquit.workers.dev/docs  200
+/openapi.json  https://orchestrateos-api.nevaquit.workers.dev/openapi.json  200

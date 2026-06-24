@@ -2,6 +2,7 @@
 
 import type { Context } from "hono";
 import { DEMO_RUN_IDS } from "./demo-runs";
+import { lookupTenantApiKey } from "./tenant-api-keys";
 
 export type AuthEnv = {
   API_AUTH_ENABLED?: string;
@@ -158,7 +159,7 @@ export function actorLabel(ctx: AuthContext): string {
 }
 
 type AuthMiddlewareContext = {
-  env: AuthEnv;
+  env: AuthEnv & { DB?: D1Database };
   req: {
     method: string;
     path: string;
@@ -178,11 +179,16 @@ export async function enforceAuth(c: AuthMiddlewareContext) {
   };
 
   const keys = parseApiKeys(c.env.API_KEYS_JSON);
-  const resolved = resolveAuth(
+  let resolved = resolveAuth(
     c.req.header("Authorization"),
     keys,
     c.env.DEMO_OPERATOR_KEY,
   );
+
+  if (!resolved.authenticated && resolved.token && c.env.DB) {
+    const fromDb = await lookupTenantApiKey(c.env.DB, resolved.token);
+    if (fromDb) resolved = fromDb;
+  }
 
   if (!requiresAuth(c.req.method, c.req.path)) {
     c.set("auth", authEnabled(c.env) ? resolved : defaultAuth);

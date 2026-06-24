@@ -1,7 +1,10 @@
 /*
  * Install guide — PyPI + remote control plane.
  */
+import { useEffect, useState } from "react";
 import OrchestrateOSSubpage, { SubSection } from "@/components/OrchestrateOSSubpage";
+import { useSession } from "@/contexts/SessionContext";
+import { buildRemoteQuickstart, readStashedRunnerKey } from "@/lib/partner-credentials";
 import { orchestrateOSApiBaseUrl } from "@/lib/site";
 
 const localQuickstart = `pip install resume_engine
@@ -12,17 +15,39 @@ store = SQLiteCheckpointStore("sqlite:///workflow.db")
 engine = ResumeEngine(store)
 run = engine.start_run("my_pipeline")`;
 
-const remoteQuickstart = `pip install "resume_engine[remote]"
+function RemoteQuickstartBlock() {
+  const { session } = useSession();
+  const [snippet, setSnippet] = useState("");
 
-from resume_engine.core.checkpoint_store import ResumeEngine
-from resume_engine.storage.remote_backend import RemoteCheckpointStore
+  useEffect(() => {
+    const api = orchestrateOSApiBaseUrl();
+    const stashedKey = readStashedRunnerKey();
+    const tenant = session.partner_slug ?? "YOUR_TENANT";
+    const key = stashedKey ?? "YOUR_RUNNER_KEY";
+    setSnippet(buildRemoteQuickstart(api, key, tenant));
+  }, [session.partner_slug]);
 
-API = "${orchestrateOSApiBaseUrl()}"
-
-with RemoteCheckpointStore(API, api_key="YOUR_RUNNER_KEY") as store:
-    engine = ResumeEngine(store)
-    run = engine.start_run("claims_pipeline", metadata={"environment": "staging"})
-    # execute_step / resume — checkpoints appear in the gate explorer`;
+  return (
+    <>
+      {session.authenticated && session.partner_slug && (
+        <p className="text-[#06B6D4] text-sm mb-3">
+          Personalized for tenant <code className="font-mono">{session.partner_slug}</code>
+          {readStashedRunnerKey() ? " with your onboarding key." : " — paste your runner key below."}
+        </p>
+      )}
+      <pre className="rounded-xl bg-black/40 border border-white/[0.08] p-4 text-sm font-mono text-white/70 overflow-x-auto whitespace-pre-wrap">
+        {snippet || "Loading…"}
+      </pre>
+      <p className="mt-3 text-white/45 text-sm">
+        Lost your key?{" "}
+        <a href="/partner/dashboard" className="text-[#06B6D4] hover:underline">
+          Rotate API key
+        </a>{" "}
+        on the partner dashboard.
+      </p>
+    </>
+  );
+}
 
 export default function OrchestrateOSInstall() {
   return (
@@ -66,10 +91,8 @@ export default function OrchestrateOSInstall() {
       </SubSection>
 
       <SubSection title="Live control plane (remote store)">
-        <pre className="rounded-xl bg-black/40 border border-white/[0.08] p-4 text-sm font-mono text-white/70 overflow-x-auto whitespace-pre-wrap">
-          {remoteQuickstart}
-        </pre>
-        <p>
+        <RemoteQuickstartBlock />
+        <p className="mt-4">
           Demo script:{" "}
           <code className="text-sm text-[#06B6D4]">python resume_engine/demo_remote_pipeline.py</code>
         </p>

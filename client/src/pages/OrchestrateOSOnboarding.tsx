@@ -3,6 +3,8 @@ import { Link } from "wouter";
 import { Check, ChevronLeft, ChevronRight } from "lucide-react";
 import OrchestrateOSNavbar from "@/components/OrchestrateOSNavbar";
 import { submitPartnerOnboard } from "@/lib/platform-api";
+import { buildRemoteQuickstart, stashRunnerKey } from "@/lib/partner-credentials";
+import { orchestrateOSApiBaseUrl } from "@/lib/site";
 import { slugifyPreview } from "@/lib/slugify";
 
 type Step = 1 | 2 | 3;
@@ -25,7 +27,8 @@ export default function OrchestrateOSOnboarding() {
   const [error, setError] = useState("");
   const [result, setResult] = useState<{
     tenant_id: string;
-    runner_key_note: string;
+    runner_api_key: string;
+    runner_api_key_hint: string;
     magic_link_sent: boolean;
     message: string;
   } | null>(null);
@@ -53,10 +56,12 @@ export default function OrchestrateOSOnboarding() {
       });
       setResult({
         tenant_id: data.tenant_id,
-        runner_key_note: data.runner_key_note,
+        runner_api_key: data.runner_api_key,
+        runner_api_key_hint: data.runner_api_key_hint,
         magic_link_sent: data.magic_link_sent,
         message: data.message,
       });
+      stashRunnerKey(data.runner_api_key);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Onboarding failed");
     } finally {
@@ -65,6 +70,12 @@ export default function OrchestrateOSOnboarding() {
   }
 
   if (result) {
+    const quickstart = buildRemoteQuickstart(
+      orchestrateOSApiBaseUrl(),
+      result.runner_api_key,
+      result.tenant_id,
+    );
+
     return (
       <div className="min-h-screen bg-[#0B0D17]">
         <OrchestrateOSNavbar />
@@ -82,12 +93,12 @@ export default function OrchestrateOSOnboarding() {
               </div>
               <div>
                 <dt className="text-white/40">Runner API key</dt>
-                <dd className="text-white/70 font-mono text-xs break-all bg-black/40 p-3 rounded-lg mt-1">
-                  {result.runner_key_note}
+                <dd className="text-white/90 font-mono text-xs break-all bg-black/40 p-3 rounded-lg mt-1 border border-amber-500/30">
+                  {result.runner_api_key}
                 </dd>
-                <p className="text-white/30 text-xs mt-2">
-                  Your AI Tech Pros contact will add this to{" "}
-                  <code className="text-white/50">API_KEYS_JSON</code> via wrangler. See{" "}
+                <p className="text-amber-300/80 text-xs mt-2">
+                  Copy this key now — it is shown only once (hint: {result.runner_api_key_hint}).
+                  Use it as <code className="text-white/50">ORCHESTRATEOS_API_KEY</code> in the SDK. See{" "}
                   <Link href="/install" className="text-[#06B6D4] hover:underline">
                     /install
                   </Link>
@@ -95,12 +106,37 @@ export default function OrchestrateOSOnboarding() {
                 </p>
               </div>
             </dl>
+            <div className="mb-6">
+              <p className="text-white/40 text-xs mb-2 uppercase tracking-wide">SDK quickstart</p>
+              <pre className="text-[11px] font-mono text-[#06B6D4] overflow-x-auto whitespace-pre-wrap p-3 rounded-lg bg-black/50 border border-white/10">
+                {quickstart}
+              </pre>
+            </div>
+            <ol className="text-white/50 text-sm space-y-2 mb-6 list-decimal pl-5">
+              <li>Copy your runner key and quickstart above</li>
+              <li>
+                <Link href="/login" className="text-[#06B6D4] hover:underline">
+                  Sign in
+                </Link>{" "}
+                to open your partner dashboard
+              </li>
+              <li>Click <strong className="text-white/70">Run sample workflow</strong> — no SDK needed first</li>
+              <li>Run the SDK snippet to sync your own pipeline</li>
+            </ol>
+            <div className="flex flex-wrap gap-3">
             <Link
               href="/login"
               className="inline-block px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#8B5CF6] to-[#3B82F6] text-white text-sm font-semibold"
             >
               {result.magic_link_sent ? "Open sign-in" : "Partner sign in"}
             </Link>
+            <Link
+              href="/install"
+              className="inline-block px-5 py-2.5 rounded-xl border border-white/15 text-white/70 text-sm"
+            >
+              Install guide
+            </Link>
+            </div>
           </div>
         </main>
       </div>

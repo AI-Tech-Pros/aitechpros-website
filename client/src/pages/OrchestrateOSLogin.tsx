@@ -47,6 +47,13 @@ export default function OrchestrateOSLogin() {
         </form>
         {message && <p className="mt-4 text-sm text-[#06B6D4]">{message}</p>}
         <p className="mt-8 text-sm text-white/40">
+          New design partner?{" "}
+          <a href="/onboarding" className="text-[#06B6D4] hover:underline">
+            Complete onboarding
+          </a>{" "}
+          first to get your tenant and runner API key.
+        </p>
+        <p className="mt-3 text-sm text-white/40">
           <Link href="/" className="text-[#06B6D4] hover:underline">
             ← Back to OrchestrateOS
           </Link>
