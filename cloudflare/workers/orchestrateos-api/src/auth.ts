@@ -172,8 +172,15 @@ export async function enforceAuth(c: AuthMiddlewareContext) {
     tenant: null,
   };
 
+  const keys = parseApiKeys(c.env.API_KEYS_JSON);
+  const resolved = resolveAuth(
+    c.req.header("Authorization"),
+    keys,
+    c.env.DEMO_OPERATOR_KEY,
+  );
+
   if (!requiresAuth(c.req.method, c.req.path)) {
-    c.set("auth", defaultAuth);
+    c.set("auth", authEnabled(c.env) ? resolved : defaultAuth);
     return null;
   }
   if (!authEnabled(c.env)) {
@@ -181,8 +188,7 @@ export async function enforceAuth(c: AuthMiddlewareContext) {
     return null;
   }
 
-  const keys = parseApiKeys(c.env.API_KEYS_JSON);
-  const ctx = resolveAuth(c.req.header("Authorization"), keys, c.env.DEMO_OPERATOR_KEY);
+  const ctx = resolved;
   if (!ctx.authenticated) {
     return c.json({ detail: "Missing or invalid API key" }, 401);
   }
