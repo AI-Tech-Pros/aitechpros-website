@@ -1,0 +1,22 @@
+{
+  "name": "orchestrateos-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-06-01",
+  "workers_dev": true,
+  "routes": [
+    {
+      "pattern": "api.orchestrateos.aitechpros.ai/*",
+      "zone_name": "aitechpros.ai"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "orchestrateos",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID"
+    }
+  ],
+  "vars": {
+    "CORS_ORIGINS": "https://aitechpros.ai,https://www.aitechpros.ai,https://orchestrateos.aitechpros.ai,http://localhost:3001"
+  }
+}

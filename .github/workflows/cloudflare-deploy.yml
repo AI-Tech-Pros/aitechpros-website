@@ -1,0 +1,71 @@
+name: Cloudflare Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "client/**"
+      - "cloudflare/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".npmrc"
+      - "vite.config.ts"
+      - ".github/workflows/cloudflare-deploy.yml"
+  workflow_dispatch:
+
+jobs:
+  pages:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    name: Deploy Pages (aitechpros.ai)
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build:pages
+        env:
+          VITE_ORCHESTRATEOS_API_URL: https://api.orchestrateos.aitechpros.ai
+
+      - name: Publish to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist/public --project-name=aitechpros-website
+
+  worker:
+    runs-on: ubuntu-latest
+    name: Deploy Worker (OrchestrateOS API)
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install worker dependencies
+        working-directory: cloudflare/workers/orchestrateos-api
+        run: npm install
+
+      - name: Apply D1 schema (remote)
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: cloudflare/workers/orchestrateos-api
+          command: d1 execute orchestrateos --remote --file=../../d1/schema.sql
+
+      - name: Deploy API worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: cloudflare/workers/orchestrateos-api
+          command: deploy

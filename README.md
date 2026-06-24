@@ -29,59 +29,41 @@ python -m pytest resume_engine/tests -q
 
 ---
 
-## Hosting architecture
+## Hosting architecture (target: all Cloudflare)
 
-| Layer | Provider |
-|-------|----------|
-| **Domain registrar** | Namecheap |
-| **Production web host** | Namecheap Stellar — `server97.web-hosting.com` / `198.54.116.40` |
-| **Docroot** | `/home/aitevrpo/public_html/` |
-| **CI/CD** | GitHub Actions → SFTP deploy on push to `main` |
-| **Previous host (legacy)** | Manus — no longer in use |
+| Layer | Product | Hosts |
+|-------|---------|-------|
+| **Frontend** | [Cloudflare Pages](https://pages.cloudflare.com) | `aitechpros.ai`, `/orchestrateos` |
+| **API** | [Cloudflare Workers](https://workers.cloudflare.com) + [D1](https://developers.cloudflare.com/d1/) | `api.orchestrateos.aitechpros.ai` |
+| **Domain** | Namecheap registrar → Cloudflare DNS | Nameservers on Cloudflare |
 
-The marketing site is a **static SPA** (`dist/public`) on Namecheap shared hosting. See [docs/namecheap-deploy.md](docs/namecheap-deploy.md) and [docs/namecheap-ssh-key.md](docs/namecheap-ssh-key.md).
+Full setup: **[docs/cloudflare-deploy.md](docs/cloudflare-deploy.md)**
 
-**OrchestrateOS API** is a separate Docker/Cloud Run deploy (`resume_engine/`).
+The Python `resume_engine/` package stays in-repo for SDK/adapters (LangGraph, CrewAI). Production gate-explorer API is the Worker in `cloudflare/workers/orchestrateos-api/`.
+
+Legacy Namecheap FTP deploy: [docs/namecheap-deploy.md](docs/namecheap-deploy.md) (optional, superseded by Pages).
 
 ---
 
 ## Deploy checklist
 
-### 1. Website (Namecheap — automatic on push to `main`)
+### 1. Cloudflare (recommended)
 
-GitHub secrets (environment `namecheap-production`):
-
-| Secret | Value |
-|--------|-------|
-| `NAMECHEAP_FTP_SERVER` | `server97.web-hosting.com` |
-| `NAMECHEAP_FTP_USERNAME` | `aitevrpo` |
-| `NAMECHEAP_SSH_PRIVATE_KEY` | Deploy key — [docs/namecheap-ssh-key.md](docs/namecheap-ssh-key.md) |
+1. Add `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` to GitHub secrets
+2. Create D1 database, update `database_id` in `cloudflare/workers/orchestrateos-api/wrangler.toml`
+3. Point domain nameservers to Cloudflare
+4. Push to `main` → `.github/workflows/cloudflare-deploy.yml`
 
 ```powershell
-npm run build   # local verify
-git push origin main   # triggers .github/workflows/deploy-website.yml
+npm run build:pages   # local verify
 ```
 
-### 2. API (Cloud Run or Docker)
+### 2. Python SDK (local / your apps)
 
 ```powershell
 docker compose -f resume_engine/docker-compose.yml up --build
-# Or: resume_engine/scripts/deploy_cloud_run.ps1 -ProjectId YOUR_GCP_PROJECT
+python -m pytest resume_engine/tests -q
 ```
-
-### 3. DNS (Namecheap Advanced DNS)
-
-Ensure public DNS points at your Namecheap server:
-
-| Type | Host | Value | TTL |
-|------|------|-------|-----|
-| **A** | `@` | `198.54.116.40` | Automatic |
-| **CNAME** | `www` | `aitechpros.ai` | Automatic |
-
-Remove legacy records from the previous Manus host (`cname.manus.space`, old Cloudflare A records).  
-Subdomains (later): `orchestrateos` → same docroot; `api.orchestrateos` → Cloud Run URL.
-
-> **Note:** External DNS lookups may still show stale Cloudflare/Manus IPs until records propagate. Production hosting is Namecheap (`198.54.116.40`).
 
 ---
 
@@ -89,8 +71,8 @@ Subdomains (later): `orchestrateos` → same docroot; `api.orchestrateos` → Cl
 
 - **Frontend:** React 19 + TypeScript
 - **Styling:** Tailwind CSS 4 + shadcn/ui
-- **Build:** Vite (static) + optional Express for local preview
-- **Hosting:** Namecheap Stellar (`server97.web-hosting.com`), GitHub Actions SFTP
+- **Build:** Vite (`npm run build:pages` for Cloudflare Pages)
+- **Hosting:** Cloudflare Pages + Workers + D1
 
 ## Connect
 
