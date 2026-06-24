@@ -228,6 +228,12 @@ pip install "resume_engine[remote]"
 | Partner session for different slug | Log in as the partner who owns the run |
 | Demo operator key on non-demo run | Use full operator/runner key, or stick to demo UUIDs |
 
+### `403 Admin access required` on `/api/admin/*`
+
+**Symptoms:** Admin UI redirects to partner dashboard or API returns 403.
+
+**Fix:** Add your email to Worker secret `ADMIN_EMAILS` (comma-separated), sign out, and request a new magic link. Or set `users.role = 'admin'` in D1 for your account.
+
 ### `GET /idempotency/{key}` 404
 
 **Cause:** No **completed** step with that key yet (failed/running steps are not returned).

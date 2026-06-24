@@ -2,6 +2,7 @@
 
 import { Hono } from "hono";
 import type { Context } from "hono";
+import { adminApp } from "./admin-routes";
 import { leadNotifyEmail, magicLinkEmail, sendEmail, type EmailEnv } from "./email";
 import {
   clearSessionCookieHeader,
@@ -61,6 +62,8 @@ platformApp.use("*", async (c, next) => {
   }
   return next();
 });
+
+platformApp.route("/admin", adminApp);
 
 platformApp.post("/leads", async (c) => {
   const body = await c.req.json<{
@@ -185,7 +188,7 @@ platformApp.get("/auth/verify", async (c) => {
     JSON.stringify({
       ok: true,
       role: sessionUser.role,
-      redirect: sessionUser.role === "admin" ? "/partner/dashboard" : "/partner/dashboard",
+      redirect: sessionUser.role === "admin" ? "/admin/capture" : "/partner/dashboard",
     }),
     {
       status: 200,

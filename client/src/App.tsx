@@ -11,6 +11,8 @@ import OrchestrateOSInstall from "@/pages/OrchestrateOSInstall";
 import OrchestrateOSLogin from "@/pages/OrchestrateOSLogin";
 import OrchestrateOSAuthVerify from "@/pages/OrchestrateOSAuthVerify";
 import OrchestrateOSPartnerDashboard from "@/pages/OrchestrateOSPartnerDashboard";
+import OrchestrateOSAdminCapture from "@/pages/OrchestrateOSAdminCapture";
+import OrchestrateOSAdminPartners from "@/pages/OrchestrateOSAdminPartners";
 import { SessionProvider } from "@/contexts/SessionContext";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -57,6 +59,8 @@ function OrchestrateOSRouter() {
         <Route path={"/login"} component={OrchestrateOSLogin} />
         <Route path={"/auth/verify"} component={OrchestrateOSAuthVerify} />
         <Route path={"/partner/dashboard"} component={OrchestrateOSPartnerDashboard} />
+        <Route path={"/admin/capture"} component={OrchestrateOSAdminCapture} />
+        <Route path={"/admin/partners"} component={OrchestrateOSAdminPartners} />
         <Route path={"/privacy"} component={PrivacyPolicy} />
         <Route path={"/terms"} component={TermsOfService} />
         <Route path={"/404"} component={NotFound} />

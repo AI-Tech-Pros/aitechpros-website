@@ -189,6 +189,8 @@ Demo runs keep `tenant_id = 'demo'` (public gate explorer). Partner runs use `te
 
 ### Phase 5c — Admin: capture + design partners
 
+**Status:** ✅ Shipped
+
 | Route | Purpose |
 |-------|---------|
 | `/admin/capture` | Lead list, stage filters, manual CRUD |
@@ -200,6 +202,14 @@ Demo runs keep `tenant_id = 'demo'` (public gate explorer). Partner runs use `te
 | `GET/POST/PUT /api/admin/partners` | Partner CRUD + link user |
 
 Admin role: emails in `ADMIN_EMAILS` env var or `users.role = admin`.
+
+**Acceptance criteria (5c):**
+
+- [x] Admin session required for `/admin/*` routes
+- [x] Lead list with stage filter; create, edit, delete
+- [x] Partner cohort CRUD with auto slug + user link
+- [x] Admin magic-link redirect → `/admin/capture`
+- [x] Runner key hint shown on partner create
 
 ### Phase 5d — Partner onboarding (`/onboarding`)
 
@@ -324,7 +334,7 @@ Existing secrets unchanged: `API_KEYS_JSON`, `DEMO_OPERATOR_KEY`, `ORCHESTRATEOS
 5a  [ ] Pages: lead form, /login, /auth/verify, /partner/dashboard
 5a  [ ] Session middleware + partner route guard
 5b  [x] tenant_id on start_run + scoped GET
-5c  [ ] /admin/capture, /admin/partners
+5c  [x] /admin/capture, /admin/partners
 5d  [ ] /onboarding flow
 5e  [ ] Welcome + post-demo sequences + cron
 5f  [ ] /admin/outcomes (real runs)

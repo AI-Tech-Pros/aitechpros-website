@@ -102,3 +102,91 @@ export async function fetchPartnerRuns(): Promise<{ runs: PartnerRun[]; tenant_i
   if (!res.ok) throw new Error("Failed to load runs");
   return res.json();
 }
+
+export type LeadStage = "new" | "engaged" | "qualified" | "converted";
+
+export type AdminLead = {
+  id: string;
+  email: string;
+  name: string;
+  company: string | null;
+  use_case: string | null;
+  stage: LeadStage;
+  source: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AdminPartner = {
+  id: string;
+  slug: string;
+  company_name: string;
+  contact_email: string;
+  phase: string;
+  status: string;
+  milestone: string | null;
+  runner_api_key_hint: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PartnerPhase = "discovery" | "build" | "review" | "complete";
+export type PartnerStatus = "active" | "paused" | "complete";
+
+async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await platformFetch(path, init);
+  const data = (await res.json()) as T & { detail?: string };
+  if (!res.ok) {
+    throw new Error(data.detail ?? `Request failed (${res.status})`);
+  }
+  return data;
+}
+
+export async function fetchAdminLeads(stage?: LeadStage): Promise<{ leads: AdminLead[] }> {
+  const q = stage ? `?stage=${encodeURIComponent(stage)}` : "";
+  return adminFetch(`/admin/leads${q}`);
+}
+
+export async function upsertAdminLead(body: {
+  id?: string;
+  email: string;
+  name: string;
+  company?: string;
+  use_case?: string;
+  stage?: LeadStage;
+  source?: string;
+}): Promise<{ lead: AdminLead }> {
+  return adminFetch("/admin/leads", { method: "PUT", body: JSON.stringify(body) });
+}
+
+export async function deleteAdminLead(id: string): Promise<void> {
+  await adminFetch("/admin/leads", { method: "DELETE", body: JSON.stringify({ id }) });
+}
+
+export async function fetchAdminPartners(): Promise<{ partners: AdminPartner[] }> {
+  return adminFetch("/admin/partners");
+}
+
+export async function createAdminPartner(body: {
+  company_name: string;
+  contact_email: string;
+  slug?: string;
+  phase?: PartnerPhase;
+  status?: PartnerStatus;
+  milestone?: string;
+  runner_api_key_hint?: string;
+}): Promise<{ partner: AdminPartner; runner_key_note?: string }> {
+  return adminFetch("/admin/partners", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function updateAdminPartner(body: {
+  id: string;
+  company_name?: string;
+  contact_email?: string;
+  phase?: PartnerPhase;
+  status?: PartnerStatus;
+  milestone?: string;
+  runner_api_key_hint?: string;
+}): Promise<{ partner: AdminPartner }> {
+  return adminFetch("/admin/partners", { method: "PUT", body: JSON.stringify(body) });
+}

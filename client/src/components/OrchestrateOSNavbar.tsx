@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { Menu, X, ArrowUpRight } from "lucide-react";
 import { mainSiteUrl, orchestrateOSApiDocsUrl } from "@/lib/site";
+import { useSession } from "@/contexts/SessionContext";
 
 const navLinks = [
   { label: "Problem", href: "#problem" },
@@ -19,6 +20,7 @@ const CALENDLY_URL = "https://calendly.com/aitechpros/15min";
 export default function OrchestrateOSNavbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { session } = useSession();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -105,6 +107,14 @@ export default function OrchestrateOSNavbar() {
           >
             Partner login
           </Link>
+          {session.role === "admin" && (
+            <Link
+              href="/admin/capture"
+              className="text-sm text-[#06B6D4]/80 hover:text-[#06B6D4] transition-colors font-medium"
+            >
+              Admin
+            </Link>
+          )}
           <a
             href={CALENDLY_URL}
             target="_blank"
