@@ -9,10 +9,9 @@ import { mainSiteUrl, orchestrateOSApiDocsUrl } from "@/lib/site";
 const navLinks = [
   { label: "Problem", href: "#problem" },
   { label: "Compare", href: "#compare" },
-  { label: "Primitives", href: "#primitives" },
   { label: "Gates", href: "#gates" },
-  { label: "API", href: "#api" },
-  { label: "Benchmark", href: "#benchmark" },
+  { label: "Install", href: "/install", route: true },
+  { label: "Governance", href: "/governance", route: true },
 ];
 
 const CALENDLY_URL = "https://calendly.com/aitechpros/15min";
@@ -31,6 +30,30 @@ export default function OrchestrateOSNavbar() {
     setMobileOpen(false);
     const el = document.querySelector(href);
     if (el) el.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const renderNavItem = (link: (typeof navLinks)[number]) => {
+    if ("route" in link && link.route) {
+      return (
+        <Link
+          key={link.href}
+          href={link.href}
+          className="text-sm text-white/55 hover:text-white transition-colors font-medium"
+          onClick={() => setMobileOpen(false)}
+        >
+          {link.label}
+        </Link>
+      );
+    }
+    return (
+      <button
+        key={link.href}
+        onClick={() => scrollTo(link.href)}
+        className="text-sm text-white/55 hover:text-white transition-colors font-medium"
+      >
+        {link.label}
+      </button>
+    );
   };
 
   return (
@@ -57,15 +80,7 @@ export default function OrchestrateOSNavbar() {
         </Link>
 
         <nav className="hidden lg:flex items-center gap-8">
-          {navLinks.map((link) => (
-            <button
-              key={link.href}
-              onClick={() => scrollTo(link.href)}
-              className="text-sm text-white/55 hover:text-white transition-colors font-medium"
-            >
-              {link.label}
-            </button>
-          ))}
+          {navLinks.map(renderNavItem)}
           <a
             href={orchestrateOSApiDocsUrl()}
             target="_blank"
@@ -105,15 +120,26 @@ export default function OrchestrateOSNavbar() {
 
       {mobileOpen && (
         <div className="lg:hidden bg-[#0B0D17]/95 backdrop-blur-xl border-b border-white/[0.06] px-6 py-4 space-y-3">
-          {navLinks.map((link) => (
-            <button
-              key={link.href}
-              onClick={() => scrollTo(link.href)}
-              className="block w-full text-left text-sm text-white/70 py-2"
-            >
-              {link.label}
-            </button>
-          ))}
+          {navLinks.map((link) =>
+            "route" in link && link.route ? (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMobileOpen(false)}
+                className="block w-full text-left text-sm text-white/70 py-2"
+              >
+                {link.label}
+              </Link>
+            ) : (
+              <button
+                key={link.href}
+                onClick={() => scrollTo(link.href)}
+                className="block w-full text-left text-sm text-white/70 py-2"
+              >
+                {link.label}
+              </button>
+            ),
+          )}
           <a
             href={CALENDLY_URL}
             target="_blank"

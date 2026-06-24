@@ -23,7 +23,10 @@
 ## Installation
 
 ```bash
-# Core engine (stdlib + SQLAlchemy)
+# PyPI
+pip install resume_engine
+
+# From source (repo root)
 pip install -e .
 
 # With FastAPI service

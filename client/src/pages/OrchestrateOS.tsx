@@ -179,12 +179,12 @@ export default function OrchestrateOS() {
                 <GitBranch className="w-4 h-4 text-[#06B6D4]" />
                 API docs
               </a>
-              <a
-                href="#gates"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl glass-card text-white/80 font-medium hover:text-white transition-colors sm:hidden"
+              <Link
+                href="/install"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl glass-card text-white/80 font-medium hover:text-white transition-colors font-mono text-sm"
               >
-                Gate explorer
-              </a>
+                pip install resume_engine
+              </Link>
             </div>
 
             <p className="mt-8 text-sm text-white/30">
@@ -296,7 +296,10 @@ export default function OrchestrateOS() {
               <p className="text-white/55 text-sm leading-relaxed">
                 Regulated teams need data sovereignty, immutable execution logs, and operator
                 approval before retry — without CrewAI Enterprise pricing or LangSmith trace
-                residency tradeoffs.
+                residency tradeoffs.{" "}
+                <Link href="/compliance" className="text-[#06B6D4] hover:underline">
+                  Compliance overview →
+                </Link>
               </p>
             </div>
             <div className="glass-card rounded-2xl p-6 border-[#06B6D4]/15">
@@ -589,7 +592,19 @@ export default function OrchestrateOS() {
           <p className="text-xs text-white/30">
             &copy; {new Date().getFullYear()} AI Tech Pros, Inc. · OrchestrateOS
           </p>
-          <div className="flex gap-6">
+          <div className="flex flex-wrap gap-6 justify-center">
+            <Link href="/governance" className="text-xs text-white/30 hover:text-white/50 transition-colors">
+              Governance
+            </Link>
+            <Link href="/compliance" className="text-xs text-white/30 hover:text-white/50 transition-colors">
+              Compliance
+            </Link>
+            <Link href="/install" className="text-xs text-white/30 hover:text-white/50 transition-colors">
+              Install
+            </Link>
+            <Link href="/compare" className="text-xs text-white/30 hover:text-white/50 transition-colors">
+              Compare (PDF)
+            </Link>
             <Link href="/privacy" className="text-xs text-white/30 hover:text-white/50 transition-colors">
               Privacy
             </Link>

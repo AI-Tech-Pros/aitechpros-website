@@ -4,6 +4,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { isOrchestrateOSProductSite, orchestrateOSUrl } from "@/lib/site";
 import NotFound from "@/pages/NotFound";
 import OrchestrateOS from "@/pages/OrchestrateOS";
+import OrchestrateOSCompare from "@/pages/OrchestrateOSCompare";
+import OrchestrateOSCompliance from "@/pages/OrchestrateOSCompliance";
+import OrchestrateOSGovernance from "@/pages/OrchestrateOSGovernance";
+import OrchestrateOSInstall from "@/pages/OrchestrateOSInstall";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -41,6 +45,10 @@ function OrchestrateOSRouter() {
   return (
     <Switch>
       <Route path={"/"} component={OrchestrateOS} />
+      <Route path={"/governance"} component={OrchestrateOSGovernance} />
+      <Route path={"/compliance"} component={OrchestrateOSCompliance} />
+      <Route path={"/install"} component={OrchestrateOSInstall} />
+      <Route path={"/compare"} component={OrchestrateOSCompare} />
       <Route path={"/privacy"} component={PrivacyPolicy} />
       <Route path={"/terms"} component={TermsOfService} />
       <Route path={"/404"} component={NotFound} />

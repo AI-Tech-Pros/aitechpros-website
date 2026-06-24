@@ -1,62 +1,15 @@
 /*
  * Governance-focused comparison — aligns with OrchestrateOS competitive intel (June 2026).
  */
+import { Link } from "wouter";
+import {
+  COMPARISON_CELL,
+  COMPARISON_ROWS,
+  type ComparisonCell,
+} from "@/lib/orchestrateos-comparison";
 
-type Cell = "yes" | "partial" | "no";
-
-const CELL: Record<Cell, { label: string; className: string }> = {
-  yes: { label: "Yes", className: "text-[#06B6D4]" },
-  partial: { label: "Partial", className: "text-amber-400/90" },
-  no: { label: "No", className: "text-red-400/80" },
-};
-
-const ROWS: { feature: string; langchain: Cell; crewai: Cell; microsoft: Cell; orchestrate: Cell }[] = [
-  {
-    feature: "Deployment governance (gates before resume)",
-    langchain: "no",
-    crewai: "no",
-    microsoft: "partial",
-    orchestrate: "yes",
-  },
-  {
-    feature: "Resume from last step (not full restart)",
-    langchain: "partial",
-    crewai: "no",
-    microsoft: "yes",
-    orchestrate: "yes",
-  },
-  {
-    feature: "Immutable audit / deterministic replay",
-    langchain: "partial",
-    crewai: "partial",
-    microsoft: "partial",
-    orchestrate: "yes",
-  },
-  {
-    feature: "Operator approval & compensation gates",
-    langchain: "no",
-    crewai: "no",
-    microsoft: "partial",
-    orchestrate: "yes",
-  },
-  {
-    feature: "Framework-agnostic (no cloud lock-in)",
-    langchain: "yes",
-    crewai: "yes",
-    microsoft: "no",
-    orchestrate: "yes",
-  },
-  {
-    feature: "Enterprise compliance tier required for governance",
-    langchain: "yes",
-    crewai: "yes",
-    microsoft: "yes",
-    orchestrate: "no",
-  },
-];
-
-function CellValue({ value }: { value: Cell }) {
-  const { label, className } = CELL[value];
+function CellValue({ value }: { value: ComparisonCell }) {
+  const { label, className } = COMPARISON_CELL[value];
   return <span className={`text-sm font-medium ${className}`}>{label}</span>;
 }
 
@@ -74,7 +27,7 @@ export default function OrchestrateOSComparison() {
           </tr>
         </thead>
         <tbody>
-          {ROWS.map((row) => (
+          {COMPARISON_ROWS.map((row) => (
             <tr key={row.feature} className="border-b border-white/[0.04] last:border-0">
               <td className="px-4 py-3.5 text-white/55">{row.feature}</td>
               <td className="px-4 py-3.5">
@@ -93,10 +46,14 @@ export default function OrchestrateOSComparison() {
           ))}
         </tbody>
       </table>
-      <p className="px-4 py-3 text-xs text-white/30 border-t border-white/[0.04]">
-        LangSmith observes after deployment; CrewAI lacks built-in checkpointing on failure; Microsoft
-        Agent Framework is pre-GA with Azure coupling. OrchestrateOS targets the governance gap as a
-        first-class layer.
+      <p className="px-4 py-3 text-xs text-white/30 border-t border-white/[0.04] flex flex-wrap items-center gap-x-2">
+        <span>
+          LangSmith observes after deployment; CrewAI lacks built-in checkpointing on failure;
+          Microsoft Agent Framework is pre-GA with Azure coupling.
+        </span>
+        <Link href="/compare" className="text-[#06B6D4] hover:underline shrink-0">
+          Save comparison as PDF →
+        </Link>
       </p>
     </div>
   );

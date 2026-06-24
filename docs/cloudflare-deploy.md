@@ -149,5 +149,30 @@ cd cloudflare/workers/orchestrateos-api && npm run dev
 |----------|--------|
 | Gate explorer UI | Worker + D1 |
 | LangGraph / CrewAI in your apps | `pip install -e .` locally |
-| Python → live control plane (D1) | `pip install -e ".[remote]"` + `RemoteCheckpointStore` |
+| Python → live control plane (D1) | `pip install "resume_engine[remote]"` + `RemoteCheckpointStore` |
 | Full Python FastAPI on Cloudflare | [Cloudflare Containers](https://developers.cloudflare.com/containers/) (paid)
+
+### Phase 4 — Go-to-market (PyPI + sales content)
+
+**Site pages** (orchestrateos.pages.dev):
+
+| Path | Purpose |
+|------|---------|
+| `/install` | PyPI install + remote control plane quickstart |
+| `/governance` | Objection-handling — observability vs governance |
+| `/compliance` | Healthcare/finance audit & RBAC positioning |
+| `/compare` | Printable comparison one-pager (browser → Save as PDF) |
+
+**PyPI publish:** workflow `.github/workflows/pypi-publish.yml`
+
+1. Create PyPI account + API token for `resume_engine`
+2. Add GitHub secret `PYPI_API_TOKEN`
+3. Bump `version` in `pyproject.toml`
+4. Create a GitHub Release, or run workflow **Publish resume_engine to PyPI** manually
+
+```powershell
+pip install resume_engine
+pip install "resume_engine[remote]"
+```
+
+**Internal sales script:** `docs/orchestrateos/sales-displacement-script.md`

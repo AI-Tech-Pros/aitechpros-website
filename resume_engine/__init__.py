@@ -19,7 +19,7 @@ from resume_engine.core.run import Run, RunStatus
 from resume_engine.core.step_record import StepRecord, StepStatus
 from resume_engine.storage.sqlite_backend import SQLiteCheckpointStore
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "CheckpointStore",
