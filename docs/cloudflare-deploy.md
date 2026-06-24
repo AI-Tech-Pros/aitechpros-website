@@ -100,8 +100,11 @@ npx wrangler secret put DEMO_OPERATOR_KEY
 |--------|-------|
 | `CLOUDFLARE_API_TOKEN` | API token with Workers, Pages, D1 edit |
 | `CLOUDFLARE_ACCOUNT_ID` | `365965a7234fe266200abe63be3b63ba` |
-| `ORCHESTRATEOS_API_KEY` | Runner-role key (CI smoke tests + SDK) |
+| `ORCHESTRATEOS_API_KEY` | Runner-role key — synced into Worker `API_KEYS_JSON` on each deploy |
 | `ORCHESTRATEOS_DEMO_KEY` | Demo operator key (`VITE_ORCHESTRATEOS_DEMO_KEY` at build) |
+| `API_KEYS_JSON` | *(Optional)* Full key map; if set, merged with `ORCHESTRATEOS_API_KEY` before deploy |
+
+CI syncs `API_KEYS_JSON` and `DEMO_OPERATOR_KEY` to the Worker **before** `wrangler deploy`, so smoke tests use the same runner key as production.
 
 ### Build profiles
 

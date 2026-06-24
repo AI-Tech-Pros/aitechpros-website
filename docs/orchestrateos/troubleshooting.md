@@ -285,7 +285,7 @@ pip install "resume_engine[remote]"
 | Cause | Fix |
 |-------|-----|
 | Missing `ORCHESTRATEOS_API_KEY` in GitHub | Add runner key secret |
-| Key not in `API_KEYS_JSON` | Ensure same key string in Worker secret |
+| Key not in `API_KEYS_JSON` | Deploy workflow syncs `ORCHESTRATEOS_API_KEY` into Worker `API_KEYS_JSON` automatically; for partner keys add full map to GitHub secret `API_KEYS_JSON` |
 | Auth disabled in wrangler but CI sends auth | Harmless — or align `API_AUTH_ENABLED` |
 
 ### `API_KEYS_JSON` invalid

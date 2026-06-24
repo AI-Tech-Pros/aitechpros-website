@@ -154,6 +154,25 @@ jobs:
           workingDirectory: cloudflare/workers/orchestrateos-api
           command: d1 execute orchestrateos --remote --file=../../d1/seed.sql
 
+      - name: Sync Worker API secrets
+        working-directory: cloudflare/workers/orchestrateos-api
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          ORCHESTRATEOS_API_KEY: ${{ secrets.ORCHESTRATEOS_API_KEY }}
+          ORCHESTRATEOS_DEMO_KEY: ${{ secrets.ORCHESTRATEOS_DEMO_KEY }}
+          API_KEYS_JSON: ${{ secrets.API_KEYS_JSON }}
+        run: |
+          set -euo pipefail
+          if [ -z "${ORCHESTRATEOS_API_KEY:-}" ] && [ -z "${API_KEYS_JSON:-}" ]; then
+            echo "::error::Set ORCHESTRATEOS_API_KEY or API_KEYS_JSON in GitHub secrets"
+            exit 1
+          fi
+          node scripts/merge-api-keys.mjs | npx wrangler secret put API_KEYS_JSON
+          if [ -n "${ORCHESTRATEOS_DEMO_KEY:-}" ]; then
+            printf '%s' "$ORCHESTRATEOS_DEMO_KEY" | npx wrangler secret put DEMO_OPERATOR_KEY
+          fi
+
       - name: Deploy API worker
         uses: cloudflare/wrangler-action@v3
         with:
@@ -163,17 +182,22 @@ jobs:
           command: deploy
 
       - name: Smoke test API
+        working-directory: cloudflare/workers/orchestrateos-api
         env:
           ORCHESTRATEOS_API_KEY: ${{ secrets.ORCHESTRATEOS_API_KEY }}
+          API_KEYS_JSON: ${{ secrets.API_KEYS_JSON }}
         run: |
+          set -euo pipefail
+          SMOKE_KEY=$(node scripts/merge-api-keys.mjs --print-runner)
           curl -fsS "${{ env.WORKER_API_URL }}/health"
           curl -fsS "${{ env.WORKER_API_URL }}/docs" | grep -qi "OrchestrateOS"
           curl -fsS "${{ env.WORKER_API_URL }}/demo/runs" | grep -qi '"scenario":"partial"'
           RUN_ID=$(curl -fsS -X POST "${{ env.WORKER_API_URL }}/start_run" \
             -H "Content-Type: application/json" \
-            -H "Authorization: Bearer ${ORCHESTRATEOS_API_KEY}" \
+            -H "Authorization: Bearer ${SMOKE_KEY}" \
             -d '{"workflow_name":"ci_smoke_sdk","metadata":{"ci":true}}' | grep -oE '"run_id":"[^"]+"' | cut -d'"' -f4)
-          curl -fsS -H "Authorization: Bearer ${ORCHESTRATEOS_API_KEY}" \
+          test -n "$RUN_ID"
+          curl -fsS -H "Authorization: Bearer ${SMOKE_KEY}" \
             "${{ env.WORKER_API_URL }}/runs/${RUN_ID}" | grep -qi "ci_smoke_sdk"
-          curl -fsS -H "Authorization: Bearer ${ORCHESTRATEOS_API_KEY}" \
+          curl -fsS -H "Authorization: Bearer ${SMOKE_KEY}" \
             "${{ env.WORKER_API_URL }}/runs/${RUN_ID}/replay" | grep -qi "replay_from_index"
