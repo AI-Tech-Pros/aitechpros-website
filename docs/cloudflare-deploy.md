@@ -194,14 +194,24 @@ pip install "resume_engine[remote]"
 
 **First vertical slice (5a):** landing lead form → `POST /api/leads` → magic-link login → read-only `/partner/dashboard` with real `run_id`s from D1.
 
-Planned secrets (5a+): `SESSION_SECRET`, `RESEND_API_KEY`, `NOTIFY_EMAIL`, `ADMIN_EMAILS`, `CRON_SECRET` (5e nurture cron).
+Planned secrets (5a+): set as **GitHub repository secrets** — CI syncs them to the Worker on each deploy (see `.github/workflows/cloudflare-deploy.yml`).
+
+| GitHub secret | Worker secret | Purpose |
+|---------------|---------------|---------|
+| `SESSION_SECRET` | `SESSION_SECRET` | Sign magic-link session JWT |
+| `RESEND_API_KEY` | `RESEND_API_KEY` | Outbound email (Resend) |
+| `NOTIFY_EMAIL` | `NOTIFY_EMAIL` | Admin alert on new lead |
+| `ADMIN_EMAILS` | `ADMIN_EMAILS` | Comma-separated admin allowlist |
+| `SITE_URL` | `SITE_URL` | Magic-link redirect base (e.g. `https://orchestrateos.pages.dev`) |
+
+Manual fallback:
 
 ```powershell
-# One-time Worker secrets (production)
+# One-time Worker secrets (if not using CI sync)
 cd cloudflare/workers/orchestrateos-api
 wrangler secret put SESSION_SECRET
 wrangler secret put RESEND_API_KEY
 wrangler secret put NOTIFY_EMAIL
 wrangler secret put ADMIN_EMAILS
-wrangler secret put CRON_SECRET
+wrangler secret put SITE_URL
 ```

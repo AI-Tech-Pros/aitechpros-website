@@ -413,3 +413,15 @@ export async function updateAdminPartnerGatePolicy(
     body: JSON.stringify(policy),
   });
 }
+
+export async function fetchAdminPartnerGatePolicy(
+  partnerId: string,
+): Promise<{ tenant_id: string; policy: TenantGatePolicy }> {
+  return adminFetch(`/admin/partners/${encodeURIComponent(partnerId)}/gate-policy`);
+}
+
+export const DEFAULT_TENANT_GATE_POLICY: TenantGatePolicy = {
+  prod_requires_ack: true,
+  permanent_consensus_min: 0,
+  partial_requires_compensation: true,
+};

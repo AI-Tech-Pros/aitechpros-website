@@ -4,12 +4,16 @@ import AdminLayout from "@/components/AdminLayout";
 import AdminRoute from "@/components/AdminRoute";
 import {
   createAdminPartner,
+  DEFAULT_TENANT_GATE_POLICY,
+  fetchAdminPartnerGatePolicy,
   fetchAdminPartners,
   provisionAdminPartnerRunnerKey,
   updateAdminPartner,
+  updateAdminPartnerGatePolicy,
   type AdminPartner,
   type PartnerPhase,
   type PartnerStatus,
+  type TenantGatePolicy,
 } from "@/lib/platform-api";
 
 const PHASES: PartnerPhase[] = ["discovery", "build", "review", "complete"];
@@ -35,6 +39,10 @@ function PartnersContent() {
   const [keyNote, setKeyNote] = useState("");
   const [revealedKey, setRevealedKey] = useState("");
   const [provisioningId, setProvisioningId] = useState("");
+  const [gatePolicy, setGatePolicy] = useState<TenantGatePolicy>(DEFAULT_TENANT_GATE_POLICY);
+  const [policyLoading, setPolicyLoading] = useState(false);
+  const [policySaving, setPolicySaving] = useState(false);
+  const [policyNote, setPolicyNote] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -57,10 +65,12 @@ function PartnersContent() {
     setEditing(null);
     setForm(emptyForm);
     setKeyNote("");
+    setGatePolicy(DEFAULT_TENANT_GATE_POLICY);
+    setPolicyNote("");
     setShowForm(true);
   };
 
-  const openEdit = (partner: AdminPartner) => {
+  const openEdit = async (partner: AdminPartner) => {
     setEditing(partner);
     setForm({
       company_name: partner.company_name,
@@ -72,7 +82,18 @@ function PartnersContent() {
       runner_api_key_hint: partner.runner_api_key_hint ?? "",
     });
     setKeyNote("");
+    setPolicyNote("");
     setShowForm(true);
+    setPolicyLoading(true);
+    try {
+      const { policy } = await fetchAdminPartnerGatePolicy(partner.id);
+      setGatePolicy(policy);
+    } catch {
+      setGatePolicy(DEFAULT_TENANT_GATE_POLICY);
+      setPolicyNote("Could not load gate policy — showing defaults.");
+    } finally {
+      setPolicyLoading(false);
+    }
   };
 
   const provisionKey = async (partner: AdminPartner, rotate = false) => {
@@ -126,6 +147,22 @@ function PartnersContent() {
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Save failed");
+    }
+  };
+
+  const saveGatePolicy = async () => {
+    if (!editing) return;
+    setPolicySaving(true);
+    setPolicyNote("");
+    setError("");
+    try {
+      const result = await updateAdminPartnerGatePolicy(editing.id, gatePolicy);
+      setGatePolicy(result.policy);
+      setPolicyNote(`Gate policy saved for tenant ${result.tenant_id}. Applies on new start_run calls.`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not save gate policy");
+    } finally {
+      setPolicySaving(false);
     }
   };
 
@@ -232,6 +269,78 @@ function PartnersContent() {
               />
             </label>
           </div>
+
+          {editing && (
+            <div className="rounded-xl border border-[#8B5CF6]/25 bg-[#8B5CF6]/5 p-4 space-y-4">
+              <div>
+                <h3 className="text-white font-medium text-sm">Gate policy</h3>
+                <p className="text-xs text-white/40 mt-1">
+                  Applied automatically when this tenant calls{" "}
+                  <code className="text-[#06B6D4]">start_run</code>. Tenant:{" "}
+                  <code className="text-white/50">{editing.slug}</code>
+                </p>
+              </div>
+              {policyLoading ? (
+                <p className="text-xs text-white/40">Loading policy…</p>
+              ) : (
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <label className="flex items-center gap-2 text-sm text-white/70">
+                    <input
+                      type="checkbox"
+                      checked={gatePolicy.prod_requires_ack}
+                      onChange={(e) =>
+                        setGatePolicy({ ...gatePolicy, prod_requires_ack: e.target.checked })
+                      }
+                      className="rounded border-white/20"
+                    />
+                    Require prod resume acknowledgment
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-white/70">
+                    <input
+                      type="checkbox"
+                      checked={gatePolicy.partial_requires_compensation}
+                      onChange={(e) =>
+                        setGatePolicy({
+                          ...gatePolicy,
+                          partial_requires_compensation: e.target.checked,
+                        })
+                      }
+                      className="rounded border-white/20"
+                    />
+                    Partial failures require compensation
+                  </label>
+                  <label className="block text-sm sm:col-span-2">
+                    <span className="text-white/40">Permanent failure consensus reviewers (0 = single approver)</span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={10}
+                      className="mt-1 w-full max-w-xs rounded-lg bg-black/40 border border-white/10 px-3 py-2 text-white text-sm font-mono"
+                      value={gatePolicy.permanent_consensus_min}
+                      onChange={(e) =>
+                        setGatePolicy({
+                          ...gatePolicy,
+                          permanent_consensus_min: Math.max(0, Number(e.target.value) || 0),
+                        })
+                      }
+                    />
+                  </label>
+                </div>
+              )}
+              <div className="flex flex-wrap gap-2 items-center">
+                <button
+                  type="button"
+                  onClick={() => void saveGatePolicy()}
+                  disabled={policySaving || policyLoading}
+                  className="px-3 py-1.5 text-xs rounded-lg border border-[#8B5CF6]/40 text-[#c4b5fd] disabled:opacity-50"
+                >
+                  {policySaving ? "Saving policy…" : "Save gate policy"}
+                </button>
+                {policyNote && <span className="text-xs text-[#06B6D4]">{policyNote}</span>}
+              </div>
+            </div>
+          )}
+
           {keyNote && (
             <p className="text-xs text-[#06B6D4] font-mono bg-black/40 p-3 rounded-lg">{keyNote}</p>
           )}
@@ -308,7 +417,7 @@ function PartnersContent() {
                     <td className="p-4">
                       <button
                         type="button"
-                        onClick={() => openEdit(partner)}
+                        onClick={() => void openEdit(partner)}
                         className="text-white/40 hover:text-[#06B6D4]"
                         aria-label="Edit"
                       >

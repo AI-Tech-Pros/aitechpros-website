@@ -26,7 +26,7 @@ Planned capabilities beyond the current self-serve pilot control plane.
 | Item | Status | Notes |
 |------|--------|-------|
 | Per-tenant gate policy JSON | Shipped | `gate_policy_json` on `design_partners` |
-| Admin policy editor UI | Partial | API only |
+| Admin policy editor UI | Shipped | `/admin/partners` edit form |
 | Automated retry policy apply | Roadmap | Optimizer metrics advisory today |
 
 ## Infrastructure
@@ -35,7 +35,7 @@ Planned capabilities beyond the current self-serve pilot control plane.
 |------|--------|-------|
 | Custom domain | Planned | DNS + Pages custom domain |
 | Dedicated single-tenant Worker | Planned | Regulated pilots |
-| SESSION_SECRET / RESEND in CI sync | Planned | GitHub secrets → wrangler |
+| SESSION_SECRET / RESEND in CI sync | Shipped | GitHub secrets → wrangler on deploy |
 
 ## Framework parity
 

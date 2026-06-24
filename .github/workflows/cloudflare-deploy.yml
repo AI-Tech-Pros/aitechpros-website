@@ -201,6 +201,11 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           ORCHESTRATEOS_DEMO_KEY: ${{ secrets.ORCHESTRATEOS_DEMO_KEY }}
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          NOTIFY_EMAIL: ${{ secrets.NOTIFY_EMAIL }}
+          ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
+          SITE_URL: ${{ secrets.SITE_URL }}
           # Kernel ingress webhook: POST /ingress/webhook with X-Ingress-Secret header
           INGRESS_WEBHOOK_SECRET: ${{ secrets.INGRESS_WEBHOOK_SECRET }}
           # Cron auth for nurture tick + manual queue drain; also used by scheduled queue drain
@@ -212,6 +217,25 @@ jobs:
         run: |
           set -euo pipefail
           npx wrangler secret put API_KEYS_JSON < .api-keys.json
+          if [ -n "${SESSION_SECRET:-}" ]; then
+            printf '%s' "$SESSION_SECRET" | npx wrangler secret put SESSION_SECRET
+          else
+            echo "::warning::SESSION_SECRET not set — magic-link login will fail until configured"
+          fi
+          if [ -n "${RESEND_API_KEY:-}" ]; then
+            printf '%s' "$RESEND_API_KEY" | npx wrangler secret put RESEND_API_KEY
+          else
+            echo "::warning::RESEND_API_KEY not set — outbound email disabled"
+          fi
+          if [ -n "${NOTIFY_EMAIL:-}" ]; then
+            printf '%s' "$NOTIFY_EMAIL" | npx wrangler secret put NOTIFY_EMAIL
+          fi
+          if [ -n "${ADMIN_EMAILS:-}" ]; then
+            printf '%s' "$ADMIN_EMAILS" | npx wrangler secret put ADMIN_EMAILS
+          fi
+          if [ -n "${SITE_URL:-}" ]; then
+            printf '%s' "$SITE_URL" | npx wrangler secret put SITE_URL
+          fi
           if [ -n "${ORCHESTRATEOS_DEMO_KEY:-}" ]; then
             printf '%s' "$ORCHESTRATEOS_DEMO_KEY" | npx wrangler secret put DEMO_OPERATOR_KEY
           fi
