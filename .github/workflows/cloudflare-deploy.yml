@@ -154,21 +154,10 @@ jobs:
           workingDirectory: cloudflare/workers/orchestrateos-api
           command: d1 execute orchestrateos --remote --file=../../d1/seed.sql
 
-      - name: Deploy API worker
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: cloudflare/workers/orchestrateos-api
-          command: deploy
-
-      - name: Sync Worker API secrets
+      - name: Prepare Worker API keys
         working-directory: cloudflare/workers/orchestrateos-api
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           ORCHESTRATEOS_API_KEY: ${{ secrets.ORCHESTRATEOS_API_KEY }}
-          ORCHESTRATEOS_DEMO_KEY: ${{ secrets.ORCHESTRATEOS_DEMO_KEY }}
           API_KEYS_JSON: ${{ secrets.API_KEYS_JSON }}
         run: |
           set -euo pipefail
@@ -176,10 +165,29 @@ jobs:
             echo "::error::Set ORCHESTRATEOS_API_KEY or API_KEYS_JSON in GitHub secrets"
             exit 1
           fi
-          node scripts/merge-api-keys.mjs | npx wrangler secret put API_KEYS_JSON
+          node scripts/merge-api-keys.mjs > .api-keys.json
+          echo "Runner key length: $(node scripts/merge-api-keys.mjs --print-runner | wc -c | tr -d ' ')"
+
+      - name: Sync Worker API secrets
+        working-directory: cloudflare/workers/orchestrateos-api
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          ORCHESTRATEOS_DEMO_KEY: ${{ secrets.ORCHESTRATEOS_DEMO_KEY }}
+        run: |
+          set -euo pipefail
+          npx wrangler secret put API_KEYS_JSON < .api-keys.json
           if [ -n "${ORCHESTRATEOS_DEMO_KEY:-}" ]; then
             printf '%s' "$ORCHESTRATEOS_DEMO_KEY" | npx wrangler secret put DEMO_OPERATOR_KEY
           fi
+
+      - name: Deploy API worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: cloudflare/workers/orchestrateos-api
+          command: deploy
 
       - name: Smoke test API
         working-directory: cloudflare/workers/orchestrateos-api
@@ -190,6 +198,7 @@ jobs:
           set -euo pipefail
           SMOKE_KEY=$(node scripts/merge-api-keys.mjs --print-runner)
           echo "Using runner key from GitHub secrets (length ${#SMOKE_KEY})"
+          sleep 10
           curl -fsS "${{ env.WORKER_API_URL }}/health"
           curl -fsS "${{ env.WORKER_API_URL }}/docs" | grep -qi "OrchestrateOS"
           curl -fsS "${{ env.WORKER_API_URL }}/demo/runs" | grep -qi '"scenario":"partial"'

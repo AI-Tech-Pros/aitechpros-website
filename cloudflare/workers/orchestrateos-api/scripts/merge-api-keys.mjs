@@ -5,7 +5,7 @@
  * - ORCHESTRATEOS_API_KEY: ensured as runner with tenant default if missing
  */
 
-const runnerKey = process.env.ORCHESTRATEOS_API_KEY?.trim();
+const runnerKey = process.env.ORCHESTRATEOS_API_KEY?.replace(/^\uFEFF/, "").trim();
 const baseJson = process.env.API_KEYS_JSON?.trim();
 
 let keys = {};
@@ -32,6 +32,10 @@ if (!runnerKey && Object.keys(keys).length === 0) {
 }
 
 if (process.argv.includes("--print-runner")) {
+  if (runnerKey && keys[runnerKey] !== undefined) {
+    console.log(runnerKey);
+    process.exit(0);
+  }
   for (const [key, value] of Object.entries(keys)) {
     const role = typeof value === "string" ? value : value?.role;
     if (role === "runner") {

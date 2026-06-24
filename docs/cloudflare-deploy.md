@@ -104,7 +104,7 @@ npx wrangler secret put DEMO_OPERATOR_KEY
 | `ORCHESTRATEOS_DEMO_KEY` | Demo operator key (`VITE_ORCHESTRATEOS_DEMO_KEY` at build) |
 | `API_KEYS_JSON` | *(Optional)* Full key map; if set, merged with `ORCHESTRATEOS_API_KEY` before deploy |
 
-CI syncs `API_KEYS_JSON` and `DEMO_OPERATOR_KEY` to the Worker **before** `wrangler deploy`, so smoke tests use the same runner key as production.
+CI syncs `API_KEYS_JSON` and `DEMO_OPERATOR_KEY` to the Worker **before** `wrangler deploy`, then waits for secret propagation before smoke tests.
 
 ### Build profiles
 
