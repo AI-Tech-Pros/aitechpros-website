@@ -11,7 +11,7 @@
 
 🌐 [Website](https://aitechpros-website.pages.dev) · [OrchestrateOS](https://orchestrateos.pages.dev) · [Install](https://orchestrateos.pages.dev/install) · [PyPI](https://pypi.org/project/resume-engine/0.2.0/) · [API docs](https://orchestrateos-api.nevaquit.workers.dev/docs)
 
-**Documentation:** [User guide](docs/orchestrateos/user-guide.md) · [Troubleshooting](docs/orchestrateos/troubleshooting.md) · [Design partner playbook](docs/orchestrateos/design-partner-playbook.md) · [Sales script](docs/orchestrateos/sales-displacement-script.md) · [Cloudflare deploy](docs/cloudflare-deploy.md)
+**Documentation:** [User guide](docs/orchestrateos/user-guide.md) · [Troubleshooting](docs/orchestrateos/troubleshooting.md) · [Design partner playbook](docs/orchestrateos/design-partner-playbook.md) · [Integration cookbook](docs/orchestrateos/cookbook-design-partner.md) · [Sales script](docs/orchestrateos/sales-displacement-script.md) · [Cloudflare deploy](docs/cloudflare-deploy.md)
 
 ---
 
@@ -31,7 +31,7 @@ AITechPros builds a governance-first agent orchestration layer (`resume_engine` 
 | **2** | `RemoteCheckpointStore` — Python SDK → Worker + D1 | ✅ Shipped |
 | **3** | API auth/RBAC, `audit_events`, prod gates, replay | ✅ Shipped (`API_AUTH_ENABLED=true`) |
 | **4** | GTM pages, PyPI publish workflow, `resume_engine` **0.2.0** on PyPI | ✅ Shipped |
-| **Next** | Design partner #1 on a real workflow; tenant isolation for multi-customer SaaS | Planned |
+| **Next** | Design partner #1 — [integration cookbook](docs/orchestrateos/cookbook-design-partner.md); tenant isolation for multi-customer SaaS | In progress |
 
 ---
 
@@ -175,7 +175,8 @@ Full setup: **[docs/cloudflare-deploy.md](docs/cloudflare-deploy.md)**
 .\resume_engine\scripts\sales_demo_smoke.ps1
 ```
 
-**First paid pilot:** [docs/orchestrateos/design-partner-playbook.md](docs/orchestrateos/design-partner-playbook.md)
+**First paid pilot:** [docs/orchestrateos/design-partner-playbook.md](docs/orchestrateos/design-partner-playbook.md)  
+**Partner integration (Week 1):** [docs/orchestrateos/cookbook-design-partner.md](docs/orchestrateos/cookbook-design-partner.md) · [`resume_engine/examples/partner_plain_python.py`](resume_engine/examples/partner_plain_python.py)
 
 ---
 

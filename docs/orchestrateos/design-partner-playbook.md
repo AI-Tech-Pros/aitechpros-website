@@ -39,7 +39,11 @@ pip install "resume_engine[remote]"
 # or [langgraph] / [crewai] as needed
 ```
 
-Wire `RemoteCheckpointStore` into the chosen workflow. See [user-guide §7](../orchestrateos/user-guide.md#7-connect-to-the-live-control-plane).
+Wire `RemoteCheckpointStore` into the chosen workflow:
+
+- **Cookbook:** [cookbook-design-partner.md](./cookbook-design-partner.md)
+- **Starter script:** `resume_engine/examples/partner_plain_python.py`
+- **User guide:** [§7 Connect to the live control plane](./user-guide.md#7-connect-to-the-live-control-plane)
 
 **Success criteria:**
 
