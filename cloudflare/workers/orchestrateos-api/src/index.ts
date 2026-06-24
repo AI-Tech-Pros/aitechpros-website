@@ -12,7 +12,7 @@ import { seedDemoRuns } from "./demo-seed";
 import { DOCS_HTML, OPENAPI_SPEC } from "./docs";
 import { platformApp } from "./platform/routes";
 import { runNurtureTick } from "./platform/nurture/service";
-import { executeKernelPipeline, kernelAgentCatalog } from "./kernel/execute";
+import { executeKernelPipeline, resumeKernelPipeline, kernelAgentCatalog, extractGoalFromPayload } from "./kernel/pipeline";
 import { completeLlm, llmStatus } from "./llm/router";
 import type { LlmEnv } from "./llm/env";
 import {
@@ -43,6 +43,8 @@ export type Env = LlmEnv & {
   ADMIN_EMAILS?: string;
   SITE_URL?: string;
   CRON_SECRET?: string;
+  INGRESS_WEBHOOK_SECRET?: string;
+  LLM_BUDGET_USD_PER_RUN?: string;
 };
 
 type AppVariables = {
@@ -143,7 +145,12 @@ app.post("/llm/complete", async (c) => {
 });
 
 app.post("/kernel/run", async (c) => {
-  const body = await c.req.json<{ goal: string; environment?: "dev" | "staging" | "prod" }>();
+  const body = await c.req.json<{
+    goal: string;
+    environment?: "dev" | "staging" | "prod";
+    source?: "human" | "webhook" | "queue";
+    metadata?: Record<string, unknown>;
+  }>();
   if (!body.goal?.trim()) {
     return c.json({ detail: "goal is required" }, 400);
   }
@@ -160,6 +167,7 @@ app.post("/kernel/run", async (c) => {
   const auth = c.get("auth");
   const tenantId = auth.tenant ?? "default";
   const now = new Date().toISOString();
+  const source = body.source ?? "human";
 
   await c.env.DB.prepare(
     `INSERT INTO runs (run_id, workflow_name, status, environment, tenant_id, created_at, updated_at, metadata_json)
@@ -171,12 +179,18 @@ app.post("/kernel/run", async (c) => {
       tenantId,
       now,
       now,
-      JSON.stringify({ goal: body.goal.trim(), kernel: true }),
+      JSON.stringify({
+        goal: body.goal.trim(),
+        kernel: true,
+        kernel_next_agent: 0,
+        ...(body.metadata ?? {}),
+      }),
     )
     .run();
 
   await recordAuditEvent(c.env.DB, runId, "kernel.started", actorLabel(auth), {
     goal: body.goal.trim(),
+    source,
   });
 
   try {
@@ -186,8 +200,12 @@ app.post("/kernel/run", async (c) => {
       body.goal.trim(),
       tenantId,
       actorLabel(auth),
+      {
+        ingressSource: source,
+        ingressPayload: { goal: body.goal.trim(), ...(body.metadata ?? {}) },
+      },
     );
-    return c.json(result, 201);
+    return c.json(result, result.gated ? 409 : 201);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Kernel execution failed";
     await c.env.DB.prepare("UPDATE runs SET status = ?, updated_at = ? WHERE run_id = ?")
@@ -196,6 +214,131 @@ app.post("/kernel/run", async (c) => {
     await recordAuditEvent(c.env.DB, runId, "kernel.failed", actorLabel(auth), { error: message });
     return c.json({ detail: message, run_id: runId }, 500);
   }
+});
+
+app.post("/ingress/webhook", async (c) => {
+  const secret = c.req.header("X-Ingress-Secret") ?? "";
+  if (!c.env.INGRESS_WEBHOOK_SECRET || secret !== c.env.INGRESS_WEBHOOK_SECRET) {
+    return c.json({ detail: "Invalid ingress secret" }, 401);
+  }
+  const body = await c.req.json<{
+    tenant?: string;
+    goal: string;
+    source_id?: string;
+    metadata?: Record<string, unknown>;
+    environment?: "dev" | "staging" | "prod";
+  }>();
+  if (!body.goal?.trim()) return c.json({ detail: "goal is required" }, 400);
+  const tenantId = body.tenant?.trim() || "default";
+  const runId = crypto.randomUUID();
+  const environment = body.environment ?? "dev";
+  const now = new Date().toISOString();
+
+  await c.env.DB.prepare(
+    `INSERT INTO runs (run_id, workflow_name, status, environment, tenant_id, created_at, updated_at, metadata_json)
+     VALUES (?, 'kernel_nine_agent', 'running', ?, ?, ?, ?, ?)`,
+  )
+    .bind(
+      runId,
+      environment,
+      tenantId,
+      now,
+      now,
+      JSON.stringify({ goal: body.goal.trim(), kernel: true, kernel_next_agent: 0 }),
+    )
+    .run();
+
+  const result = await executeKernelPipeline(c.env, runId, body.goal.trim(), tenantId, "ingress:webhook", {
+    ingressSource: "webhook",
+    ingressPayload: { goal: body.goal, source_id: body.source_id, ...body.metadata },
+  });
+  return c.json(result, result.gated ? 409 : 201);
+});
+
+app.post("/ingress/queue/enqueue", async (c) => {
+  const body = await c.req.json<{ goal: string; metadata?: Record<string, unknown> }>();
+  if (!body.goal?.trim()) return c.json({ detail: "goal is required" }, 400);
+  const auth = c.get("auth");
+  const tenantId = auth.tenant ?? "default";
+  const { recordIngressEvent } = await import("./kernel/pipeline");
+  const id = await recordIngressEvent(c.env, tenantId, "queue", {
+    goal: body.goal.trim(),
+    ...(body.metadata ?? {}),
+  });
+  return c.json({ ingress_event_id: id, status: "pending" }, 201);
+});
+
+app.post("/ingress/queue/process", async (c) => {
+  const secret =
+    c.req.header("Authorization")?.replace(/^Bearer\s+/i, "") ??
+    c.req.query("secret") ??
+    "";
+  const auth = c.get("auth");
+  const isCron = c.env.CRON_SECRET && secret === c.env.CRON_SECRET;
+  const isRunner = auth.authenticated;
+  if (!isCron && !isRunner) return c.json({ detail: "Forbidden" }, 403);
+
+  const { results } = await c.env.DB.prepare(
+    `SELECT * FROM ingress_events WHERE status = 'pending' AND source = 'queue' ORDER BY created_at ASC LIMIT 5`,
+  ).all<{ id: string; tenant_id: string; payload_json: string }>();
+
+  const processed: string[] = [];
+  for (const row of results ?? []) {
+    const payload = JSON.parse(row.payload_json) as Record<string, unknown>;
+    const goal = extractGoalFromPayload(payload);
+    const runId = crypto.randomUUID();
+    const now = new Date().toISOString();
+    await c.env.DB.prepare(
+      `INSERT INTO runs (run_id, workflow_name, status, environment, tenant_id, created_at, updated_at, metadata_json)
+       VALUES (?, 'kernel_nine_agent', 'running', 'dev', ?, ?, ?, ?)`,
+    )
+      .bind(runId, row.tenant_id, now, now, JSON.stringify({ goal, kernel: true, kernel_next_agent: 0 }))
+      .run();
+    await executeKernelPipeline(c.env, runId, goal, row.tenant_id, "ingress:queue", {
+      ingressEventId: row.id,
+      ingressSource: "queue",
+      ingressPayload: payload,
+    });
+    processed.push(runId);
+  }
+  return c.json({ processed: processed.length, run_ids: processed });
+});
+
+app.post("/kernel/runs/:runId/resume", async (c) => {
+  const runId = c.req.param("runId");
+  const auth = c.get("auth");
+  const tenantId = auth.tenant ?? "default";
+  try {
+    const result = await resumeKernelPipeline(c.env, runId, tenantId, actorLabel(auth));
+    return c.json(result);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Resume failed";
+    return c.json({ detail: message }, 409);
+  }
+});
+
+app.get("/kernel/runs/:runId/observer", async (c) => {
+  const runId = c.req.param("runId");
+  const run = await getRun(c.env.DB, runId);
+  if (!run) return c.json({ detail: `Run not found: ${runId}` }, 404);
+  const denied = assertRunAccess(c, run);
+  if (denied) return denied;
+  const steps = await getSteps(c.env.DB, runId);
+  const blockers = getResumeBlockers(run, steps);
+  const metadata = parseMetadata(run.metadata_json);
+  const { getUsageSummary } = await import("./kernel/usage");
+  const usage = await getUsageSummary(c.env, runId);
+  return c.json({
+    run_id: runId,
+    status: run.status,
+    environment: run.environment,
+    goal: metadata.goal,
+    blockers,
+    can_resume: blockers.length === 0,
+    steps_completed: steps.filter((s) => s.status === "completed").length,
+    usage,
+    optimizer: metadata.optimizer,
+  });
 });
 
 app.post("/demo/reset", async (c) => {

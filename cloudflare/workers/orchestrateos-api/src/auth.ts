@@ -107,6 +107,7 @@ export function resolveAuth(
 export function requiresAuth(method: string, path: string): boolean {
   if (path.startsWith("/api/")) return false;
   if (path.startsWith("/internal/")) return false;
+  if (path === "/ingress/webhook" || path === "/ingress/queue/process") return false;
   if (method === "GET" || method === "HEAD" || method === "OPTIONS") return false;
   if (path === "/health" || path === "/demo/runs") return false;
   return true;
@@ -125,6 +126,8 @@ export function requiredRole(method: string, path: string): ApiRole {
     path === "/start_run" ||
     path === "/kernel/run" ||
     path === "/llm/complete" ||
+    path === "/ingress/queue/enqueue" ||
+    (path.includes("/kernel/runs/") && path.endsWith("/resume")) ||
     path.includes("/steps") ||
     path === "/resume" ||
     method === "PATCH"

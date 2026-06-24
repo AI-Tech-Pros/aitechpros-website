@@ -54,12 +54,14 @@ export type KernelAgentInfo = {
   status: "live";
   runtime: string;
   step_name: string;
+  capabilities?: string[];
 };
 
-export type KernelAgentsResponse = {
-  model: string;
-  ai_available: boolean;
-  agents: KernelAgentInfo[];
+export type KernelUsageSummary = {
+  prompt_tokens: number;
+  completion_tokens: number;
+  estimated_cost_usd: number;
+  call_count: number;
 };
 
 export type KernelRunResponse = {
@@ -73,7 +75,30 @@ export type KernelRunResponse = {
     step_index: number;
     output: string;
     model: string;
+    provider?: string;
+    tool_invoked?: string;
   }[];
+  gated?: boolean;
+  blockers?: ResumeBlocker[];
+  usage?: KernelUsageSummary;
+  ingress_event_id?: string;
+};
+
+export type KernelObserverResponse = {
+  run_id: string;
+  status: string;
+  environment?: string;
+  goal?: string;
+  blockers: ResumeBlocker[];
+  can_resume: boolean;
+  steps_completed: number;
+  usage: KernelUsageSummary;
+  optimizer?: Record<string, unknown>;
+};
+export type KernelAgentsResponse = {
+  model: string;
+  ai_available: boolean;
+  agents: KernelAgentInfo[];
 };
 
 export type LlmProviderInfo = {
@@ -137,10 +162,45 @@ export async function fetchKernelAgents(): Promise<KernelAgentsResponse> {
   return apiFetch<KernelAgentsResponse>("/kernel/agents");
 }
 
-export async function runKernelAgents(goal: string): Promise<KernelRunResponse> {
-  return apiFetch<KernelRunResponse>("/kernel/run", {
+export async function runKernelAgents(
+  goal: string,
+  options?: { environment?: "dev" | "staging" | "prod" },
+): Promise<KernelRunResponse> {
+  const response = await fetch(`${baseUrl()}/kernel/run`, {
     method: "POST",
-    body: JSON.stringify({ goal }),
+    credentials: "include",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      ...writeHeaders(),
+    },
+    body: JSON.stringify({ goal, ...options }),
+  });
+  const body = (await response.json()) as KernelRunResponse & { detail?: string };
+  if (!response.ok && response.status !== 409) {
+    throw new Error(body.detail ?? `API error ${response.status}`);
+  }
+  return body;
+}
+
+export async function resumeKernelRun(runId: string): Promise<KernelRunResponse> {
+  return apiFetch<KernelRunResponse>(`/kernel/runs/${encodeURIComponent(runId)}/resume`, {
+    method: "POST",
+    body: "{}",
+  });
+}
+
+export async function fetchKernelObserver(runId: string): Promise<KernelObserverResponse> {
+  return apiFetch<KernelObserverResponse>(`/kernel/runs/${encodeURIComponent(runId)}/observer`);
+}
+
+export async function enqueueIngressGoal(
+  goal: string,
+  metadata?: Record<string, unknown>,
+): Promise<{ ingress_event_id: string; status: string }> {
+  return apiFetch("/ingress/queue/enqueue", {
+    method: "POST",
+    body: JSON.stringify({ goal, metadata }),
   });
 }
 
@@ -214,8 +274,13 @@ export const API_ENDPOINTS = [
   { method: "GET", path: "/health", description: "Load balancer health check" },
   { method: "GET", path: "/docs", description: "API reference (HTML)" },
   { method: "POST", path: "/start_run", description: "Create a new workflow run" },
-  { method: "GET", path: "/kernel/agents", description: "Nine-agent LLM kernel catalog" },
-  { method: "POST", path: "/kernel/run", description: "Run all nine LLM agents on a goal" },
+  { method: "GET", path: "/kernel/agents", description: "Nine-agent kernel catalog (v2)" },
+  { method: "POST", path: "/kernel/run", description: "Run nine-agent kernel with tools, gates, and cost breaker" },
+  { method: "POST", path: "/kernel/runs/{run_id}/resume", description: "Resume kernel after gates cleared" },
+  { method: "GET", path: "/kernel/runs/{run_id}/observer", description: "Live observer status, blockers, and usage" },
+  { method: "POST", path: "/ingress/webhook", description: "Partner webhook ingress (X-Ingress-Secret)" },
+  { method: "POST", path: "/ingress/queue/enqueue", description: "Enqueue goal for async kernel processing" },
+  { method: "POST", path: "/ingress/queue/process", description: "Drain ingress queue (cron or runner)" },
   { method: "GET", path: "/llm/status", description: "LLM provider availability and routing" },
   { method: "POST", path: "/llm/complete", description: "Unified LLM completion with provider failover" },
   { method: "POST", path: "/runs/{run_id}/steps", description: "Record step completion or failure" },
