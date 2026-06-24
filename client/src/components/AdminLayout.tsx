@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import OrchestrateOSNavbar from "@/components/OrchestrateOSNavbar";
+import PlatformReadinessPanel from "@/components/PlatformReadinessPanel";
 import { useSession } from "@/contexts/SessionContext";
 
 const tabs: { label: string; href: string }[] = [
@@ -51,6 +52,8 @@ export default function AdminLayout({
               </Link>
           ))}
         </nav>
+
+        <PlatformReadinessPanel />
 
         {children}
       </main>

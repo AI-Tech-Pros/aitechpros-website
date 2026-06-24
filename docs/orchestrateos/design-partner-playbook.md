@@ -81,10 +81,10 @@ Wire `RemoteCheckpointStore` into the chosen workflow:
 
 ## 6. Known limitations (set expectations)
 
-- Shared control plane is **single-tenant demo/pilot** until Phase **5b** ([tenant isolation spec](./phase-5-platform.md#phase-5b--tenant-isolation-security-prerequisite-for-multi-partner)).
-- `GET /runs/{id}` is public for demo runs; scoped reads for partner tenants ship in 5b.
+- Shared control plane is **multi-tenant** with D1-scoped runs and auto-provisioned runner keys (Phase 5b+).
+- `GET /runs/{id}` remains public for demo runs; partner tenants see scoped runs on `/partner/dashboard`.
 - Custom domain optional — `*.pages.dev` / `*.workers.dev` is production today.
-- CRM, magic-link login, and partner portal are **specified** in [phase-5-platform.md](./phase-5-platform.md) — not live until 5a ships.
+- CRM, magic-link login, and partner portal are **live** — see [phase-5-platform.md](./phase-5-platform.md).
 
 ---
 
