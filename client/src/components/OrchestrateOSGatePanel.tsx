@@ -15,6 +15,8 @@ import {
   WifiOff,
 } from "lucide-react";
 import { DEMO_RUN_CATALOG } from "@/lib/orchestrateos-demo";
+import ComplianceExportPanel from "@/components/ComplianceExportPanel";
+import RunTimeline from "@/components/RunTimeline";
 import {
   ackProdResume,
   fetchApiHealth,
@@ -464,6 +466,9 @@ export default function OrchestrateOSGatePanel() {
                     No active gates on run <code className="text-[#06B6D4]">{activeRunId}</code>.
                   </p>
                 )}
+
+                <ComplianceExportPanel runId={activeRunId} />
+                <RunTimeline runId={activeRunId} compact />
 
                 {needsCompensation && (
                   <button

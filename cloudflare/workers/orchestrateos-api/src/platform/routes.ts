@@ -14,6 +14,8 @@ import {
 import { createPartnerFirstWorkflow } from "./partner-first-workflow";
 import { createPartnerStartRun } from "./partner-start-run";
 import { getPartnerJourney } from "./partner-journey";
+import { buildComplianceExport } from "../compliance-export";
+import { getTenantGatePolicy, parseGatePolicy, type TenantGatePolicy } from "../gate-policies";
 import { provisionPartnerRunnerKey, rotatePartnerRunnerKey } from "../tenant-api-keys";
 import { enrollWelcomeSequence, onLeadStageChanged } from "./nurture/service";
 import {
@@ -280,6 +282,78 @@ platformApp.get("/partners/me/runs", async (c) => {
     .all<RunSummaryRow>();
 
   return c.json({ runs: results ?? [], tenant_id: tenantId });
+});
+
+platformApp.get("/partners/me/gate-policy", async (c) => {
+  const session = requirePartnerSession(c);
+  if (session instanceof Response) return session;
+
+  const tenantId = session.partnerSlug;
+  if (!tenantId) {
+    return c.json({ tenant_id: null, policy: parseGatePolicy(null) });
+  }
+
+  const policy = await getTenantGatePolicy(c.env.DB, tenantId);
+  return c.json({ tenant_id: tenantId, policy });
+});
+
+platformApp.get("/partners/me/runs/:runId/compliance_export", async (c) => {
+  const session = requirePartnerSession(c);
+  if (session instanceof Response) return session;
+
+  const tenantId = session.partnerSlug;
+  if (!tenantId) return c.json({ detail: "Partner tenant not found" }, 400);
+
+  const runId = c.req.param("runId")?.trim();
+  if (!runId) return c.json({ detail: "runId is required" }, 400);
+
+  const run = await c.env.DB.prepare(`SELECT * FROM runs WHERE run_id = ?`)
+    .bind(runId)
+    .first<{
+      run_id: string;
+      workflow_name: string;
+      status: string;
+      environment: string;
+      tenant_id?: string;
+      created_at: string;
+      updated_at: string;
+      metadata_json: string;
+    }>();
+  if (!run) return c.json({ detail: "Run not found" }, 404);
+  if ((run.tenant_id?.trim() || "default") !== tenantId) {
+    return c.json({ detail: "Access denied for this run" }, 403);
+  }
+
+  const { results: steps } = await c.env.DB.prepare(
+    `SELECT * FROM step_records WHERE run_id = ? ORDER BY sequence ASC`,
+  )
+    .bind(runId)
+    .all<{
+      id: number;
+      run_id: string;
+      step_name: string;
+      step_index: number;
+      input_json: string;
+      input_hash: string;
+      output_json: string | null;
+      status: string;
+      idempotency_key: string;
+      timestamp: string;
+      failure_classification: string | null;
+      error_message: string | null;
+      sequence: number;
+    }>();
+
+  const bundle = await buildComplianceExport(c.env.DB, run, steps ?? []);
+  if (c.req.query("download") === "1") {
+    return new Response(JSON.stringify(bundle, null, 2), {
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Content-Disposition": `attachment; filename="orchestrateos-compliance-${runId}.json"`,
+      },
+    });
+  }
+  return c.json(bundle);
 });
 
 platformApp.get("/partners/me/journey", async (c) => {

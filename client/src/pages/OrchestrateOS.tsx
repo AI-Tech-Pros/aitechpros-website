@@ -164,31 +164,36 @@ export default function OrchestrateOS() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <a
-                href={CALENDLY_URL}
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href="/#gates"
                 className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-gradient-to-r from-[#8B5CF6] to-[#3B82F6] text-white font-semibold font-[Montserrat] hover:opacity-90 transition-opacity shadow-xl shadow-violet-500/25"
               >
-                Request Early Access
+                Try gate explorer
+                <Shield className="w-4 h-4" />
+              </Link>
+              <Link
+                href="/onboarding"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl glass-card text-white/80 font-medium hover:text-white transition-colors"
+              >
+                Start partner onboarding
                 <ArrowUpRight className="w-4 h-4" />
-              </a>
+              </Link>
               <a
                 href={orchestrateOSApiDocsUrl()}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl glass-card text-white/80 font-medium hover:text-white transition-colors"
-              >
-                <GitBranch className="w-4 h-4 text-[#06B6D4]" />
-                API docs
-              </a>
-              <Link
-                href="/install"
                 className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl glass-card text-white/80 font-medium hover:text-white transition-colors font-mono text-sm"
               >
-                pip install resume_engine
-              </Link>
+                API docs
+              </a>
             </div>
+
+            <p className="mt-6 text-sm text-white/40 max-w-2xl">
+              <strong className="text-white/60">Production:</strong> SDK + gates + compliance export.{" "}
+              <Link href="/production" className="text-[#06B6D4] hover:underline">
+                Production vs demo guide →
+              </Link>
+            </p>
 
             <p className="mt-8 text-sm text-white/30">
               Control plane:{" "}

@@ -7,6 +7,7 @@ import OrchestrateOS from "@/pages/OrchestrateOS";
 import OrchestrateOSCompare from "@/pages/OrchestrateOSCompare";
 import OrchestrateOSCompliance from "@/pages/OrchestrateOSCompliance";
 import OrchestrateOSGovernance from "@/pages/OrchestrateOSGovernance";
+import OrchestrateOSProduction from "@/pages/OrchestrateOSProduction";
 import OrchestrateOSInstall from "@/pages/OrchestrateOSInstall";
 import OrchestrateOSLogin from "@/pages/OrchestrateOSLogin";
 import OrchestrateOSAuthVerify from "@/pages/OrchestrateOSAuthVerify";
@@ -55,6 +56,7 @@ function OrchestrateOSRouter() {
       <Switch>
         <Route path={"/"} component={OrchestrateOS} />
         <Route path={"/governance"} component={OrchestrateOSGovernance} />
+        <Route path={"/production"} component={OrchestrateOSProduction} />
         <Route path={"/compliance"} component={OrchestrateOSCompliance} />
         <Route path={"/install"} component={OrchestrateOSInstall} />
         <Route path={"/compare"} component={OrchestrateOSCompare} />

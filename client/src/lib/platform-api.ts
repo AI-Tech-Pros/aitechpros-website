@@ -358,3 +358,58 @@ export async function fetchAdminOutcomes(tenant?: string): Promise<{
   const q = tenant ? `?tenant=${encodeURIComponent(tenant)}` : "";
   return adminFetch(`/admin/outcomes${q}`);
 }
+
+export type TenantGatePolicy = {
+  prod_requires_ack: boolean;
+  permanent_consensus_min: number;
+  partial_requires_compensation: boolean;
+};
+
+export async function fetchPartnerGatePolicy(): Promise<{
+  tenant_id: string | null;
+  policy: TenantGatePolicy;
+}> {
+  const res = await platformFetch("/partners/me/gate-policy");
+  if (!res.ok) throw new Error("Failed to load gate policy");
+  return res.json();
+}
+
+export async function fetchPartnerComplianceExport(
+  runId: string,
+): Promise<import("@/lib/orchestrateos-api").ComplianceExport> {
+  const res = await platformFetch(
+    `/partners/me/runs/${encodeURIComponent(runId)}/compliance_export`,
+  );
+  const data = (await res.json()) as import("@/lib/orchestrateos-api").ComplianceExport & {
+    detail?: string;
+  };
+  if (!res.ok) throw new Error(data.detail ?? "Export failed");
+  return data;
+}
+
+export async function downloadPartnerComplianceExport(runId: string): Promise<void> {
+  const res = await platformFetch(
+    `/partners/me/runs/${encodeURIComponent(runId)}/compliance_export?download=1`,
+  );
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { detail?: string };
+    throw new Error(body.detail ?? `Download failed (${res.status})`);
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `orchestrateos-compliance-${runId}.json`;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+export async function updateAdminPartnerGatePolicy(
+  partnerId: string,
+  policy: Partial<TenantGatePolicy>,
+): Promise<{ tenant_id: string; policy: TenantGatePolicy }> {
+  return adminFetch(`/admin/partners/${encodeURIComponent(partnerId)}/gate-policy`, {
+    method: "PUT",
+    body: JSON.stringify(policy),
+  });
+}

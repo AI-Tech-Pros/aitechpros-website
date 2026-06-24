@@ -348,6 +348,95 @@ export async function ackProdResume(
   );
 }
 
+export type ComplianceExport = {
+  export_version: string;
+  exported_at: string;
+  product: string;
+  run: {
+    run_id: string;
+    workflow_name: string;
+    status: string;
+    environment: string;
+    tenant_id: string;
+    created_at: string;
+    updated_at: string;
+    metadata: Record<string, unknown>;
+  };
+  gate_summary: {
+    can_resume: boolean;
+    blocker_count: number;
+    blockers: ResumeBlocker[];
+  };
+  gate_state: Record<string, unknown>;
+  resume_blockers: ResumeBlocker[];
+  steps: {
+    step_name: string;
+    step_index: number;
+    status: string;
+    timestamp: string;
+    failure_classification: string | null;
+    error_message: string | null;
+    sequence: number;
+    idempotency_key: string;
+  }[];
+  replay: {
+    replay_from_index: number;
+    step_count: number;
+    steps: ComplianceExport["steps"];
+  };
+  audit_events: {
+    event_type: string;
+    actor: string | null;
+    payload: Record<string, unknown>;
+    created_at: string;
+  }[];
+  idempotency_analysis: {
+    findings: {
+      type: string;
+      idempotency_key: string;
+      step_indices: number[];
+      sequences: number[];
+      message: string;
+    }[];
+    side_effect_safe: boolean;
+    summary: string;
+  };
+  integrity: {
+    step_count: number;
+    audit_event_count: number;
+    completed_steps: number;
+    failed_steps: number;
+  };
+};
+
+export async function fetchComplianceExport(runId: string): Promise<ComplianceExport> {
+  return apiFetch<ComplianceExport>(`/runs/${encodeURIComponent(runId)}/compliance_export`);
+}
+
+export async function downloadComplianceExport(runId: string): Promise<void> {
+  const response = await fetch(
+    `${baseUrl()}/runs/${encodeURIComponent(runId)}/compliance_export?download=1`,
+    {
+      credentials: "include",
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${runnerKeyForStartRun()}`,
+      },
+    },
+  );
+  if (!response.ok) {
+    const body = (await response.json().catch(() => ({}))) as { detail?: string };
+    throw new Error(body.detail ?? `Download failed (${response.status})`);
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `orchestrateos-compliance-${runId}.json`;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
 export const API_ENDPOINTS = [
   { method: "GET", path: "/health", description: "Load balancer health check" },
   { method: "GET", path: "/docs", description: "API reference (HTML)" },
@@ -379,6 +468,7 @@ export const API_ENDPOINTS = [
   { method: "GET", path: "/runs/{run_id}/audit_log", description: "Deterministic audit trace" },
   { method: "GET", path: "/runs/{run_id}/audit_events", description: "Immutable governance audit events" },
   { method: "GET", path: "/runs/{run_id}/replay", description: "Deterministic replay payload" },
+  { method: "GET", path: "/runs/{run_id}/compliance_export", description: "Compliance bundle (steps, gates, audit, idempotency)" },
   { method: "GET", path: "/demo/runs", description: "Seeded demo run catalog" },
   { method: "POST", path: "/demo/reset", description: "Reset demo runs to initial gate state" },
 ] as const;

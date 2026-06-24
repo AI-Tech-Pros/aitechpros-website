@@ -22,6 +22,8 @@ import {
 } from "./platform/session";
 import { assertRunAccess } from "./tenant-access";
 import { applyConsensusVote, seedConsensusPolicy } from "./consensus-gate";
+import { buildComplianceExport } from "./compliance-export";
+import { applyTenantGatePolicy, getTenantGatePolicy } from "./gate-policies";
 import { getResumeBlockers, failureKey, lastFailedStep, type ResumeBlocker } from "./resume-blockers";
 import {
   parseMetadata,
@@ -345,7 +347,12 @@ app.post("/start_run", async (c) => {
   if (existing) {
     return c.json({ detail: `Run already exists: ${runId}` }, 409);
   }
-  const runMetadata = seedConsensusPolicy(body.metadata ?? {});
+  const runMetadataBase = seedConsensusPolicy(body.metadata ?? {});
+  let runMetadata = runMetadataBase;
+  if (tenantId !== "demo" && tenantId !== "default") {
+    const policy = await getTenantGatePolicy(c.env.DB, tenantId);
+    runMetadata = applyTenantGatePolicy(runMetadataBase, policy);
+  }
   await c.env.DB.prepare(
     `INSERT INTO runs (run_id, workflow_name, status, environment, tenant_id, created_at, updated_at, metadata_json)
      VALUES (?, ?, 'running', ?, ?, ?, ?, ?)`,
@@ -726,6 +733,25 @@ app.get("/runs/:runId/replay", async (c) => {
     replay_from_index: 0,
     steps: replayable.map(stepToApi),
   });
+});
+
+app.get("/runs/:runId/compliance_export", async (c) => {
+  const runId = c.req.param("runId");
+  const run = await getRun(c.env.DB, runId);
+  if (!run) return c.json({ detail: `Run not found: ${runId}` }, 404);
+  const denied = assertRunAccess(c, run);
+  if (denied) return denied;
+  const steps = await getSteps(c.env.DB, runId);
+  const bundle = await buildComplianceExport(c.env.DB, run, steps);
+  if (c.req.query("download") === "1") {
+    return new Response(JSON.stringify(bundle, null, 2), {
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Content-Disposition": `attachment; filename="orchestrateos-compliance-${runId}.json"`,
+      },
+    });
+  }
+  return c.json(bundle);
 });
 
 app.post("/internal/nurture/tick", async (c) => {

@@ -4,6 +4,8 @@ import { ExternalLink } from "lucide-react";
 import OrchestrateOSNavbar from "@/components/OrchestrateOSNavbar";
 import PartnerRoute from "@/components/PartnerRoute";
 import PartnerJourneyPanel from "@/components/PartnerJourneyPanel";
+import ComplianceExportPanel from "@/components/ComplianceExportPanel";
+import RunTimeline from "@/components/RunTimeline";
 import {
   fetchPartnerJourney,
   fetchPartnerMe,
@@ -33,6 +35,7 @@ function DashboardContent() {
   const [rotatingKey, setRotatingKey] = useState(false);
   const [workflowMessage, setWorkflowMessage] = useState<string | null>(null);
   const [revealedKey, setRevealedKey] = useState<string | null>(null);
+  const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
 
   async function refreshDashboard() {
     const me = await fetchPartnerMe();
@@ -239,11 +242,15 @@ function DashboardContent() {
 
         {journey && journey.next_action === "wire_sdk" && (
           <section className="rounded-2xl border border-[#06B6D4]/25 bg-[#06B6D4]/5 p-6 mb-8">
-            <h2 className="text-lg font-semibold text-white mb-2">Next: connect the SDK</h2>
+            <h2 className="text-lg font-semibold text-white mb-2">Next: connect the SDK and resume a real failure</h2>
             <p className="text-white/50 text-sm mb-4">
-              Use your runner key with <code className="text-[#06B6D4]">resume_engine[remote]</code>.
-              Runs appear here automatically when scoped to tenant{" "}
-              <code className="text-[#06B6D4]">{tenantId}</code>.
+              Production path: wire <code className="text-[#06B6D4]">resume_engine[remote]</code>,
+              fail a step in your workflow, clear gates here, and export the compliance bundle for
+              reviewers. The nine-agent kernel on{" "}
+              <Link href="/governance" className="text-[#06B6D4] hover:underline">
+                /governance
+              </Link>{" "}
+              is architecture lab only.
             </p>
             <div className="flex flex-wrap gap-3">
               <button
@@ -305,10 +312,8 @@ function DashboardContent() {
           ) : (
             <ul className="space-y-3">
               {runs.map((run) => (
-                <li
-                  key={run.run_id}
-                  className="rounded-xl border border-white/[0.06] bg-black/30 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
-                >
+                <li key={run.run_id} className="rounded-xl border border-white/[0.06] bg-black/30 overflow-hidden">
+                  <div className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
                     <p className="text-white font-mono text-xs break-all">{run.run_id}</p>
                     <p className="text-white/60 text-sm mt-1">
@@ -316,6 +321,15 @@ function DashboardContent() {
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExpandedRunId((id) => (id === run.run_id ? null : run.run_id))
+                      }
+                      className="text-xs px-3 py-1.5 rounded-lg text-white/70 border border-white/10"
+                    >
+                      {expandedRunId === run.run_id ? "Hide timeline" : "Timeline & export"}
+                    </button>
                     <button
                       type="button"
                       onClick={() => openGateExplorer(run.run_id)}
@@ -332,15 +346,14 @@ function DashboardContent() {
                       Audit
                       <ExternalLink className="w-3 h-3" />
                     </a>
-                    <a
-                      href={orchestrateOSApiDocsUrl()}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs px-3 py-1.5 rounded-lg text-white/60 border border-white/10"
-                    >
-                      API docs
-                    </a>
                   </div>
+                  </div>
+                  {expandedRunId === run.run_id && (
+                    <div className="border-t border-white/[0.06] p-4 space-y-4 bg-black/20">
+                      <ComplianceExportPanel runId={run.run_id} partnerSession />
+                      <RunTimeline runId={run.run_id} partnerSession compact />
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>

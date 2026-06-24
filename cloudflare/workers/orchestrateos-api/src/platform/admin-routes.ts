@@ -13,6 +13,7 @@ import { provisionPartnerRunnerKey, rotatePartnerRunnerKey, ensurePartnerRunnerK
 import { enrollWelcomeSequence, onLeadStageChanged } from "./nurture/service";
 import type { SessionPayload } from "./session";
 import { runGateSummary } from "../resume-blockers";
+import { parseGatePolicy, type TenantGatePolicy } from "../gate-policies";
 import { parseMetadata, type RunRow, type StepRow } from "../serialize";
 
 const LEAD_STAGES = new Set(["new", "engaged", "qualified", "converted"]);
@@ -338,6 +339,48 @@ adminApp.post("/partners/:id/provision-runner-key", async (c) => {
     },
     201,
   );
+});
+
+adminApp.get("/partners/:id/gate-policy", async (c) => {
+  const denied = requireAdmin(c);
+  if (denied) return denied;
+
+  const partnerId = c.req.param("id")?.trim();
+  if (!partnerId) return c.json({ detail: "Partner id is required" }, 400);
+
+  const partner = await c.env.DB.prepare(`SELECT slug, gate_policy_json FROM design_partners WHERE id = ?`)
+    .bind(partnerId)
+    .first<{ slug: string; gate_policy_json: string | null }>();
+  if (!partner) return c.json({ detail: "Partner not found" }, 404);
+
+  return c.json({
+    tenant_id: partner.slug,
+    policy: parseGatePolicy(partner.gate_policy_json),
+  });
+});
+
+adminApp.put("/partners/:id/gate-policy", async (c) => {
+  const denied = requireAdmin(c);
+  if (denied) return denied;
+
+  const partnerId = c.req.param("id")?.trim();
+  if (!partnerId) return c.json({ detail: "Partner id is required" }, 400);
+
+  const body = await c.req.json<Partial<TenantGatePolicy>>();
+  const policy = parseGatePolicy(JSON.stringify(body));
+
+  const existing = await c.env.DB.prepare(`SELECT id, slug FROM design_partners WHERE id = ?`)
+    .bind(partnerId)
+    .first<PartnerRow>();
+  if (!existing) return c.json({ detail: "Partner not found" }, 404);
+
+  await c.env.DB.prepare(
+    `UPDATE design_partners SET gate_policy_json = ?, updated_at = ? WHERE id = ?`,
+  )
+    .bind(JSON.stringify(policy), new Date().toISOString(), partnerId)
+    .run();
+
+  return c.json({ tenant_id: existing.slug, policy });
 });
 
 adminApp.get("/outcomes", async (c) => {

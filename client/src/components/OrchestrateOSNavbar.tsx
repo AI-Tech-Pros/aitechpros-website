@@ -13,6 +13,7 @@ const navLinks = [
   { label: "Compare", href: "#compare" },
   { label: "Gates", href: "#gates" },
   { label: "Install", href: "/install", route: true },
+  { label: "Production", href: "/production", route: true },
   { label: "Governance", href: "/governance", route: true },
 ];
 

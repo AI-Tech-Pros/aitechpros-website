@@ -164,6 +164,15 @@ jobs:
           workingDirectory: cloudflare/workers/orchestrateos-api
           command: d1 execute orchestrateos --remote --file=../../d1/migrations/0009_tenant_api_keys.sql
 
+      - name: Apply D1 gate policies migration (remote)
+        continue-on-error: true
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: cloudflare/workers/orchestrateos-api
+          command: d1 execute orchestrateos --remote --file=../../d1/migrations/0010_gate_policies.sql
+
       - name: Seed D1 demo runs
         uses: cloudflare/wrangler-action@v3
         with:

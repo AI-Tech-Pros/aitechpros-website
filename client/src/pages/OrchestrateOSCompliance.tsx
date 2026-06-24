@@ -36,6 +36,10 @@ export default function OrchestrateOSCompliance() {
       <SubSection title="Immutable audit trail">
         <ul className="list-disc pl-5 space-y-2">
           <li>
+            <code className="text-[#06B6D4] text-sm">GET /runs/&#123;id&#125;/compliance_export</code> —
+            one-click JSON bundle for compliance (steps, gates, audit, replay, idempotency proof)
+          </li>
+          <li>
             <code className="text-[#06B6D4] text-sm">GET /runs/&#123;id&#125;/audit_events</code> —
             append-only governance log (start, step, compensate, approve, prod ack)
           </li>

@@ -63,6 +63,9 @@ export const OPENAPI_SPEC = {
     "/runs/{run_id}/replay": {
       get: { summary: "Deterministic replay payload from completed steps" },
     },
+    "/runs/{run_id}/compliance_export": {
+      get: { summary: "Compliance bundle — steps, gates, audit, replay, idempotency analysis" },
+    },
     "/runs/{run_id}/audit_events": {
       get: { summary: "Immutable governance audit event log" },
     },
@@ -123,6 +126,7 @@ export const DOCS_HTML = `<!DOCTYPE html>
       <tr><td>POST</td><td><code>/runs/{run_id}/approve</code></td><td>Grant human approval (permanent failures)</td></tr>
       <tr><td>POST</td><td><code>/runs/{run_id}/ack_prod_resume</code></td><td>Production resume acknowledgment</td></tr>
       <tr><td>GET</td><td><code>/runs/{run_id}/replay</code></td><td>Replay payload (completed steps)</td></tr>
+      <tr><td>GET</td><td><code>/runs/{run_id}/compliance_export</code></td><td>Compliance JSON bundle for auditors</td></tr>
       <tr><td>GET</td><td><code>/runs/{run_id}/audit_events</code></td><td>Immutable governance audit log</td></tr>
       <tr><td>POST</td><td><code>/resume</code></td><td>Validate resume (409 if gated)</td></tr>
       <tr><td>GET</td><td><code>/runs/{run_id}/audit_log</code></td><td>Deterministic audit trace</td></tr>

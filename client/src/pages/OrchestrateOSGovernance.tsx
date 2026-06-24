@@ -32,14 +32,27 @@ const objections = [
 export default function OrchestrateOSGovernance() {
   return (
     <OrchestrateOSSubpage
-      eyebrow="Governance guide"
+      eyebrow="Architecture & live lab"
       title={
         <>
           Why observability <span className="gradient-text">is not</span> governance
         </>
       }
-      subtitle="Objection-handling for teams evaluating LangGraph, CrewAI, or Azure agents who need governed resume — not just traces after deploy."
+      subtitle="Production runs use the SDK and gate APIs. This page maps the nine-agent reference model and includes a live kernel lab — not your default orchestration path."
     >
+      <SubSection title="Production vs demo">
+        <p>
+          Partners ship with <code className="text-[#06B6D4] text-sm">resume_engine[remote]</code>,{" "}
+          <code className="text-[#06B6D4] text-sm">start_run</code>, and gate clears — then export
+          compliance bundles from the partner dashboard. The nine-agent kernel below is for
+          architecture storytelling and ingress experiments.
+        </p>
+        <p>
+          <Link href="/production" className="text-[#06B6D4] hover:underline">
+            Read the production vs demo guide →
+          </Link>
+        </p>
+      </SubSection>
       <SubSection title="The wedge">
         <p>
           LangSmith answers <strong className="text-white/80">what happened</strong>. OrchestrateOS
@@ -69,7 +82,15 @@ export default function OrchestrateOSGovernance() {
         <OrchestrateOSLifecycleLoop />
       </SubSection>
 
-      <SubSection title="Nine-agent kernel (reference architecture)">
+      <SubSection title="Nine-agent kernel (reference architecture · live lab)">
+        <p className="text-white/55 text-sm mb-4">
+          Runs all nine roles sequentially on the Worker for demos. Do not use as your production
+          orchestrator — use the SDK path described in{" "}
+          <Link href="/production" className="text-[#06B6D4] hover:underline">
+            /production
+          </Link>
+          .
+        </p>
         <OrchestrateOSNineAgentKernel />
       </SubSection>
 
