@@ -16,6 +16,7 @@ export type AuthContext = {
   role: ApiRole | null;
   token: string | null;
   isDemoOperator: boolean;
+  tenant: string | null;
 };
 
 const ROLE_RANK: Record<ApiRole, number> = {
@@ -26,14 +27,23 @@ const ROLE_RANK: Record<ApiRole, number> = {
 
 const DEMO_RUN_ID_SET = new Set(Object.values(DEMO_RUN_IDS));
 
-export function parseApiKeys(json: string | undefined): Map<string, ApiRole> {
-  const map = new Map<string, ApiRole>();
+export type ApiKeyEntry = ApiRole | { role: ApiRole; tenant?: string };
+
+export function parseApiKeys(json: string | undefined): Map<string, ApiKeyEntry> {
+  const map = new Map<string, ApiKeyEntry>();
   if (!json) return map;
   try {
-    const parsed = JSON.parse(json) as Record<string, string>;
-    for (const [key, role] of Object.entries(parsed)) {
-      if (role === "auditor" || role === "operator" || role === "runner") {
-        map.set(key, role);
+    const parsed = JSON.parse(json) as Record<string, ApiKeyEntry>;
+    for (const [key, value] of Object.entries(parsed)) {
+      if (typeof value === "string") {
+        if (value === "auditor" || value === "operator" || value === "runner") {
+          map.set(key, value);
+        }
+      } else if (value && typeof value === "object" && "role" in value) {
+        const role = value.role;
+        if (role === "auditor" || role === "operator" || role === "runner") {
+          map.set(key, value);
+        }
       }
     }
   } catch {
@@ -42,30 +52,60 @@ export function parseApiKeys(json: string | undefined): Map<string, ApiRole> {
   return map;
 }
 
+function entryRole(entry: ApiKeyEntry | undefined): ApiRole | null {
+  if (!entry) return null;
+  return typeof entry === "string" ? entry : entry.role;
+}
+
+function entryTenant(entry: ApiKeyEntry | undefined): string | null {
+  if (!entry || typeof entry === "string") return null;
+  return entry.tenant?.trim() || null;
+}
+
 export function authEnabled(env: AuthEnv): boolean {
   return env.API_AUTH_ENABLED === "true" || env.API_AUTH_ENABLED === "1";
 }
 
 export function resolveAuth(
   authHeader: string | undefined,
-  apiKeys: Map<string, ApiRole>,
+  apiKeys: Map<string, ApiKeyEntry>,
   demoOperatorKey: string | undefined,
 ): AuthContext {
   if (!authHeader?.startsWith("Bearer ")) {
-    return { authenticated: false, role: null, token: null, isDemoOperator: false };
+    return {
+      authenticated: false,
+      role: null,
+      token: null,
+      isDemoOperator: false,
+      tenant: null,
+    };
   }
   const token = authHeader.slice(7).trim();
-  const role = apiKeys.get(token) ?? null;
+  const entry = apiKeys.get(token);
+  const role = entryRole(entry);
   if (role) {
-    return { authenticated: true, role, token, isDemoOperator: false };
+    return {
+      authenticated: true,
+      role,
+      token,
+      isDemoOperator: false,
+      tenant: entryTenant(entry),
+    };
   }
   if (demoOperatorKey && token === demoOperatorKey) {
-    return { authenticated: true, role: "operator", token, isDemoOperator: true };
+    return {
+      authenticated: true,
+      role: "operator",
+      token,
+      isDemoOperator: true,
+      tenant: "demo",
+    };
   }
-  return { authenticated: false, role: null, token, isDemoOperator: false };
+  return { authenticated: false, role: null, token, isDemoOperator: false, tenant: null };
 }
 
 export function requiresAuth(method: string, path: string): boolean {
+  if (path.startsWith("/api/")) return false;
   if (method === "GET" || method === "HEAD" || method === "OPTIONS") return false;
   if (path === "/health" || path === "/demo/runs") return false;
   return true;
@@ -117,6 +157,7 @@ export async function enforceAuth(c: Context<{ Bindings: AuthEnv; Variables: { a
     role: null,
     token: null,
     isDemoOperator: false,
+    tenant: null,
   };
 
   if (!requiresAuth(c.req.method, c.req.path)) {

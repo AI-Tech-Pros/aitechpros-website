@@ -12,3 +12,5 @@ database_id = "a7443074-33df-40e4-b2dd-c89f40976c8c"
 [vars]
 CORS_ORIGINS = "https://orchestrateos.pages.dev,https://aitechpros-website.pages.dev,https://*.pages.dev,http://localhost:3001,http://127.0.0.1:3001"
 API_AUTH_ENABLED = "true"
+SITE_URL = "https://orchestrateos.pages.dev"
+# Set via wrangler secret: SESSION_SECRET, RESEND_API_KEY, NOTIFY_EMAIL, ADMIN_EMAILS

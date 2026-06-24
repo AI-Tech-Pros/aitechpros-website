@@ -163,6 +163,14 @@ export default function OrchestrateOSGatePanel() {
     }
   }, [runId]);
 
+  useEffect(() => {
+    const stored = sessionStorage.getItem("orchestrateos_run_id");
+    if (stored) {
+      sessionStorage.removeItem("orchestrateos_run_id");
+      void lookupRun(stored);
+    }
+  }, [lookupRun]);
+
   const handleResetDemos = async () => {
     setActionLoading(true);
     setLiveError(null);

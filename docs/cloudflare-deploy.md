@@ -192,3 +192,12 @@ pip install "resume_engine[remote]"
 **First vertical slice (5a):** landing lead form → `POST /api/leads` → magic-link login → read-only `/partner/dashboard` with real `run_id`s from D1.
 
 Planned secrets (5a+): `SESSION_SECRET`, `RESEND_API_KEY`, `NOTIFY_EMAIL`, `ADMIN_EMAILS`.
+
+```powershell
+# One-time Worker secrets (production)
+cd cloudflare/workers/orchestrateos-api
+wrangler secret put SESSION_SECRET
+wrangler secret put RESEND_API_KEY
+wrangler secret put NOTIFY_EMAIL
+wrangler secret put ADMIN_EMAILS
+```

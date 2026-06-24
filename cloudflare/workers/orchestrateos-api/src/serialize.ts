@@ -5,6 +5,7 @@ export type RunRow = {
   workflow_name: string;
   status: string;
   environment: string;
+  tenant_id?: string;
   created_at: string;
   updated_at: string;
   metadata_json: string;

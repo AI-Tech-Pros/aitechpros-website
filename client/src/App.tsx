@@ -8,6 +8,10 @@ import OrchestrateOSCompare from "@/pages/OrchestrateOSCompare";
 import OrchestrateOSCompliance from "@/pages/OrchestrateOSCompliance";
 import OrchestrateOSGovernance from "@/pages/OrchestrateOSGovernance";
 import OrchestrateOSInstall from "@/pages/OrchestrateOSInstall";
+import OrchestrateOSLogin from "@/pages/OrchestrateOSLogin";
+import OrchestrateOSAuthVerify from "@/pages/OrchestrateOSAuthVerify";
+import OrchestrateOSPartnerDashboard from "@/pages/OrchestrateOSPartnerDashboard";
+import { SessionProvider } from "@/contexts/SessionContext";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -43,17 +47,22 @@ function MainSiteRouter() {
 
 function OrchestrateOSRouter() {
   return (
-    <Switch>
-      <Route path={"/"} component={OrchestrateOS} />
-      <Route path={"/governance"} component={OrchestrateOSGovernance} />
-      <Route path={"/compliance"} component={OrchestrateOSCompliance} />
-      <Route path={"/install"} component={OrchestrateOSInstall} />
-      <Route path={"/compare"} component={OrchestrateOSCompare} />
-      <Route path={"/privacy"} component={PrivacyPolicy} />
-      <Route path={"/terms"} component={TermsOfService} />
-      <Route path={"/404"} component={NotFound} />
-      <Route component={NotFound} />
-    </Switch>
+    <SessionProvider>
+      <Switch>
+        <Route path={"/"} component={OrchestrateOS} />
+        <Route path={"/governance"} component={OrchestrateOSGovernance} />
+        <Route path={"/compliance"} component={OrchestrateOSCompliance} />
+        <Route path={"/install"} component={OrchestrateOSInstall} />
+        <Route path={"/compare"} component={OrchestrateOSCompare} />
+        <Route path={"/login"} component={OrchestrateOSLogin} />
+        <Route path={"/auth/verify"} component={OrchestrateOSAuthVerify} />
+        <Route path={"/partner/dashboard"} component={OrchestrateOSPartnerDashboard} />
+        <Route path={"/privacy"} component={PrivacyPolicy} />
+        <Route path={"/terms"} component={TermsOfService} />
+        <Route path={"/404"} component={NotFound} />
+        <Route component={NotFound} />
+      </Switch>
+    </SessionProvider>
   );
 }
 

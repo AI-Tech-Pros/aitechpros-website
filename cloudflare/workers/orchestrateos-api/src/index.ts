@@ -10,6 +10,7 @@ import { auditEventToApi, listAuditEvents, recordAuditEvent } from "./audit";
 import { DEMO_RUN_CATALOG } from "./demo-runs";
 import { seedDemoRuns } from "./demo-seed";
 import { DOCS_HTML, OPENAPI_SPEC } from "./docs";
+import { platformApp } from "./platform/routes";
 import {
   parseMetadata,
   runToApi,
@@ -24,6 +25,11 @@ export type Env = {
   API_AUTH_ENABLED?: string;
   API_KEYS_JSON?: string;
   DEMO_OPERATOR_KEY?: string;
+  SESSION_SECRET?: string;
+  RESEND_API_KEY?: string;
+  NOTIFY_EMAIL?: string;
+  ADMIN_EMAILS?: string;
+  SITE_URL?: string;
 };
 
 type AppVariables = {
@@ -69,6 +75,8 @@ app.use("*", async (c, next) => {
   return next();
 });
 
+app.route("/api", platformApp);
+
 app.get("/health", (c) =>
   c.json({ status: "ok", service: "orchestrateos-api", platform: "cloudflare-workers" }),
 );
@@ -109,15 +117,25 @@ app.post("/start_run", async (c) => {
     return c.json({ detail: "environment must be dev, staging, or prod" }, 400);
   }
   const now = new Date().toISOString();
+  const auth = c.get("auth");
+  const tenantId = auth.tenant ?? (auth.authenticated ? "default" : "demo");
   const existing = await getRun(c.env.DB, runId);
   if (existing) {
     return c.json({ detail: `Run already exists: ${runId}` }, 409);
   }
   await c.env.DB.prepare(
-    `INSERT INTO runs (run_id, workflow_name, status, environment, created_at, updated_at, metadata_json)
-     VALUES (?, ?, 'running', ?, ?, ?, ?)`,
+    `INSERT INTO runs (run_id, workflow_name, status, environment, tenant_id, created_at, updated_at, metadata_json)
+     VALUES (?, ?, 'running', ?, ?, ?, ?, ?)`,
   )
-    .bind(runId, body.workflow_name, environment, now, now, JSON.stringify(body.metadata ?? {}))
+    .bind(
+      runId,
+      body.workflow_name,
+      environment,
+      tenantId,
+      now,
+      now,
+      JSON.stringify(body.metadata ?? {}),
+    )
     .run();
   await recordAuditEvent(c.env.DB, runId, "run.started", actorLabel(c.get("auth")), {
     workflow_name: body.workflow_name,

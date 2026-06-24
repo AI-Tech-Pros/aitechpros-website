@@ -91,7 +91,7 @@ export default function OrchestrateOSNavbar() {
             <ArrowUpRight className="w-3.5 h-3.5" />
           </a>
           <a
-            href={mainSiteUrl()}
+            href={CALENDLY_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm text-white/40 hover:text-white/70 transition-colors inline-flex items-center gap-1"
@@ -99,6 +99,12 @@ export default function OrchestrateOSNavbar() {
             {new URL(mainSiteUrl()).hostname}
             <ArrowUpRight className="w-3.5 h-3.5" />
           </a>
+          <Link
+            href="/login"
+            className="text-sm text-white/55 hover:text-white transition-colors font-medium"
+          >
+            Partner login
+          </Link>
           <a
             href={CALENDLY_URL}
             target="_blank"

@@ -8,6 +8,7 @@ import OrchestrateOSNavbar from "@/components/OrchestrateOSNavbar";
 import OrchestrateOSApiSection from "@/components/OrchestrateOSApiSection";
 import OrchestrateOSComparison from "@/components/OrchestrateOSComparison";
 import OrchestrateOSGatePanel from "@/components/OrchestrateOSGatePanel";
+import LeadCaptureForm from "@/components/LeadCaptureForm";
 import { useInView } from "@/hooks/useInView";
 import {
   ArrowUpRight,
@@ -583,6 +584,18 @@ export default function OrchestrateOS() {
               Back to {new URL(mainSiteUrl()).hostname}
             </a>
           </div>
+        </div>
+      </section>
+
+      {/* Early access */}
+      <section id="early-access" className="py-20 border-t border-white/[0.04]">
+        <div className="container max-w-3xl">
+          <h2 className="text-3xl font-bold text-white font-[Montserrat] mb-3">Request early access</h2>
+          <p className="text-white/50 mb-8">
+            Tell us about your multi-step agent workflow. We onboard design partners with governed
+            resume on LangGraph, CrewAI, or plain Python.
+          </p>
+          <LeadCaptureForm />
         </div>
       </section>
 
