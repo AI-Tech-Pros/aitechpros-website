@@ -23,7 +23,7 @@ jobs:
 
       - name: Run tests
         run: |
-          pip install -e ".[dev]"
+          pip install -e ".[dev,api]"
           python -m pytest resume_engine/tests -q
 
       - name: Build package
