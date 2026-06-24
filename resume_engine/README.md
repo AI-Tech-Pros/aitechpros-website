@@ -25,23 +25,14 @@
 ## Installation
 
 ```bash
-# PyPI
+# PyPI (recommended)
 pip install resume_engine
+pip install "resume_engine[remote]"    # Cloudflare Worker checkpoint store
+pip install "resume_engine[langgraph,crewai]"
+pip install "resume_engine[api]"       # optional self-hosted FastAPI
 
-# From source (repo root)
-pip install -e .
-
-# With FastAPI service
-pip install -e ".[api]"
-
-# With framework adapters
-pip install -e ".[langgraph,crewai]"
-
-# Development
-pip install -e ".[dev]"
-
-# Remote checkpoint store (Python SDK → Cloudflare Worker + D1)
-pip install -e ".[remote]"
+# From source (repo root — contributors)
+pip install -e ".[dev,remote]"
 ```
 
 ## Quickstart — Remote control plane
@@ -154,10 +145,12 @@ def enrich(state: dict) -> dict:
 result = enrich.execute({"input": "data"})
 ```
 
-## FastAPI Service
+## FastAPI Service (optional self-host)
+
+Production control plane is the **Cloudflare Worker** at `https://orchestrateos-api.nevaquit.workers.dev`. Use FastAPI only if you self-host on Docker, Cloud Run, or your own VM.
 
 ```bash
-pip install -e ".[api]"
+pip install "resume_engine[api]"
 uvicorn resume_engine.api.main:app --host 0.0.0.0 --port 8000
 ```
 
@@ -170,6 +163,8 @@ uvicorn resume_engine.api.main:app --host 0.0.0.0 --port 8000
 | `/runs/{run_id}/compensate` | POST | Record partial-failure compensation |
 | `/runs/{run_id}/approve` | POST | Grant human approval (permanent failures) |
 | `/runs/{run_id}/audit_log` | GET | Deterministic audit trace |
+
+Worker API adds: RBAC, `audit_events`, `replay`, `ack_prod_resume`, remote SDK sync — see [API docs](https://orchestrateos-api.nevaquit.workers.dev/docs).
 
 ### Docker (recommended for deploy)
 
@@ -200,9 +195,9 @@ docker build -f resume_engine/Dockerfile -t orchestrateos-api:latest .
 docker run --rm -p 8000:8000 -v orchestrateos_data:/data orchestrateos-api:latest
 ```
 
-### Cloud Run
+### Cloud Run (optional)
 
-**Deploy order:** site on Namecheap → API on Cloud Run/Docker → DNS subdomains last.
+**Production API:** Cloudflare Worker + D1 — not Cloud Run. Use Cloud Run only if you need a self-managed Python API.
 
 1. Push the image to Artifact Registry or GHCR (`ghcr.io/<org>/orchestrateos-api`).
 2. Store `DATABASE_URL` in Secret Manager as `orchestrateos-database-url`.
@@ -220,18 +215,17 @@ Smoke test after deploy:
 .\resume_engine\scripts\smoke_test_api.ps1 -BaseUrl https://YOUR_API_URL
 ```
 
-CI builds and pushes to GHCR on every push to `main` via `.github/workflows/orchestrateos-api.yml`.
+CI builds and pushes to GHCR on push to `main` via `.github/workflows/orchestrateos-api.yml` (optional; parallel to Cloudflare Worker).
 
-**Production (Cloudflare — no custom domain required)**
+### Production URLs (Cloudflare)
 
 | URL | Purpose |
 |-----|---------|
-| https://orchestrateos.pages.dev | Product landing (gate explorer + docs) |
-| https://orchestrateos-api.nevaquit.workers.dev | Control plane API (Workers + D1) |
+| https://orchestrateos.pages.dev | Product landing (gate explorer, install, compliance) |
+| https://orchestrateos-api.nevaquit.workers.dev | Control plane API (Workers + D1, auth enabled) |
+| https://aitechpros-website.pages.dev | AI Tech Pros marketing site |
 
-Set `CORS_ORIGINS` on the Worker so the landing page can call the API from the browser (see `cloudflare/workers/orchestrateos-api/wrangler.toml`).
-
-Override locally with `VITE_ORCHESTRATEOS_API_URL` and `VITE_SITE_URL` (see `.env.example`).
+Set `CORS_ORIGINS` on the Worker in `cloudflare/workers/orchestrateos-api/wrangler.toml`. For local Pages dev, use `.env.orchestrateos` (`VITE_ORCHESTRATEOS_API_URL`, `VITE_ORCHESTRATEOS_DEMO_KEY`).
 
 ## Storage Backends
 
@@ -240,9 +234,17 @@ Override locally with `VITE_ORCHESTRATEOS_API_URL` and `VITE_SITE_URL` (see `.en
 from resume_engine.storage.sqlite_backend import SQLiteCheckpointStore
 store = SQLiteCheckpointStore("sqlite:///resume_engine.db")
 
-# Production
+# Production (self-hosted Postgres)
 from resume_engine.storage.postgres_backend import PostgresCheckpointStore
 store = PostgresCheckpointStore("postgresql+psycopg2://user:pass@host/db")
+
+# Cloudflare control plane (same D1 as gate explorer)
+from resume_engine.storage.remote_backend import RemoteCheckpointStore
+
+store = RemoteCheckpointStore(
+    "https://orchestrateos-api.nevaquit.workers.dev",
+    api_key=os.environ["ORCHESTRATEOS_API_KEY"],  # runner role
+)
 ```
 
 ## Demo
@@ -282,6 +284,7 @@ raise PartialStepError("Email sent but DB write failed")
 | `transient` | None — resume immediately |
 | `partial` | Run `execute_compensation()` or `record_compensation()` |
 | `permanent` | Call `grant_human_approval(approved_by=...)` |
+| `prod` environment | Operator `ack_prod_resume` via API (even for transient failures) |
 
 ```python
 from resume_engine import ResumeBlockedError
@@ -312,11 +315,20 @@ Gates are keyed per failure event (`step_index:sequence`), so a re-failure after
 resume_engine/
   core/           # Run, StepRecord, ResumeEngine, idempotency, failure classifier
   adapters/       # LangGraph, CrewAI, @durable_step decorator
-  api/            # FastAPI service
-  storage/        # SQLite and Postgres backends
+  api/            # Optional self-hosted FastAPI service
+  storage/        # SQLite, Postgres, RemoteCheckpointStore (Worker + D1)
   tests/
+  demo_*.py       # Restart vs resume + remote pipeline demos
 ```
+
+## CI/CD
+
+| Workflow | Purpose |
+|----------|---------|
+| `.github/workflows/cloudflare-deploy.yml` | Deploy Pages + Worker + D1 (production) |
+| `.github/workflows/pypi-publish.yml` | Publish `resume_engine` to PyPI |
+| `.github/workflows/orchestrateos-api.yml` | Build Docker image → GHCR (optional self-host) |
 
 ## License
 
-MIT — [AI Tech Pros](https://aitechpros.ai)
+MIT — [AI Tech Pros](https://orchestrateos.pages.dev)

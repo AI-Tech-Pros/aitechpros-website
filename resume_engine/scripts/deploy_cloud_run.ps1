@@ -25,6 +25,6 @@ gcloud run deploy $ServiceName `
     --project $ProjectId `
     --allow-unauthenticated `
     --port 8000 `
-    --set-env-vars "LOG_LEVEL=info,CORS_ORIGINS=https://orchestrateos.aitechpros.ai,https://aitechpros.ai"
+    --set-env-vars "LOG_LEVEL=info,CORS_ORIGINS=https://orchestrateos.pages.dev,https://aitechpros-website.pages.dev"
 
-Write-Host "Done. Map api.orchestrateos.aitechpros.ai to the Cloud Run URL when ready."
+Write-Host "Done. Point your API URL at the Cloud Run service URL (optional — production uses Cloudflare Workers)."

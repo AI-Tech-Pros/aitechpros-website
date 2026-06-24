@@ -1,5 +1,7 @@
 # Namecheap CI/CD (aitechpros.ai)
 
+> **OrchestrateOS** is hosted separately on Cloudflare: [orchestrateos.pages.dev](https://orchestrateos.pages.dev) and [orchestrateos-api.nevaquit.workers.dev](https://orchestrateos-api.nevaquit.workers.dev). See [cloudflare-deploy.md](./cloudflare-deploy.md). This doc covers only the legacy **aitechpros.ai** marketing domain on Namecheap.
+
 Production hosting is **Namecheap Stellar** on cPanel. **Manus was the previous host** — remove any legacy DNS records pointing at `cname.manus.space` when cleaning up Advanced DNS.
 
 | Setting | Value |
@@ -56,12 +58,13 @@ Point the domain at your Namecheap server so visitors reach `public_html`:
 | **A Record** | `@` | `198.54.116.40` | Server IP from cPanel → Manage SSH |
 | **CNAME Record** | `www` | `aitechpros.ai` | Remove conflicting `www` records first |
 
-Optional (later):
+Optional (legacy — OrchestrateOS is on Cloudflare, not Namecheap):
 
 | Type | Host | Value |
 |------|------|-------|
-| A or CNAME | `orchestrateos` | `198.54.116.40` or `aitechpros.ai` |
-| CNAME | `api.orchestrateos` | Cloud Run URL |
+| — | — | Use [orchestrateos.pages.dev](https://orchestrateos.pages.dev) instead of DNS on this host |
+
+For self-hosted FastAPI on Cloud Run (optional), point a CNAME at your Cloud Run URL — not required for the default Cloudflare Worker API.
 
 Until DNS uses `198.54.116.40`, `https://aitechpros.ai` may show a different origin than Namecheap. Verify deploy with:
 
@@ -89,4 +92,4 @@ Check `public_html` in cPanel File Manager for `index.html` and `assets/`.
 | `https://aitechpros.ai` shows old site | DNS apex not pointing to `198.54.116.40` — update Namecheap Advanced DNS |
 | Empty directory on `198.54.116.40` | Deploy has not succeeded yet — fix SSH key, re-run workflow |
 | 404 on `/orchestrateos` | Ensure `.htaccess` is in `public_html` |
-| Gate explorer offline | Set `VITE_ORCHESTRATEOS_API_URL` GitHub variable |
+| Gate explorer offline | OrchestrateOS runs on Cloudflare — set `VITE_ORCHESTRATEOS_API_URL` / `ORCHESTRATEOS_DEMO_KEY` in GitHub secrets (see [cloudflare-deploy.md](./cloudflare-deploy.md)) |

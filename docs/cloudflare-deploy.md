@@ -47,7 +47,8 @@ Reset after testing: `POST /demo/reset` · Catalog: `GET /demo/runs` · Docs: `/
 The `RemoteCheckpointStore` persists runs and steps to the Worker API so real Python workflows appear in D1 and the gate explorer.
 
 ```powershell
-pip install -e ".[remote]"
+pip install "resume_engine[remote]"
+# Or from repo: pip install -e ".[remote]"
 $env:ORCHESTRATEOS_API_URL = "https://orchestrateos-api.nevaquit.workers.dev"
 python resume_engine/demo_remote_pipeline.py
 ```
@@ -66,7 +67,9 @@ Gate metadata: permanent failures accept both `metadata.gates.human_approval` (P
 
 ### Phase 3 — Governance (auth, audit, deployment environments)
 
-**API authentication (optional, off by default):** set `API_AUTH_ENABLED=true` on the Worker and configure secrets:
+**API authentication is enabled in production** (`API_AUTH_ENABLED = "true"` in `wrangler.toml`). All write endpoints require `Authorization: Bearer <key>`. Public reads (`GET`) remain open for the gate explorer.
+
+Configure Worker secrets:
 
 | Secret | Purpose |
 |--------|---------|
@@ -84,11 +87,11 @@ Roles: `auditor` (read), `runner` (start/steps/resume), `operator` (+ compensate
 Gate explorer writes use `VITE_ORCHESTRATEOS_DEMO_KEY` when auth is enabled (set in `.env.orchestrateos` / Pages build env).
 
 ```powershell
-# Enable auth (one-time, via wrangler)
+# Enable or rotate secrets (one-time / rotation)
 cd cloudflare/workers/orchestrateos-api
 npx wrangler secret put API_KEYS_JSON
 npx wrangler secret put DEMO_OPERATOR_KEY
-# Then set API_AUTH_ENABLED = "true" in wrangler.toml and redeploy
+# API_AUTH_ENABLED is true in wrangler.toml — redeploy after secret changes
 ```
 
 ### GitHub secrets (required)
@@ -149,10 +152,11 @@ cd cloudflare/workers/orchestrateos-api && npm run dev
 
 | Use case | Where |
 |----------|--------|
-| Gate explorer UI | Worker + D1 |
-| LangGraph / CrewAI in your apps | `pip install -e .` locally |
+| Gate explorer UI | Worker + D1 at `orchestrateos-api.nevaquit.workers.dev` |
+| LangGraph / CrewAI in your apps | `pip install resume_engine` |
 | Python → live control plane (D1) | `pip install "resume_engine[remote]"` + `RemoteCheckpointStore` |
-| Full Python FastAPI on Cloudflare | [Cloudflare Containers](https://developers.cloudflare.com/containers/) (paid)
+| Self-hosted FastAPI (optional) | `pip install "resume_engine[api]"` + Docker / GHCR image |
+| Full Python on Cloudflare edge | [Cloudflare Containers](https://developers.cloudflare.com/containers/) (paid) |
 
 ### Phase 4 — Go-to-market (PyPI + sales content)
 

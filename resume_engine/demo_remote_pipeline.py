@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Run a workflow against the live OrchestrateOS control plane (Worker + D1).
 
-Requires: pip install -e ".[remote]"
+Requires: pip install "resume_engine[remote]"
 
 Environment:
   ORCHESTRATEOS_API_URL — default https://orchestrateos-api.nevaquit.workers.dev

@@ -40,13 +40,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(
         title="OrchestrateOS Resume Engine",
         description="Deterministic execution layer for multi-step agent workflows",
-        version="0.1.0",
+        version="0.2.0",
         lifespan=lifespan,
     )
 
     cors_origins = os.environ.get(
         "CORS_ORIGINS",
-        "https://orchestrateos.aitechpros.ai,http://localhost:3001,http://127.0.0.1:3001",
+        "https://orchestrateos.pages.dev,https://aitechpros-website.pages.dev,http://localhost:3001,http://127.0.0.1:3001",
     ).split(",")
     app.add_middleware(
         CORSMiddleware,

@@ -16,7 +16,7 @@ async function startServer() {
       ? path.resolve(__dirname, "public")
       : path.resolve(__dirname, "..", "dist", "public");
 
-  // Same static bundle serves aitechpros.ai and orchestrateos.aitechpros.ai.
+  // Static SPA: marketing (aitechpros-website.pages.dev) or OrchestrateOS (orchestrateos.pages.dev) via VITE_APP.
   // DNS: point orchestrateos CNAME to the same host as the main site.
   app.use(express.static(staticPath));
 
