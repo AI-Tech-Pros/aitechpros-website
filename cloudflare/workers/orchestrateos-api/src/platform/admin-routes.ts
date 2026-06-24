@@ -3,7 +3,16 @@
 import { Hono } from "hono";
 import type { Context } from "hono";
 import type { PlatformEnv } from "./routes";
+import {
+  createDesignPartner,
+  ensureUser,
+  type PartnerRow,
+  runnerKeyNote,
+} from "./partner-db";
+import { enrollWelcomeSequence, onLeadStageChanged } from "./nurture/service";
 import type { SessionPayload } from "./session";
+import { runGateSummary } from "../resume-blockers";
+import { parseMetadata, type RunRow, type StepRow } from "../serialize";
 
 const LEAD_STAGES = new Set(["new", "engaged", "qualified", "converted"]);
 const PARTNER_PHASES = new Set(["discovery", "build", "review", "complete"]);
@@ -17,19 +26,6 @@ type LeadRow = {
   use_case: string | null;
   stage: string;
   source: string;
-  created_at: string;
-  updated_at: string;
-};
-
-type PartnerRow = {
-  id: string;
-  slug: string;
-  company_name: string;
-  contact_email: string;
-  phase: string;
-  status: string;
-  milestone: string | null;
-  runner_api_key_hint: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -89,6 +85,10 @@ adminApp.put("/leads", async (c) => {
   const source = body.source?.trim() || "admin";
 
   if (body.id) {
+    const prior = await c.env.DB.prepare(`SELECT stage FROM leads WHERE id = ?`)
+      .bind(body.id)
+      .first<{ stage: string }>();
+
     const conflict = await c.env.DB.prepare(
       `SELECT id FROM leads WHERE email = ? AND id != ?`,
     )
@@ -107,6 +107,7 @@ adminApp.put("/leads", async (c) => {
       .bind(body.id)
       .first<LeadRow>();
     if (!lead) return c.json({ detail: "Lead not found" }, 404);
+    await onLeadStageChanged(c.env.DB, body.id, prior?.stage ?? null, stage);
     return c.json({ lead });
   }
 
@@ -129,6 +130,10 @@ adminApp.put("/leads", async (c) => {
   const lead = await c.env.DB.prepare(`SELECT * FROM leads WHERE id = ?`)
     .bind(id)
     .first<LeadRow>();
+  await enrollWelcomeSequence(c.env.DB, id);
+  if (stage === "engaged") {
+    await onLeadStageChanged(c.env.DB, id, null, "engaged");
+  }
   return c.json({ lead }, 201);
 });
 
@@ -184,43 +189,28 @@ adminApp.post("/partners", async (c) => {
   if (!PARTNER_PHASES.has(phase)) return c.json({ detail: "Invalid phase" }, 400);
   if (!PARTNER_STATUSES.has(status)) return c.json({ detail: "Invalid status" }, 400);
 
-  const baseSlug = slugify(body.slug?.trim() || companyName);
-  if (!baseSlug) return c.json({ detail: "Could not derive tenant slug" }, 400);
-
-  const slug = await uniqueSlug(c.env.DB, baseSlug);
-  const now = new Date().toISOString();
-  const id = crypto.randomUUID();
-
-  await c.env.DB.prepare(
-    `INSERT INTO design_partners (
-      id, slug, company_name, contact_email, phase, status, milestone,
-      runner_api_key_hint, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  )
-    .bind(
-      id,
-      slug,
-      companyName,
-      contactEmail,
+  try {
+    const partner = await createDesignPartner(c.env.DB, {
+      company_name: companyName,
+      contact_email: contactEmail,
+      slug: body.slug,
       phase,
       status,
-      body.milestone?.trim() || null,
-      body.runner_api_key_hint?.trim() || null,
-      now,
-      now,
-    )
-    .run();
+      milestone: body.milestone?.trim() || null,
+      runner_api_key_hint: body.runner_api_key_hint?.trim() || null,
+    });
 
-  await ensureUser(c.env.DB, contactEmail, "partner", id, companyName);
-
-  const partner = await c.env.DB.prepare(`SELECT * FROM design_partners WHERE id = ?`)
-    .bind(id)
-    .first<PartnerRow>();
-
-  return c.json({
-    partner,
-    runner_key_note: `Add to API_KEYS_JSON: {"<key>": {"role":"runner","tenant":"${slug}"}}`,
-  }, 201);
+    return c.json({
+      partner,
+      runner_key_note: runnerKeyNote(partner.slug),
+    }, 201);
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg.includes("UNIQUE") || msg.includes("unique")) {
+      return c.json({ detail: "Partner or email already exists" }, 409);
+    }
+    throw e;
+  }
 });
 
 adminApp.put("/partners", async (c) => {
@@ -279,6 +269,65 @@ adminApp.put("/partners", async (c) => {
   return c.json({ partner });
 });
 
+adminApp.get("/outcomes", async (c) => {
+  const denied = requireAdmin(c);
+  if (denied) return denied;
+
+  const tenant = c.req.query("tenant")?.trim();
+  const sql = tenant
+    ? `SELECT r.*, dp.company_name AS partner_company
+       FROM runs r
+       LEFT JOIN design_partners dp ON dp.slug = r.tenant_id
+       WHERE r.tenant_id != 'demo' AND r.tenant_id = ?
+       ORDER BY r.updated_at DESC
+       LIMIT 200`
+    : `SELECT r.*, dp.company_name AS partner_company
+       FROM runs r
+       LEFT JOIN design_partners dp ON dp.slug = r.tenant_id
+       WHERE r.tenant_id != 'demo'
+       ORDER BY r.updated_at DESC
+       LIMIT 200`;
+
+  type OutcomeRunRow = RunRow & { partner_company: string | null };
+  const { results } = tenant
+    ? await c.env.DB.prepare(sql).bind(tenant).all<OutcomeRunRow>()
+    : await c.env.DB.prepare(sql).all<OutcomeRunRow>();
+
+  const outcomes = [];
+  for (const run of results ?? []) {
+    const { results: stepRows } = await c.env.DB.prepare(
+      `SELECT * FROM step_records WHERE run_id = ? ORDER BY sequence ASC`,
+    )
+      .bind(run.run_id)
+      .all<StepRow>();
+    const steps = stepRows ?? [];
+    const gates = runGateSummary(run, steps);
+    const metadata = parseMetadata(run.metadata_json);
+    const journey = metadata.journey as Record<string, unknown> | undefined;
+
+    outcomes.push({
+      run_id: run.run_id,
+      workflow_name: run.workflow_name,
+      tenant_id: run.tenant_id ?? "default",
+      partner_company: run.partner_company,
+      status: run.status,
+      environment: run.environment ?? "dev",
+      can_resume: gates.can_resume,
+      blocker_count: gates.blocker_count,
+      steps_completed: steps.filter((s) => s.status === "completed").length,
+      created_at: run.created_at,
+      updated_at: run.updated_at,
+      journey: {
+        checklist_completed: journey?.checklist_completed === true,
+        first_workflow_at:
+          typeof journey?.first_workflow_at === "string" ? journey.first_workflow_at : null,
+      },
+    });
+  }
+
+  return c.json({ outcomes, count: outcomes.length });
+});
+
 function requireAdmin(
   c: Context<{ Bindings: PlatformEnv; Variables: { session: SessionPayload | null } }>,
 ): Response | null {
@@ -286,56 +335,4 @@ function requireAdmin(
   if (!session) return c.json({ detail: "Authentication required" }, 401);
   if (session.role !== "admin") return c.json({ detail: "Admin access required" }, 403);
   return null;
-}
-
-function slugify(value: string): string {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 48);
-}
-
-async function uniqueSlug(db: D1Database, base: string): Promise<string> {
-  let slug = base;
-  let suffix = 0;
-  while (true) {
-    const row = await db.prepare(`SELECT id FROM design_partners WHERE slug = ?`)
-      .bind(slug)
-      .first();
-    if (!row) return slug;
-    suffix += 1;
-    slug = `${base}-${suffix}`;
-  }
-}
-
-async function ensureUser(
-  db: D1Database,
-  email: string,
-  role: "partner" | "admin",
-  partnerId: string | null,
-  name: string | null,
-): Promise<string> {
-  const existing = await db
-    .prepare(`SELECT id FROM users WHERE email = ?`)
-    .bind(email)
-    .first<{ id: string }>();
-  if (existing) {
-    if (partnerId) {
-      await db
-        .prepare(`UPDATE users SET partner_id = ?, role = ?, name = COALESCE(name, ?) WHERE id = ?`)
-        .bind(partnerId, role, name, existing.id)
-        .run();
-    }
-    return existing.id;
-  }
-  const id = crypto.randomUUID();
-  const now = new Date().toISOString();
-  await db
-    .prepare(
-      `INSERT INTO users (id, email, name, role, partner_id, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
-    )
-    .bind(id, email, name, role, partnerId, now)
-    .run();
-  return id;
 }

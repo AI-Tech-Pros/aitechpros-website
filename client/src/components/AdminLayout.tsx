@@ -2,10 +2,10 @@ import { Link, useLocation } from "wouter";
 import OrchestrateOSNavbar from "@/components/OrchestrateOSNavbar";
 import { useSession } from "@/contexts/SessionContext";
 
-const tabs: { label: string; href: string; disabled?: boolean }[] = [
+const tabs: { label: string; href: string }[] = [
   { label: "Capture", href: "/admin/capture" },
   { label: "Partners", href: "/admin/partners" },
-  { label: "Outcomes", href: "/admin/outcomes", disabled: true },
+  { label: "Outcomes", href: "/admin/outcomes" },
 ];
 
 export default function AdminLayout({
@@ -37,17 +37,7 @@ export default function AdminLayout({
         </div>
 
         <nav className="flex flex-wrap gap-2 mb-8 border-b border-white/[0.06] pb-4">
-          {tabs.map((tab) =>
-            tab.disabled ? (
-              <span
-                key={tab.href}
-                className="px-4 py-2 text-sm text-white/25 rounded-lg cursor-not-allowed"
-                title="Phase 5f"
-              >
-                {tab.label}
-                <span className="ml-1 text-[10px] uppercase">soon</span>
-              </span>
-            ) : (
+          {tabs.map((tab) => (
               <Link
                 key={tab.href}
                 href={tab.href}
@@ -59,8 +49,7 @@ export default function AdminLayout({
               >
                 {tab.label}
               </Link>
-            ),
-          )}
+          ))}
         </nav>
 
         {children}

@@ -3,7 +3,16 @@
 import { Hono } from "hono";
 import type { Context } from "hono";
 import { adminApp } from "./admin-routes";
-import { leadNotifyEmail, magicLinkEmail, sendEmail, type EmailEnv } from "./email";
+import { storeAndSendMagicLink } from "./auth-links";
+import { leadNotifyEmail, sendEmail, type EmailEnv } from "./email";
+import {
+  createDesignPartner,
+  ensureUser,
+  parseEmailList,
+  partnerContactExists,
+  runnerKeyNote,
+} from "./partner-db";
+import { enrollWelcomeSequence, onLeadStageChanged } from "./nurture/service";
 import {
   clearSessionCookieHeader,
   hashToken,
@@ -42,8 +51,6 @@ type RunSummaryRow = {
   created_at: string;
   updated_at: string;
 };
-
-const MAGIC_LINK_TTL_MS = 15 * 60 * 1000;
 
 export const platformApp = new Hono<{
   Bindings: PlatformEnv;
@@ -102,6 +109,7 @@ platformApp.post("/leads", async (c) => {
     });
     await sendEmail(c.env, c.env.NOTIFY_EMAIL, subject, html);
   }
+  await enrollWelcomeSequence(c.env.DB, id);
   return c.json({ id, message: "Thank you — we will be in touch shortly." }, 201);
 });
 
@@ -122,18 +130,7 @@ platformApp.post("/auth/magic-link", async (c) => {
     });
   }
 
-  const token = crypto.randomUUID() + crypto.randomUUID();
-  const tokenHash = await hashToken(token);
-  const expiresAt = new Date(Date.now() + MAGIC_LINK_TTL_MS).toISOString();
-  await c.env.DB.prepare(
-    `INSERT INTO magic_link_tokens (token_hash, email, expires_at) VALUES (?, ?, ?)`,
-  )
-    .bind(tokenHash, email, expiresAt)
-    .run();
-
-  const siteUrl = c.env.SITE_URL ?? "https://orchestrateos.pages.dev";
-  const { subject, html } = magicLinkEmail(siteUrl, token);
-  await sendEmail(c.env, email, subject, html);
+  await storeAndSendMagicLink(c.env, email);
 
   return c.json({
     message: "If an account exists for this email, a sign-in link has been sent.",
@@ -276,6 +273,76 @@ platformApp.get("/partners/me/runs", async (c) => {
   return c.json({ runs: results ?? [], tenant_id: tenantId });
 });
 
+platformApp.post("/partners/onboard", async (c) => {
+  const body = await c.req.json<{
+    company_name?: string;
+    contact_name?: string;
+    contact_email?: string;
+    team_emails?: string[] | string;
+    slug?: string;
+    use_case?: string;
+  }>();
+
+  const companyName = body.company_name?.trim();
+  const contactName = body.contact_name?.trim();
+  const contactEmail = body.contact_email?.trim().toLowerCase();
+  if (!companyName || !contactName || !contactEmail || !contactEmail.includes("@")) {
+    return c.json({ detail: "company_name, contact_name, and valid contact_email are required" }, 400);
+  }
+
+  if (await partnerContactExists(c.env.DB, contactEmail)) {
+    return c.json({ detail: "This contact email is already onboarded as a design partner" }, 409);
+  }
+
+  const teamEmails = parseEmailList(body.team_emails).filter((e) => e !== contactEmail);
+
+  try {
+    const partner = await createDesignPartner(c.env.DB, {
+      company_name: companyName,
+      contact_email: contactEmail,
+      contact_name: contactName,
+      slug: body.slug,
+      milestone: body.use_case?.trim() || "Self-service onboarding",
+    });
+
+    for (const email of teamEmails) {
+      await ensureUser(c.env.DB, email, "partner", partner.id, null);
+    }
+
+    const now = new Date().toISOString();
+    await c.env.DB.prepare(
+      `UPDATE leads SET stage = 'converted', company = COALESCE(company, ?), updated_at = ?
+       WHERE lower(email) = ?`,
+    )
+      .bind(companyName, now, contactEmail)
+      .run();
+
+    const magicLinkSent = await storeAndSendMagicLink(c.env, contactEmail);
+
+    return c.json({
+      partner: {
+        id: partner.id,
+        slug: partner.slug,
+        company_name: partner.company_name,
+        contact_email: partner.contact_email,
+      },
+      tenant_id: partner.slug,
+      team_count: teamEmails.length + 1,
+      magic_link_sent: magicLinkSent,
+      runner_key_note: runnerKeyNote(partner.slug),
+      message: magicLinkSent
+        ? "Partner workspace created. Check your email for a sign-in link."
+        : "Partner workspace created. Use Partner login to request a sign-in link.",
+    }, 201);
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg.includes("UNIQUE") || msg.includes("unique")) {
+      return c.json({ detail: "Partner or email already exists" }, 409);
+    }
+    throw e;
+  }
+});
+
 function requireSessionSecret(c: { env: PlatformEnv }): string | null {
   return c.env.SESSION_SECRET?.trim() || null;
 }
@@ -371,27 +438,4 @@ async function resolveOrCreateSessionUser(
   }
 
   return null;
-}
-
-async function ensureUser(
-  db: D1Database,
-  email: string,
-  role: "partner" | "admin",
-  partnerId: string | null,
-  name: string | null,
-): Promise<string> {
-  const existing = await db
-    .prepare(`SELECT id FROM users WHERE email = ?`)
-    .bind(email)
-    .first<{ id: string }>();
-  if (existing) return existing.id;
-  const id = crypto.randomUUID();
-  const now = new Date().toISOString();
-  await db
-    .prepare(
-      `INSERT INTO users (id, email, name, role, partner_id, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
-    )
-    .bind(id, email, name, role, partnerId, now)
-    .run();
-  return id;
 }

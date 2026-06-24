@@ -2,6 +2,8 @@
  * Governance objection-handling — why observability is not governance.
  */
 import OrchestrateOSSubpage, { SubSection } from "@/components/OrchestrateOSSubpage";
+import OrchestrateOSNineAgentKernel from "@/components/OrchestrateOSNineAgentKernel";
+import OrchestrateOSLifecycleLoop from "@/components/OrchestrateOSLifecycleLoop";
 import { Link } from "wouter";
 
 const objections = [
@@ -36,7 +38,7 @@ export default function OrchestrateOSGovernance() {
           Why observability <span className="gradient-text">is not</span> governance
         </>
       }
-      subtitle="Objection-handling for teams evaluating LangChain, CrewAI, or Azure agents who need governed resume — not just traces after deploy."
+      subtitle="Objection-handling for teams evaluating LangGraph, CrewAI, or Azure agents who need governed resume — not just traces after deploy."
     >
       <SubSection title="The wedge">
         <p>
@@ -53,6 +55,41 @@ export default function OrchestrateOSGovernance() {
           </Link>{" "}
           — seeded runs on the real Worker API demonstrate transient, partial, and permanent
           failure paths.
+        </p>
+      </SubSection>
+
+      <SubSection title="Perceive → Plan → Act → Observe → Learn">
+        <p className="mb-6 text-white/55 text-sm">
+          The lifecycle loop on our{" "}
+          <Link href="/#lifecycle" className="text-[#06B6D4] hover:underline">
+            landing page
+          </Link>{" "}
+          maps marketing language to concrete API primitives — not a separate agent runtime.
+        </p>
+        <OrchestrateOSLifecycleLoop />
+      </SubSection>
+
+      <SubSection title="Nine-agent kernel (reference architecture)">
+        <OrchestrateOSNineAgentKernel />
+      </SubSection>
+
+      <SubSection title="Roadmap — not shipped yet">
+        <ul className="list-disc pl-5 space-y-2 text-white/55 text-sm">
+          <li>
+            <strong className="text-white/70">Cost circuit breaker</strong> — token/spend caps per
+            run before the next step executes (needs metering integration)
+          </li>
+          <li>
+            <strong className="text-white/70">Consensus gate</strong> — multi-reviewer approval for
+            high-risk permanent failures
+          </li>
+          <li>
+            <strong className="text-white/70">Optimizer agent</strong> — automated retry policy
+            tuning from audit history
+          </li>
+        </ul>
+        <p className="mt-4 text-white/40 text-xs">
+          We document these honestly on /governance. They are not simulated in the UI or Worker.
         </p>
       </SubSection>
 

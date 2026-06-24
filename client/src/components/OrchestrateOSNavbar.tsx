@@ -9,6 +9,7 @@ import { useSession } from "@/contexts/SessionContext";
 
 const navLinks = [
   { label: "Problem", href: "#problem" },
+  { label: "Lifecycle", href: "#lifecycle" },
   { label: "Compare", href: "#compare" },
   { label: "Gates", href: "#gates" },
   { label: "Install", href: "/install", route: true },

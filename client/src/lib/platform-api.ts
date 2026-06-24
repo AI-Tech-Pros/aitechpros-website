@@ -190,3 +190,52 @@ export async function updateAdminPartner(body: {
 }): Promise<{ partner: AdminPartner }> {
   return adminFetch("/admin/partners", { method: "PUT", body: JSON.stringify(body) });
 }
+
+export type OnboardResult = {
+  partner: { id: string; slug: string; company_name: string; contact_email: string };
+  tenant_id: string;
+  team_count: number;
+  magic_link_sent: boolean;
+  runner_key_note: string;
+  message: string;
+};
+
+export async function submitPartnerOnboard(body: {
+  company_name: string;
+  contact_name: string;
+  contact_email: string;
+  team_emails?: string;
+  slug?: string;
+  use_case?: string;
+}): Promise<OnboardResult> {
+  const res = await platformFetch("/partners/onboard", { method: "POST", body: JSON.stringify(body) });
+  const data = (await res.json()) as OnboardResult & { detail?: string };
+  if (!res.ok) throw new Error(data.detail ?? `Request failed (${res.status})`);
+  return data;
+}
+
+export type AdminOutcome = {
+  run_id: string;
+  workflow_name: string;
+  tenant_id: string;
+  partner_company: string | null;
+  status: string;
+  environment: string;
+  can_resume: boolean;
+  blocker_count: number;
+  steps_completed: number;
+  created_at: string;
+  updated_at: string;
+  journey: {
+    checklist_completed: boolean;
+    first_workflow_at: string | null;
+  };
+};
+
+export async function fetchAdminOutcomes(tenant?: string): Promise<{
+  outcomes: AdminOutcome[];
+  count: number;
+}> {
+  const q = tenant ? `?tenant=${encodeURIComponent(tenant)}` : "";
+  return adminFetch(`/admin/outcomes${q}`);
+}

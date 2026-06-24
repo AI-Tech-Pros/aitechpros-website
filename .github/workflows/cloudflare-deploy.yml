@@ -137,6 +137,15 @@ jobs:
           workingDirectory: cloudflare/workers/orchestrateos-api
           command: d1 execute orchestrateos --remote --file=../../d1/migrations/0006_tenant_backfill.sql
 
+      - name: Apply D1 nurture migration (remote)
+        continue-on-error: true
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: cloudflare/workers/orchestrateos-api
+          command: d1 execute orchestrateos --remote --file=../../d1/migrations/0007_nurture.sql
+
       - name: Seed D1 demo runs
         uses: cloudflare/wrangler-action@v3
         with:

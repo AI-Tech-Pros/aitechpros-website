@@ -9,6 +9,7 @@ import OrchestrateOSApiSection from "@/components/OrchestrateOSApiSection";
 import OrchestrateOSComparison from "@/components/OrchestrateOSComparison";
 import OrchestrateOSGatePanel from "@/components/OrchestrateOSGatePanel";
 import LeadCaptureForm from "@/components/LeadCaptureForm";
+import OrchestrateOSLifecycleLoop from "@/components/OrchestrateOSLifecycleLoop";
 import { useInView } from "@/hooks/useInView";
 import {
   ArrowUpRight,
@@ -107,6 +108,7 @@ except Exception:
 export default function OrchestrateOS() {
   const hero = useInView({ threshold: 0.05 });
   const problem = useInView({ threshold: 0.05 });
+  const lifecycle = useInView({ threshold: 0.05 });
   const compare = useInView({ threshold: 0.05 });
   const primitivesView = useInView({ threshold: 0.05 });
   const benchmark = useInView({ threshold: 0.05 });
@@ -252,6 +254,48 @@ export default function OrchestrateOS() {
               human approval before resume.
             </p>
           </div>
+        </div>
+      </section>
+
+      {/* Agent lifecycle — honest mapping to checkpoints + gates */}
+      <section id="lifecycle" className="relative py-20 lg:py-28 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0B0D17] via-[#0E1225] to-[#0B0D17]" />
+        <div className="container relative z-10" ref={lifecycle.ref}>
+          <div
+            className={`text-center mb-12 transition-all duration-700 ${
+              lifecycle.isInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+            }`}
+          >
+            <span className="text-sm font-medium text-[#8B5CF6] tracking-widest uppercase font-[Montserrat] mb-4 block">
+              Agent lifecycle
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white font-[Montserrat] mb-4">
+              Perceive → Plan → Act → Observe →{" "}
+              <span className="gradient-text">Learn</span>
+            </h2>
+            <p className="text-white/45 max-w-2xl mx-auto text-sm leading-relaxed">
+              How we describe the loop — mapped to what actually ships: durable checkpoints,
+              classified failures, and governance gates before resume.
+            </p>
+          </div>
+          <div
+            className={`transition-all duration-700 ${
+              lifecycle.isInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+            }`}
+            style={{ transitionDelay: "150ms" }}
+          >
+            <OrchestrateOSLifecycleLoop />
+          </div>
+          <p
+            className={`text-center mt-8 transition-all duration-700 ${
+              lifecycle.isInView ? "opacity-100" : "opacity-0"
+            }`}
+            style={{ transitionDelay: "300ms" }}
+          >
+            <Link href="/governance" className="text-sm text-[#06B6D4] hover:underline">
+              Nine-agent reference architecture →
+            </Link>
+          </p>
         </div>
       </section>
 
@@ -596,6 +640,12 @@ export default function OrchestrateOS() {
             resume on LangGraph, CrewAI, or plain Python.
           </p>
           <LeadCaptureForm />
+          <p className="mt-6 text-sm text-white/40">
+            Already accepted as a design partner?{" "}
+            <Link href="/onboarding" className="text-[#06B6D4] hover:underline">
+              Complete onboarding →
+            </Link>
+          </p>
         </div>
       </section>
 

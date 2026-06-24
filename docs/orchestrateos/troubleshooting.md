@@ -234,6 +234,17 @@ pip install "resume_engine[remote]"
 
 **Fix:** Add your email to Worker secret `ADMIN_EMAILS` (comma-separated), sign out, and request a new magic link. Or set `users.role = 'admin'` in D1 for your account.
 
+### Nurture emails not sending
+
+**Symptoms:** Leads enroll but no follow-up emails arrive.
+
+**Fix:**
+
+1. Set `RESEND_API_KEY` on the Worker for outbound email
+2. Set `CRON_SECRET` and verify daily cron is deployed (`wrangler.toml` `[triggers]`)
+3. Manual tick: `curl -X POST -H "Authorization: Bearer $CRON_SECRET" https://orchestrateos-api.nevaquit.workers.dev/internal/nurture/tick`
+4. Without Resend, check Worker logs for `[email stub]` lines
+
 ### `GET /idempotency/{key}` 404
 
 **Cause:** No **completed** step with that key yet (failed/running steps are not returned).

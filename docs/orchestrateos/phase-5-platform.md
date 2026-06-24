@@ -213,13 +213,26 @@ Admin role: emails in `ADMIN_EMAILS` env var or `users.role = admin`.
 
 ### Phase 5d — Partner onboarding (`/onboarding`)
 
+**Status:** ✅ Shipped
+
 Multi-step form (company → team emails → confirm):
 
 - `POST /api/partners/onboard` creates `design_partners` row + `users` + sends magic link  
 - Auto-assign `tenant_id` slug  
 - Document runner key issuance (manual or scripted `wrangler secret` update)
 
+**Acceptance criteria (5d):**
+
+- [x] `/onboarding` three-step UI with tenant slug preview
+- [x] `POST /api/partners/onboard` creates partner + primary user + team users
+- [x] Magic link emailed to primary contact
+- [x] Matching lead marked `converted` when email exists
+- [x] Runner key note returned with tenant slug
+- [x] [Partner onboarding doc](./partner-onboarding.md)
+
 ### Phase 5e — Nurture (minimal)
+
+**Status:** ✅ Shipped
 
 Two sequences only:
 
@@ -228,44 +241,40 @@ Two sequences only:
 | **Welcome** | New lead | Email 0 (immediate), Email 1 (+3d) |
 | **Post-demo** | Admin marks lead `engaged` | Email 0 (+1d) |
 
-Tables:
+Cron: daily Worker trigger + `POST /internal/nurture/tick` (Bearer `CRON_SECRET`).
 
-```sql
-CREATE TABLE nurture_sequences (
-  id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
-  active INTEGER NOT NULL DEFAULT 1
-);
+Templates: [`cloudflare/email-templates/`](../../cloudflare/email-templates/) with `{{name}}`, `{{company}}`.
 
-CREATE TABLE nurture_enrollments (
-  id TEXT PRIMARY KEY,
-  sequence_id TEXT NOT NULL,
-  lead_id TEXT,
-  partner_id TEXT,
-  next_send_at TEXT,
-  status TEXT NOT NULL DEFAULT 'active'
-);
-```
+**Acceptance criteria (5e):**
 
-Cron: Cloudflare **Cron Trigger** on Worker daily → `POST /internal/nurture/tick` (protected by `CRON_SECRET`).
-
-Templates: markdown bodies with `{{name}}`, `{{company}}` in D1 or repo `cloudflare/email-templates/`.
+- [x] D1 `nurture_sequences` + `nurture_enrollments` (migration `0007_nurture.sql`)
+- [x] Welcome enrolled on `POST /api/leads` and admin lead create
+- [x] Post-demo enrolled when admin sets lead stage to `engaged`
+- [x] Daily cron + manual tick endpoint
+- [x] Resend sends (stub logs when `RESEND_API_KEY` unset)
 
 ### Phase 5f — Outcomes (real runs)
+
+**Status:** ✅ Shipped
 
 | Route | Purpose |
 |-------|---------|
 | `/admin/outcomes` | Table of `runs` joined with `design_partners` — status, gates, audit links |
 
-No fake kernel canvas. Columns:
+Columns: `run_id`, `workflow_name`, `tenant_id`, `status`, `environment`, `can_resume`, blocker count, journey flags from `runs.metadata_json.journey`.
 
-- `run_id`, `workflow_name`, `tenant_id`, `status`, `environment`  
-- `can_resume`, blocker count  
-- Links: gate explorer, `GET /runs/{id}/audit_events`, `GET /runs/{id}/replay`
+Links: gate explorer, `GET /runs/{id}/audit_events`, `GET /runs/{id}/replay`.
 
-Optional: “Customer journey” flags stored in `runs.metadata_json` (`checklist_completed`, `first_workflow_at`).
+**Acceptance criteria (5f):**
+
+- [x] `GET /api/admin/outcomes` with partner join (excludes demo tenant)
+- [x] Gate summary from live blocker logic
+- [x] Admin UI with tenant filter and deep links
+- [x] Journey flags surfaced when present in metadata
 
 ### Phase 5g — Nine-agent story (content only)
+
+**Status:** ✅ Shipped
 
 Update existing pages — **no new agent runtime**:
 
@@ -274,7 +283,12 @@ Update existing pages — **no new agent runtime**:
 | `/` | Perceive → Plan → Act → Observe → Learn loop diagram; map to **checkpoint + gates** honestly |
 | `/governance` | Nine-agent kernel as **reference architecture**; live product = governed resume |
 
-When real agent workloads exist, link outcome rows to agent step names — do not simulate agents in UI.
+**Acceptance criteria (5g):**
+
+- [x] Landing `#lifecycle` section with honest API mapping
+- [x] `/governance` nine-agent reference grid (live vs partner vs roadmap)
+- [x] Roadmap items (cost breaker, consensus) labeled not shipped
+- [x] No simulated agent runtime in UI
 
 ---
 
@@ -335,10 +349,10 @@ Existing secrets unchanged: `API_KEYS_JSON`, `DEMO_OPERATOR_KEY`, `ORCHESTRATEOS
 5a  [ ] Session middleware + partner route guard
 5b  [x] tenant_id on start_run + scoped GET
 5c  [x] /admin/capture, /admin/partners
-5d  [ ] /onboarding flow
-5e  [ ] Welcome + post-demo sequences + cron
-5f  [ ] /admin/outcomes (real runs)
-5g  [ ] Landing + /governance nine-agent narrative refresh
+5d  [x] /onboarding flow
+5e  [x] Welcome + post-demo sequences + cron
+5f  [x] /admin/outcomes (real runs)
+5g  [x] Landing + /governance nine-agent narrative refresh
 ```
 
 ---

@@ -106,6 +106,7 @@ export function resolveAuth(
 
 export function requiresAuth(method: string, path: string): boolean {
   if (path.startsWith("/api/")) return false;
+  if (path.startsWith("/internal/")) return false;
   if (method === "GET" || method === "HEAD" || method === "OPTIONS") return false;
   if (path === "/health" || path === "/demo/runs") return false;
   return true;
