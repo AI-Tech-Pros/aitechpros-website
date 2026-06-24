@@ -38,3 +38,5 @@ See [Governance guide](https://orchestrateos.pages.dev/governance) on the site f
 "Schedule a design-partner session — we'll wire `RemoteCheckpointStore` to your existing LangGraph or CrewAI flow and prove governed resume on your workflow, not a toy demo."
 
 **Calendly:** https://calendly.com/aitechpros/15min
+
+**Design partner playbook:** [design-partner-playbook.md](./design-partner-playbook.md)

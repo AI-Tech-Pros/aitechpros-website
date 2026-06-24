@@ -36,6 +36,17 @@ export default function OrchestrateOSInstall() {
       subtitle="Framework-agnostic checkpointing for LangGraph, CrewAI, and plain Python — with optional Cloudflare control plane sync."
     >
       <SubSection title="PyPI (recommended)">
+        <p>
+          Package:{" "}
+          <a
+            href="https://pypi.org/project/resume-engine/0.2.0/"
+            className="text-[#06B6D4] hover:underline"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            resume_engine 0.2.0 on PyPI
+          </a>
+        </p>
         <pre className="rounded-xl bg-black/40 border border-white/[0.08] p-4 text-sm font-mono text-[#06B6D4] overflow-x-auto">
           pip install resume_engine
         </pre>

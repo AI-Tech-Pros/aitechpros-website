@@ -40,6 +40,7 @@ all = ["resume_engine[api,langgraph,crewai,dev,remote]"]
 Homepage = "https://orchestrateos.pages.dev"
 Documentation = "https://github.com/AI-Tech-Pros/aitechpros-website/tree/main/resume_engine"
 Repository = "https://github.com/AI-Tech-Pros/aitechpros-website"
+PyPI = "https://pypi.org/project/resume-engine/"
 Issues = "https://github.com/AI-Tech-Pros/aitechpros-website/issues"
 
 [tool.setuptools.packages.find]

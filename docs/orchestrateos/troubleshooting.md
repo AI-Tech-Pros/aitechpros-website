@@ -30,7 +30,7 @@ curl -fsS -X POST https://orchestrateos-api.nevaquit.workers.dev/start_run `
 | Check | Expected |
 |-------|----------|
 | `/health` | `{"status":"ok",...}` |
-| `/demo/runs` | JSON with `demo_partial_gate` |
+| `/demo/runs` | JSON with `"scenario":"partial"` |
 | partial demo blockers | `can_resume: false`, compensation blocker |
 | `start_run` with runner key | `run_id` returned |
 | `start_run` without key | `401` Missing or invalid API key |

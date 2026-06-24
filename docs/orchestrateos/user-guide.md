@@ -12,7 +12,7 @@ Step-by-step guide for developers, operators, and deployers using OrchestrateOS 
 |-------|----------------|---------------|
 | **Product site** | Marketing, gate explorer, install docs | https://orchestrateos.pages.dev |
 | **Control plane API** | Runs, steps, gates, audit (Worker + D1) | https://orchestrateos-api.nevaquit.workers.dev |
-| **Python SDK** | Execute workflows with checkpointing | `pip install resume_engine` |
+| **Python SDK** | Execute workflows with checkpointing | [`resume_engine` on PyPI](https://pypi.org/project/resume-engine/) |
 
 **Mental model:**
 

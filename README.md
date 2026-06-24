@@ -10,7 +10,7 @@
 
 🌐 [Website](https://aitechpros-website.pages.dev) · [OrchestrateOS](https://orchestrateos.pages.dev) · [API docs](https://orchestrateos-api.nevaquit.workers.dev/docs)
 
-**Documentation:** [User guide](docs/orchestrateos/user-guide.md) · [Troubleshooting](docs/orchestrateos/troubleshooting.md) · [Cloudflare deploy](docs/cloudflare-deploy.md)
+**Documentation:** [User guide](docs/orchestrateos/user-guide.md) · [Troubleshooting](docs/orchestrateos/troubleshooting.md) · [Design partner playbook](docs/orchestrateos/design-partner-playbook.md) · [Cloudflare deploy](docs/cloudflare-deploy.md)
 
 ---
 
@@ -89,7 +89,7 @@ python resume_engine/demo_remote_pipeline.py
 | Workflow | Trigger | What it deploys |
 |----------|---------|-----------------|
 | [`cloudflare-deploy.yml`](.github/workflows/cloudflare-deploy.yml) | Push to `main` (client/cloudflare paths) | Both Pages sites + Worker + D1 migrate/seed |
-| [`pypi-publish.yml`](.github/workflows/pypi-publish.yml) | Release or manual | `resume_engine` to PyPI |
+| [`pypi-publish.yml`](.github/workflows/pypi-publish.yml) | Release or manual | `resume_engine` to [PyPI](https://pypi.org/project/resume-engine/) |
 | [`deploy-website.yml`](.github/workflows/deploy-website.yml) | Manual only | Legacy Namecheap FTP (`aitechpros.ai`) |
 | [`orchestrateos-api.yml`](.github/workflows/orchestrateos-api.yml) | Push to `main` (resume_engine paths) | Docker image to GHCR (optional self-host) |
 
