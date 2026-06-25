@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { applyOrchestrateOSSiteMeta } from "@/lib/orchestrateos-seo";
 import { isOrchestrateOSProductSite, orchestrateOSUrl } from "@/lib/site";
 import NotFound from "@/pages/NotFound";
 import OrchestrateOS from "@/pages/OrchestrateOS";
@@ -52,9 +53,18 @@ function MainSiteRouter() {
   );
 }
 
+function OrchestrateOSSiteMeta() {
+  useEffect(() => {
+    applyOrchestrateOSSiteMeta();
+  }, []);
+
+  return null;
+}
+
 function OrchestrateOSRouter() {
   return (
     <SessionProvider>
+      <OrchestrateOSSiteMeta />
       <Switch>
         <Route path={"/"} component={OrchestrateOS} />
         <Route path={"/governance"} component={OrchestrateOSGovernance} />

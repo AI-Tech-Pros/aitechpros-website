@@ -2,7 +2,6 @@
  * OrchestrateOS product landing — https://orchestrateos.pages.dev
  * Governance-first deterministic execution (resume_engine competitive positioning)
  */
-import { useEffect } from "react";
 import { Link } from "wouter";
 import OrchestrateOSNavbar from "@/components/OrchestrateOSNavbar";
 import OrchestrateOSApiSection from "@/components/OrchestrateOSApiSection";
@@ -25,7 +24,6 @@ import {
   mainSiteUrl,
   orchestrateOSApiBaseUrl,
   orchestrateOSApiDocsUrl,
-  siteOrigin,
 } from "@/lib/site";
 
 const CALENDLY_URL = "https://calendly.com/aitechpros/15min";
@@ -114,20 +112,6 @@ export default function OrchestrateOS() {
   const benchmark = useInView({ threshold: 0.05 });
   const gates = useInView({ threshold: 0.05 });
   const apiSection = useInView({ threshold: 0.05 });
-
-  useEffect(() => {
-    document.title = "OrchestrateOS — Deterministic Agent Workflow Execution";
-    const meta = document.querySelector('meta[name="description"]');
-    if (meta) {
-      meta.setAttribute(
-        "content",
-        "Governance-first agent orchestration: approval gates, audit trails, and deterministic resume for LangGraph, CrewAI, and Python — without Azure or LangSmith lock-in."
-      );
-    }
-    return () => {
-      document.title = `${new URL(siteOrigin()).hostname} — AI Consultancy`;
-    };
-  }, []);
 
   return (
     <div className="min-h-screen bg-[#0B0D17]">

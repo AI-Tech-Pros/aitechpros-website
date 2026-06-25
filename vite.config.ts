@@ -3,6 +3,7 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import fs from "node:fs";
 import path from "node:path";
+import { orchestrateOSSiteMetaHtml } from "./client/src/lib/orchestrateos-seo";
 import { defineConfig, type Plugin, type ViteDevServer } from "vite";
 import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
 
@@ -150,12 +151,28 @@ function vitePluginManusDebugCollector(): Plugin {
   };
 }
 
-const plugins = [
+function vitePluginOrchestrateOSSiteMeta(mode: string): Plugin {
+  return {
+    name: "orchestrateos-site-meta",
+    transformIndexHtml(html) {
+      if (mode !== "orchestrateos") return html;
+
+      const metaBlock = orchestrateOSSiteMetaHtml();
+      return html
+        .replace(/<title>[\s\S]*?<\/title>\s*/i, "")
+        .replace(/<meta\s+name="description"[^>]*\/?>\s*/i, "")
+        .replace("</head>", `    ${metaBlock}\n  </head>`);
+    },
+  };
+}
+
+const plugins = (mode: string) => [
   react(),
   tailwindcss(),
   jsxLocPlugin(),
   vitePluginManusRuntime(),
   vitePluginManusDebugCollector(),
+  vitePluginOrchestrateOSSiteMeta(mode),
   {
     name: "conditional-analytics",
     transformIndexHtml(html: string) {
@@ -172,8 +189,8 @@ const plugins = [
   },
 ];
 
-export default defineConfig({
-  plugins,
+export default defineConfig(({ mode }) => ({
+  plugins: plugins(mode),
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "client", "src"),
@@ -253,4 +270,4 @@ export default defineConfig({
       deny: ["**/.*"],
     },
   },
-});
+}));

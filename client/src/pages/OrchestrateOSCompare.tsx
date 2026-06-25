@@ -2,6 +2,7 @@
  * Printable comparison one-pager — export via browser print / Save as PDF.
  */
 import { useEffect } from "react";
+import { applyOrchestrateOSSiteMeta } from "@/lib/orchestrateos-seo";
 import { Link } from "wouter";
 import { Printer } from "lucide-react";
 import {
@@ -18,7 +19,7 @@ function Cell({ value }: { value: ComparisonCell }) {
 
 export default function OrchestrateOSCompare() {
   useEffect(() => {
-    document.title = "OrchestrateOS — Competitive Comparison";
+    applyOrchestrateOSSiteMeta({ title: "OrchestrateOS — Competitive Comparison" });
   }, []);
 
   return (
