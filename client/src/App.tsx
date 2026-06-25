@@ -15,7 +15,9 @@ import OrchestrateOSPartnerDashboard from "@/pages/OrchestrateOSPartnerDashboard
 import OrchestrateOSAdminCapture from "@/pages/OrchestrateOSAdminCapture";
 import OrchestrateOSAdminPartners from "@/pages/OrchestrateOSAdminPartners";
 import OrchestrateOSAdminOutcomes from "@/pages/OrchestrateOSAdminOutcomes";
+import OrchestrateOSAdminOps from "@/pages/OrchestrateOSAdminOps";
 import OrchestrateOSOnboarding from "@/pages/OrchestrateOSOnboarding";
+import OrchestrateOSAuthOidcCallback from "@/pages/OrchestrateOSAuthOidcCallback";
 import { SessionProvider } from "@/contexts/SessionContext";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -63,10 +65,12 @@ function OrchestrateOSRouter() {
         <Route path={"/login"} component={OrchestrateOSLogin} />
         <Route path={"/onboarding"} component={OrchestrateOSOnboarding} />
         <Route path={"/auth/verify"} component={OrchestrateOSAuthVerify} />
+        <Route path={"/auth/oidc/callback"} component={OrchestrateOSAuthOidcCallback} />
         <Route path={"/partner/dashboard"} component={OrchestrateOSPartnerDashboard} />
         <Route path={"/admin/capture"} component={OrchestrateOSAdminCapture} />
         <Route path={"/admin/partners"} component={OrchestrateOSAdminPartners} />
         <Route path={"/admin/outcomes"} component={OrchestrateOSAdminOutcomes} />
+        <Route path={"/admin/ops"} component={OrchestrateOSAdminOps} />
         <Route path={"/privacy"} component={PrivacyPolicy} />
         <Route path={"/terms"} component={TermsOfService} />
         <Route path={"/404"} component={NotFound} />

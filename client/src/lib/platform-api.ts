@@ -324,6 +324,13 @@ export type PlatformReadiness = {
   cron_secret: boolean;
   api_keys_json: boolean;
   site_url: boolean;
+  ready_for_onboarding: boolean;
+  onboarding_url: string;
+  partners: {
+    total: number;
+    active: number;
+    with_runner_key: number;
+  };
 };
 
 export type ProvisionRunnerKeyResult = {
@@ -456,3 +463,111 @@ export const DEFAULT_TENANT_GATE_POLICY: TenantGatePolicy = {
   permanent_consensus_min: 0,
   partial_requires_compensation: true,
 };
+
+export type GovernanceMetrics = {
+  tenant_id: string;
+  runs_total: number;
+  runs_blocked: number;
+  gate_events_30d: number;
+  gate_clears_30d: number;
+  avg_clear_hours: number | null;
+  recent_approvers: string[];
+  gate_event_breakdown: Record<string, number>;
+};
+
+export async function fetchPartnerGovernanceMetrics(): Promise<GovernanceMetrics> {
+  const res = await platformFetch("/partners/me/governance-metrics");
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { detail?: string };
+    throw new Error(body.detail ?? `Request failed (${res.status})`);
+  }
+  return res.json() as Promise<GovernanceMetrics>;
+}
+
+export type PartnerApiKeyRow = {
+  role: string;
+  key_prefix: string;
+  hint: string;
+  created_at: string;
+  revoked_at: string | null;
+};
+
+export async function fetchAdminPartnerApiKeys(
+  partnerId: string,
+): Promise<{ tenant_id: string; keys: PartnerApiKeyRow[] }> {
+  return adminFetch(`/admin/partners/${encodeURIComponent(partnerId)}/api-keys`);
+}
+
+export async function provisionAdminPartnerApiKey(
+  partnerId: string,
+  role: "runner" | "operator" | "auditor",
+): Promise<{ role: string; tenant_id: string; api_key: string; key_hint: string; message: string }> {
+  return adminFetch(`/admin/partners/${encodeURIComponent(partnerId)}/provision-api-key`, {
+    method: "POST",
+    body: JSON.stringify({ role }),
+  });
+}
+
+export type OpsSummary = {
+  ingress_pending: number;
+  ingress_failed: number;
+  runs_blocked_total: number;
+  nurture_pending: number;
+};
+
+export type IngressEvent = {
+  id: string;
+  tenant_id: string;
+  source: string;
+  source_id: string | null;
+  status: string;
+  run_id: string | null;
+  created_at: string;
+  processed_at: string | null;
+};
+
+export async function fetchAdminOpsSummary(): Promise<OpsSummary> {
+  return adminFetch("/admin/ops/summary");
+}
+
+export async function fetchAdminIngressQueue(): Promise<{ events: IngressEvent[] }> {
+  return adminFetch("/admin/ops/ingress");
+}
+
+export async function fetchOidcConfig(): Promise<{ enabled: boolean }> {
+  const res = await fetch(`${platformApiBase()}/auth/oidc/config`);
+  if (!res.ok) return { enabled: false };
+  return res.json() as Promise<{ enabled: boolean }>;
+}
+
+export async function startOidcLogin(): Promise<{ authorize_url: string; state: string }> {
+  const res = await fetch(`${platformApiBase()}/auth/oidc/start`);
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { detail?: string };
+    throw new Error(body.detail ?? "SSO not available");
+  }
+  return res.json() as Promise<{ authorize_url: string; state: string }>;
+}
+
+export async function exchangeOidcCode(code: string): Promise<{
+  ok: boolean;
+  token: string;
+  role: string;
+  redirect: string;
+}> {
+  const res = await fetch(`${platformApiBase()}/auth/oidc/exchange`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code }),
+  });
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { detail?: string };
+    throw new Error(body.detail ?? "SSO sign-in failed");
+  }
+  return res.json() as Promise<{
+    ok: boolean;
+    token: string;
+    role: string;
+    redirect: string;
+  }>;
+}

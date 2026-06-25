@@ -4,6 +4,7 @@ import { ExternalLink } from "lucide-react";
 import OrchestrateOSNavbar from "@/components/OrchestrateOSNavbar";
 import PartnerRoute from "@/components/PartnerRoute";
 import PartnerJourneyPanel from "@/components/PartnerJourneyPanel";
+import GovernanceMetricsPanel from "@/components/GovernanceMetricsPanel";
 import ComplianceExportPanel from "@/components/ComplianceExportPanel";
 import RunTimeline from "@/components/RunTimeline";
 import {
@@ -145,6 +146,7 @@ function DashboardContent() {
         {workflowMessage && <p className="text-[#06B6D4] text-xs mb-6">{workflowMessage}</p>}
 
         {journey && <PartnerJourneyPanel journey={journey} />}
+        <GovernanceMetricsPanel />
 
         {journey && journey.next_action === "issue_runner_key" && (
           <section className="rounded-2xl border border-amber-500/25 bg-amber-500/5 p-6 mb-8">

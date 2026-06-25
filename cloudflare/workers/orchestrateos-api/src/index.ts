@@ -12,6 +12,7 @@ import { seedDemoRuns } from "./demo-seed";
 import { DOCS_HTML, OPENAPI_SPEC } from "./docs";
 import { platformApp } from "./platform/routes";
 import { runNurtureTick } from "./platform/nurture/service";
+import { runAuditorDigest } from "./auditor-digest";
 import { executeKernelPipeline, resumeKernelPipeline, kernelAgentCatalog, drainIngressQueue } from "./kernel/pipeline";
 import { completeLlm, llmStatus } from "./llm/router";
 import type { LlmEnv } from "./llm/env";
@@ -23,7 +24,9 @@ import {
 import { assertRunAccess } from "./tenant-access";
 import { applyConsensusVote, seedConsensusPolicy } from "./consensus-gate";
 import { buildComplianceExport } from "./compliance-export";
+import { complianceExportHtml } from "./compliance-export-html";
 import { applyTenantGatePolicy, getTenantGatePolicy } from "./gate-policies";
+import { notifyRunBlocked } from "./observer-alerts";
 import { getResumeBlockers, failureKey, lastFailedStep, type ResumeBlocker } from "./resume-blockers";
 import {
   parseMetadata,
@@ -47,6 +50,10 @@ export type Env = LlmEnv & {
   SITE_URL?: string;
   CRON_SECRET?: string;
   INGRESS_WEBHOOK_SECRET?: string;
+  OBSERVER_WEBHOOK_URL?: string;
+  OIDC_ISSUER?: string;
+  OIDC_CLIENT_ID?: string;
+  OIDC_CLIENT_SECRET?: string;
   LLM_BUDGET_USD_PER_RUN?: string;
 };
 
@@ -285,6 +292,27 @@ app.post("/ingress/queue/process", async (c) => {
   return c.json({ processed, run_ids });
 });
 
+app.get("/ingress/queue", async (c) => {
+  const auth = c.get("auth");
+  if (!auth.authenticated) return c.json({ detail: "Unauthorized" }, 401);
+  const limit = Math.min(parseInt(c.req.query("limit") ?? "50", 10) || 50, 100);
+  const tenantId = auth.tenant;
+  const { results } = tenantId
+    ? await c.env.DB.prepare(
+        `SELECT id, tenant_id, source, source_id, status, run_id, created_at, processed_at
+         FROM ingress_events WHERE tenant_id = ? ORDER BY created_at DESC LIMIT ?`,
+      )
+        .bind(tenantId, limit)
+        .all()
+    : await c.env.DB.prepare(
+        `SELECT id, tenant_id, source, source_id, status, run_id, created_at, processed_at
+         FROM ingress_events ORDER BY created_at DESC LIMIT ?`,
+      )
+        .bind(limit)
+        .all();
+  return c.json({ events: results ?? [] });
+});
+
 app.post("/kernel/runs/:runId/resume", async (c) => {
   const runId = c.req.param("runId");
   const auth = c.get("auth");
@@ -487,6 +515,18 @@ app.post("/runs/:runId/steps", async (c) => {
     status: body.status,
     failure_classification: body.failure_classification ?? null,
   });
+  if (body.status === "failed" && blockers.length > 0) {
+    void notifyRunBlocked(c.env, {
+      run_id: runId,
+      tenant_id: run.tenant_id ?? "default",
+      workflow_name: run.workflow_name,
+      blocker_count: blockers.length,
+      blockers: blockers.map((b) => ({
+        required_action: b.required_action,
+        step_name: b.step_name,
+      })),
+    }).catch(() => undefined);
+  }
   return c.json(runStatusResponse(updated!, updatedSteps, blockers), 201);
 });
 
@@ -649,8 +689,40 @@ app.get("/runs/:runId/retry_policy", async (c) => {
     advisory: true,
     auto_apply: false,
     optimizer: optimizer ?? null,
+    applied: Boolean((metadata.applied_retry_policy as Record<string, unknown> | undefined)?.applied_at),
     message:
-      "Retry policy recommendations are advisory until automated tuning ships. Use optimizer metrics to adjust workflows manually.",
+      "Retry policy recommendations are advisory until applied via POST /runs/:id/retry_policy/apply.",
+  });
+});
+
+app.post("/runs/:runId/retry_policy/apply", async (c) => {
+  const runId = c.req.param("runId");
+  const run = await getRun(c.env.DB, runId);
+  if (!run) return c.json({ detail: `Run not found: ${runId}` }, 404);
+  const denied = assertRunAccess(c, run);
+  if (denied) return denied;
+
+  const metadata = parseRunMetadata(run.metadata_json);
+  const optimizer = metadata.optimizer as Record<string, unknown> | undefined;
+  if (!optimizer) {
+    return c.json({ detail: "No optimizer recommendations on this run" }, 400);
+  }
+
+  metadata.applied_retry_policy = {
+    applied_at: new Date().toISOString(),
+    applied_by: actorLabel(c.get("auth")),
+    source: "optimizer",
+    rules: optimizer.circuit_breaker_rules ?? optimizer.consensus_recommendations ?? optimizer,
+  };
+  await updateRunMetadata(c.env.DB, runId, metadata);
+  await recordAuditEvent(c.env.DB, runId, "optimizer.retry_policy_applied", actorLabel(c.get("auth")), {
+    applied_retry_policy: metadata.applied_retry_policy,
+  });
+
+  return c.json({
+    run_id: runId,
+    applied: true,
+    applied_retry_policy: metadata.applied_retry_policy,
   });
 });
 
@@ -743,6 +815,16 @@ app.get("/runs/:runId/compliance_export", async (c) => {
   if (denied) return denied;
   const steps = await getSteps(c.env.DB, runId);
   const bundle = await buildComplianceExport(c.env.DB, run, steps);
+  const format = c.req.query("format")?.toLowerCase();
+  if (format === "html" || c.req.query("download") === "pdf") {
+    const html = complianceExportHtml(bundle);
+    return new Response(html, {
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Content-Disposition": `attachment; filename="orchestrateos-compliance-${runId}.html"`,
+      },
+    });
+  }
   if (c.req.query("download") === "1") {
     return new Response(JSON.stringify(bundle, null, 2), {
       headers: {
@@ -772,7 +854,12 @@ export default {
   fetch: app.fetch,
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
     if (event.cron === NURTURE_CRON) {
-      ctx.waitUntil(runNurtureTick(env));
+      ctx.waitUntil(
+        (async () => {
+          await runNurtureTick(env);
+          await runAuditorDigest(env);
+        })(),
+      );
     } else {
       ctx.waitUntil(drainIngressQueue(env));
     }

@@ -1,6 +1,6 @@
 # Phase 5 — Platform layer (Cloudflare)
 
-**Status:** Spec (not yet implemented)  
+**Status:** ✅ Shipped (5a–5g)  
 **Date:** June 2026  
 **Stack:** Cloudflare Pages + Workers + D1 + (optional) Workers KV · **No Polsia / Neon / Express**
 
@@ -67,6 +67,8 @@ Phase 5 adds a **commercial platform layer** on top of the shipped control plane
 ---
 
 ## 3. Vertical slice (build first — Phase 5a)
+
+**Status:** ✅ Shipped
 
 Ship this before any admin CRM or nurture automation.
 
@@ -156,13 +158,13 @@ Demo runs keep `tenant_id = 'demo'` (public gate explorer). Partner runs use `te
 
 ### 3.5 Acceptance criteria (5a)
 
-- [ ] `POST /api/leads` returns 201; duplicate email returns 409  
-- [ ] Magic link email delivered; link works once; expires in 15 minutes  
-- [ ] Partner session required for `/partner/dashboard`; others redirect to `/login`  
-- [ ] Partner sees only runs matching their `tenant_id`  
-- [ ] Each run row links to `/#gates` (prefill run ID) and `/docs` audit paths  
-- [ ] `sales_demo_smoke.ps1` still passes  
-- [ ] No regression on existing API key auth for SDK  
+- [x] `POST /api/leads` returns 201; duplicate email returns 409  
+- [x] Magic link email delivered; link works once; expires in 15 minutes  
+- [x] Partner session required for `/partner/dashboard`; others redirect to `/login`  
+- [x] Partner sees only runs matching their `tenant_id`  
+- [x] Each run row links to `/#gates` (prefill run ID) and `/docs` audit paths  
+- [x] `sales_demo_smoke.ps1` still passes  
+- [x] No regression on existing API key auth for SDK  
 
 ---
 
@@ -219,7 +221,7 @@ Multi-step form (company → team emails → confirm):
 
 - `POST /api/partners/onboard` creates `design_partners` row + `users` + sends magic link  
 - Auto-assign `tenant_id` slug  
-- Document runner key issuance (manual or scripted `wrangler secret` update)
+- Auto-provision runner key in D1 `tenant_api_keys` (returned once in onboard response)
 
 **Acceptance criteria (5d):**
 
@@ -334,7 +336,7 @@ Existing secrets unchanged: `API_KEYS_JSON`, `DEMO_OPERATOR_KEY`, `ORCHESTRATEOS
 | Change | File |
 |--------|------|
 | D1 migrate `0004_platform.sql`, `0005_tenant.sql`, `0006_tenant_backfill.sql` | `cloudflare-deploy.yml` |
-| Smoke: `POST /api/leads` test lead + cleanup | `cloudflare-deploy.yml` or `sales_demo_smoke.ps1` |
+| Smoke: `POST /api/leads` test lead + `GET /api/auth/me` 401 | `cloudflare-deploy.yml`, `sales_demo_smoke.ps1` |
 | New secrets documented | `docs/cloudflare-deploy.md`, root `README.md` |
 
 ---
@@ -342,11 +344,11 @@ Existing secrets unchanged: `API_KEYS_JSON`, `DEMO_OPERATOR_KEY`, `ORCHESTRATEOS
 ## 9. Implementation checklist (ordered)
 
 ```
-5a  [ ] D1 migration 0004_platform (+ 0005 tenant on runs)
-5a  [ ] Worker: /api/leads, /api/auth/*, /api/partners/me/*
-5a  [ ] Resend integration for magic link + lead notify
-5a  [ ] Pages: lead form, /login, /auth/verify, /partner/dashboard
-5a  [ ] Session middleware + partner route guard
+5a  [x] D1 migration 0004_platform (+ 0005 tenant on runs)
+5a  [x] Worker: /api/leads, /api/auth/*, /api/partners/me/*
+5a  [x] Resend integration for magic link + lead notify
+5a  [x] Pages: lead form, /login, /auth/verify, /partner/dashboard
+5a  [x] Session middleware + partner route guard
 5b  [x] tenant_id on start_run + scoped GET
 5c  [x] /admin/capture, /admin/partners
 5d  [x] /onboarding flow
@@ -380,4 +382,4 @@ Existing secrets unchanged: `API_KEYS_JSON`, `DEMO_OPERATOR_KEY`, `ORCHESTRATEOS
 
 ---
 
-**Next implementation PR:** Phase **5a** only — schema + lead form + magic link + partner dashboard.
+**Implementation complete:** Phases **5a–5g** shipped on Cloudflare Pages + Worker + D1.

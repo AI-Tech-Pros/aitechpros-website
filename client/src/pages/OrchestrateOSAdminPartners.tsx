@@ -5,12 +5,15 @@ import AdminRoute from "@/components/AdminRoute";
 import {
   createAdminPartner,
   DEFAULT_TENANT_GATE_POLICY,
+  fetchAdminPartnerApiKeys,
   fetchAdminPartnerGatePolicy,
   fetchAdminPartners,
+  provisionAdminPartnerApiKey,
   provisionAdminPartnerRunnerKey,
   updateAdminPartner,
   updateAdminPartnerGatePolicy,
   type AdminPartner,
+  type PartnerApiKeyRow,
   type PartnerPhase,
   type PartnerStatus,
   type TenantGatePolicy,
@@ -43,6 +46,10 @@ function PartnersContent() {
   const [policyLoading, setPolicyLoading] = useState(false);
   const [policySaving, setPolicySaving] = useState(false);
   const [policyNote, setPolicyNote] = useState("");
+  const [apiKeys, setApiKeys] = useState<PartnerApiKeyRow[]>([]);
+  const [keysLoading, setKeysLoading] = useState(false);
+  const [provisioningRole, setProvisioningRole] = useState("");
+  const [issuedKey, setIssuedKey] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -83,16 +90,23 @@ function PartnersContent() {
     });
     setKeyNote("");
     setPolicyNote("");
+    setIssuedKey(null);
     setShowForm(true);
     setPolicyLoading(true);
+    setKeysLoading(true);
     try {
-      const { policy } = await fetchAdminPartnerGatePolicy(partner.id);
+      const [{ policy }, keysResult] = await Promise.all([
+        fetchAdminPartnerGatePolicy(partner.id),
+        fetchAdminPartnerApiKeys(partner.id),
+      ]);
       setGatePolicy(policy);
+      setApiKeys(keysResult.keys);
     } catch {
       setGatePolicy(DEFAULT_TENANT_GATE_POLICY);
       setPolicyNote("Could not load gate policy — showing defaults.");
     } finally {
       setPolicyLoading(false);
+      setKeysLoading(false);
     }
   };
 
@@ -163,6 +177,25 @@ function PartnersContent() {
       setError(e instanceof Error ? e.message : "Could not save gate policy");
     } finally {
       setPolicySaving(false);
+    }
+  };
+
+  const issueApiKey = async (role: "runner" | "operator" | "auditor") => {
+    if (!editing) return;
+    setProvisioningRole(role);
+    setIssuedKey(null);
+    setError("");
+    try {
+      const result = await provisionAdminPartnerApiKey(editing.id, role);
+      setIssuedKey(result.api_key);
+      setKeyNote(result.message);
+      const keysResult = await fetchAdminPartnerApiKeys(editing.id);
+      setApiKeys(keysResult.keys);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not issue API key");
+    } finally {
+      setProvisioningRole("");
     }
   };
 
@@ -269,6 +302,47 @@ function PartnersContent() {
               />
             </label>
           </div>
+
+          {editing && (
+            <div className="rounded-xl border border-[#06B6D4]/25 bg-[#06B6D4]/5 p-4 space-y-3">
+              <h3 className="text-white font-medium text-sm">API keys (runner / operator / auditor)</h3>
+              {keysLoading ? (
+                <p className="text-xs text-white/40">Loading keys…</p>
+              ) : (
+                <ul className="text-xs font-mono text-white/60 space-y-1">
+                  {apiKeys.filter((k) => !k.revoked_at).length === 0 ? (
+                    <li>No active keys</li>
+                  ) : (
+                    apiKeys
+                      .filter((k) => !k.revoked_at)
+                      .map((k) => (
+                        <li key={`${k.role}-${k.created_at}`}>
+                          {k.role}: {k.hint}
+                        </li>
+                      ))
+                  )}
+                </ul>
+              )}
+              <div className="flex flex-wrap gap-2">
+                {(["runner", "operator", "auditor"] as const).map((role) => (
+                  <button
+                    key={role}
+                    type="button"
+                    disabled={!!provisioningRole}
+                    onClick={() => void issueApiKey(role)}
+                    className="px-3 py-1.5 text-xs rounded-lg border border-[#06B6D4]/40 text-[#06B6D4] disabled:opacity-50"
+                  >
+                    {provisioningRole === role ? "Issuing…" : `Issue ${role} key`}
+                  </button>
+                ))}
+              </div>
+              {issuedKey && (
+                <p className="text-xs text-amber-200 break-all">
+                  Copy now: <code className="text-white">{issuedKey}</code>
+                </p>
+              )}
+            </div>
+          )}
 
           {editing && (
             <div className="rounded-xl border border-[#8B5CF6]/25 bg-[#8B5CF6]/5 p-4 space-y-4">

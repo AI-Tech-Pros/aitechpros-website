@@ -27,6 +27,31 @@ export async function provisionPartnerRunnerKey(
   partnerId: string,
   tenantId: string,
 ): Promise<{ key: string; hint: string }> {
+  return provisionPartnerTenantKey(db, partnerId, tenantId, "runner");
+}
+
+export async function provisionPartnerOperatorKey(
+  db: D1Database,
+  partnerId: string,
+  tenantId: string,
+): Promise<{ key: string; hint: string }> {
+  return provisionPartnerTenantKey(db, partnerId, tenantId, "operator");
+}
+
+export async function provisionPartnerAuditorKey(
+  db: D1Database,
+  partnerId: string,
+  tenantId: string,
+): Promise<{ key: string; hint: string }> {
+  return provisionPartnerTenantKey(db, partnerId, tenantId, "auditor");
+}
+
+export async function provisionPartnerTenantKey(
+  db: D1Database,
+  partnerId: string,
+  tenantId: string,
+  role: ApiRole,
+): Promise<{ key: string; hint: string }> {
   const key = generateRunnerApiKey();
   const keyHash = await hashApiKey(key);
   const id = crypto.randomUUID();
@@ -36,17 +61,37 @@ export async function provisionPartnerRunnerKey(
   await db
     .prepare(
       `INSERT INTO tenant_api_keys (id, partner_id, tenant_id, key_prefix, key_hash, role, created_at)
-       VALUES (?, ?, ?, ?, ?, 'runner', ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
     )
-    .bind(id, partnerId, tenantId, key.slice(0, 12), keyHash, now)
+    .bind(id, partnerId, tenantId, key.slice(0, 12), keyHash, role, now)
     .run();
 
-  await db
-    .prepare(`UPDATE design_partners SET runner_api_key_hint = ?, updated_at = ? WHERE id = ?`)
-    .bind(hint, now, partnerId)
-    .run();
+  if (role === "runner") {
+    await db
+      .prepare(`UPDATE design_partners SET runner_api_key_hint = ?, updated_at = ? WHERE id = ?`)
+      .bind(hint, now, partnerId)
+      .run();
+  }
 
   return { key, hint };
+}
+
+export async function listPartnerApiKeys(
+  db: D1Database,
+  partnerId: string,
+): Promise<{ role: string; key_prefix: string; hint: string; created_at: string; revoked_at: string | null }[]> {
+  const { results } = await db
+    .prepare(
+      `SELECT role, key_prefix, created_at, revoked_at FROM tenant_api_keys
+       WHERE partner_id = ? ORDER BY created_at DESC`,
+    )
+    .bind(partnerId)
+    .all<{ role: string; key_prefix: string; created_at: string; revoked_at: string | null }>();
+
+  return (results ?? []).map((row) => ({
+    ...row,
+    hint: row.key_prefix ? `${row.key_prefix}…` : "****",
+  }));
 }
 
 export async function revokePartnerRunnerKeys(db: D1Database, partnerId: string): Promise<void> {

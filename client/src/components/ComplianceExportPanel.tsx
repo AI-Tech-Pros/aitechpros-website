@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import { Download, FileJson, Loader2, ShieldCheck } from "lucide-react";
+import { Download, FileJson, FileText, Loader2, ShieldCheck } from "lucide-react";
 import {
   downloadComplianceExport,
   fetchComplianceExport,
   type ComplianceExport,
 } from "@/lib/orchestrateos-api";
 import { downloadPartnerComplianceExport, fetchPartnerComplianceExport } from "@/lib/platform-api";
+import { downloadComplianceHtml, openCompliancePdfPrint } from "@/lib/compliance-pdf";
 
 type Props = {
   runId: string;
@@ -17,6 +18,7 @@ export default function ComplianceExportPanel({ runId, partnerSession = false, c
   const [data, setData] = useState<ComplianceExport | null>(null);
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
@@ -56,6 +58,22 @@ export default function ComplianceExportPanel({ runId, partnerSession = false, c
     }
   }
 
+  async function handleDownloadPdf() {
+    setPdfLoading(true);
+    setError("");
+    try {
+      if (data) {
+        openCompliancePdfPrint(data);
+      } else {
+        await downloadComplianceHtml(runId, partnerSession);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "PDF export failed");
+    } finally {
+      setPdfLoading(false);
+    }
+  }
+
   return (
     <div className={`rounded-xl border border-[#06B6D4]/20 bg-[#06B6D4]/5 p-4 ${className}`}>
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -68,15 +86,26 @@ export default function ComplianceExportPanel({ runId, partnerSession = false, c
             JSON bundle: steps, gates, audit trail, replay payload, idempotency analysis.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => void handleDownload()}
-          disabled={downloading || loading || !runId.trim()}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-[#06B6D4] text-[#0B0D17] text-xs font-semibold disabled:opacity-50"
-        >
-          {downloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-          Download JSON
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => void handleDownload()}
+            disabled={downloading || loading || !runId.trim()}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-[#06B6D4] text-[#0B0D17] text-xs font-semibold disabled:opacity-50"
+          >
+            {downloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+            Download JSON
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleDownloadPdf()}
+            disabled={pdfLoading || loading || !runId.trim()}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#06B6D4]/40 text-[#06B6D4] text-xs font-semibold disabled:opacity-50"
+          >
+            {pdfLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
+            Export PDF
+          </button>
+        </div>
       </div>
 
       {loading && <p className="text-xs text-white/40 mt-3">Loading export preview…</p>}

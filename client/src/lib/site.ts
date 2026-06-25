@@ -70,9 +70,8 @@ export function orchestrateOSApiDocsUrl(): string {
   return `${orchestrateOSApiBaseUrl()}/docs`;
 }
 
-/** Same-origin platform API (auth cookies). Gate explorer uses orchestrateOSApiBaseUrl(). */
+/** Platform API base. OrchestrateOS Pages has no working /api proxy — call Worker directly. */
 export function platformApiBase(): string {
-  if (isOrchestrateOSProductSite() || isOrchestrateOSApp()) return "";
   if (typeof window !== "undefined") {
     const host = window.location.hostname.toLowerCase();
     if (host === "localhost" || host === "127.0.0.1") return "";

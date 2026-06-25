@@ -15,9 +15,12 @@ import { createPartnerFirstWorkflow } from "./partner-first-workflow";
 import { createPartnerStartRun } from "./partner-start-run";
 import { getPartnerJourney } from "./partner-journey";
 import { buildComplianceExport } from "../compliance-export";
+import { complianceExportHtml } from "../compliance-export-html";
 import { getTenantGatePolicy, parseGatePolicy, type TenantGatePolicy } from "../gate-policies";
 import { provisionPartnerRunnerKey, rotatePartnerRunnerKey } from "../tenant-api-keys";
-import { enrollWelcomeSequence, onLeadStageChanged } from "./nurture/service";
+import { buildTenantGovernanceMetrics } from "../governance-metrics";
+import { buildOidcAuthorizeUrl, exchangeOidcCode, oidcEnabled } from "./oidc-auth";
+import { enrollWelcomeSequence } from "./nurture/service";
 import {
   clearSessionCookieHeader,
   hashToken,
@@ -224,6 +227,65 @@ platformApp.get("/auth/me", (c) => {
   });
 });
 
+platformApp.get("/auth/oidc/config", (c) => c.json({ enabled: oidcEnabled(c.env) }));
+
+platformApp.get("/auth/oidc/start", (c) => {
+  const start = buildOidcAuthorizeUrl(c.env);
+  if (!start) return c.json({ detail: "OIDC not configured" }, 503);
+  return c.json(start);
+});
+
+platformApp.post("/auth/oidc/exchange", async (c) => {
+  const secret = requireSessionSecret(c);
+  if (!secret) return c.json({ detail: "Auth not configured" }, 503);
+
+  const body = await c.req.json<{ code?: string }>();
+  const code = body.code?.trim();
+  if (!code) return c.json({ detail: "code is required" }, 400);
+
+  try {
+    const { email } = await exchangeOidcCode(c.env, code);
+    const sessionUser = await resolveOrCreateSessionUser(c.env.DB, email, c.env.ADMIN_EMAILS);
+    if (!sessionUser) return c.json({ detail: "No account for this email" }, 403);
+
+    const jwt = await signSession(
+      {
+        sub: sessionUser.userId,
+        email: sessionUser.email,
+        role: sessionUser.role,
+        partnerId: sessionUser.partnerId,
+        partnerSlug: sessionUser.partnerSlug,
+      },
+      secret,
+    );
+
+    const now = new Date().toISOString();
+    await c.env.DB.prepare(`UPDATE users SET last_login_at = ? WHERE id = ?`)
+      .bind(now, sessionUser.userId)
+      .run();
+
+    return c.json({
+      ok: true,
+      token: jwt,
+      role: sessionUser.role,
+      redirect:
+        sessionUser.role === "admin" ? "/admin/capture" : "/partner/dashboard?welcome=1",
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "OIDC exchange failed";
+    return c.json({ detail: msg }, 401);
+  }
+});
+
+platformApp.get("/partners/me/governance-metrics", async (c) => {
+  const session = requirePartnerSession(c);
+  if (session instanceof Response) return session;
+  const tenantId = session.partnerSlug;
+  if (!tenantId) return c.json({ detail: "Partner tenant not found" }, 400);
+  const metrics = await buildTenantGovernanceMetrics(c.env.DB, tenantId);
+  return c.json(metrics);
+});
+
 platformApp.post("/auth/logout", (c) => {
   return new Response(JSON.stringify({ ok: true }), {
     status: 200,
@@ -349,6 +411,15 @@ platformApp.get("/partners/me/runs/:runId/compliance_export", async (c) => {
     }>();
 
   const bundle = await buildComplianceExport(c.env.DB, run, steps ?? []);
+  if (c.req.query("download") === "pdf" || c.req.query("format") === "html") {
+    const html = complianceExportHtml(bundle);
+    return new Response(html, {
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Content-Disposition": `attachment; filename="orchestrateos-compliance-${runId}.html"`,
+      },
+    });
+  }
   if (c.req.query("download") === "1") {
     return new Response(JSON.stringify(bundle, null, 2), {
       headers: {

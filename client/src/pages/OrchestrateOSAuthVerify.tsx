@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import OrchestrateOSNavbar from "@/components/OrchestrateOSNavbar";
 import { verifyMagicLink } from "@/lib/platform-api";
@@ -8,6 +8,7 @@ export default function OrchestrateOSAuthVerify() {
   const [, setLocation] = useLocation();
   const { refresh } = useSession();
   const [error, setError] = useState("");
+  const started = useRef(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -16,6 +17,9 @@ export default function OrchestrateOSAuthVerify() {
       setError("Missing sign-in token.");
       return;
     }
+    if (started.current) return;
+    started.current = true;
+
     void (async () => {
       const result = await verifyMagicLink(token);
       if (!result.ok) {

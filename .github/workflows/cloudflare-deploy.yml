@@ -253,6 +253,11 @@ jobs:
             printf '%s' "$AI_GATEWAY_URL" | npx wrangler secret put AI_GATEWAY_URL
           fi
 
+      - name: Framework quickstart smoke
+        run: |
+          pip install -e ".[remote,langgraph,crewai]"
+          python resume_engine/scripts/framework_smoke.py
+
       - name: Deploy API worker
         uses: cloudflare/wrangler-action@v3
         with:
@@ -295,3 +300,13 @@ jobs:
             "${{ env.WORKER_API_URL }}/runs/${RUN_ID}" | grep -qi "ci_smoke_sdk"
           curl -fsS -H "Authorization: Bearer ${SMOKE_KEY}" \
             "${{ env.WORKER_API_URL }}/runs/${RUN_ID}/replay" | grep -qi "replay_from_index"
+          # Platform layer (Phase 5a)
+          LEAD_EMAIL="smoke+$(date +%Y%m%d%H%M%S)@aitechpros.test"
+          LEAD_CODE=$(http_code -X POST "${{ env.WORKER_API_URL }}/api/leads" \
+            -H "Content-Type: application/json" \
+            -d "{\"name\":\"CI Smoke\",\"email\":\"${LEAD_EMAIL}\",\"company\":\"CI\",\"use_case\":\"deploy smoke\"}")
+          echo "POST /api/leads HTTP ${LEAD_CODE}"
+          test "$LEAD_CODE" = "201"
+          AUTH_ME=$(http_code "${{ env.WORKER_API_URL }}/api/auth/me")
+          echo "GET /api/auth/me HTTP ${AUTH_ME}"
+          test "$AUTH_ME" = "401"

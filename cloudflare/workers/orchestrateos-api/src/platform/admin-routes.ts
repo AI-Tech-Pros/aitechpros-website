@@ -9,7 +9,8 @@ import {
   type PartnerRow,
   runnerKeyNote,
 } from "./partner-db";
-import { provisionPartnerRunnerKey, rotatePartnerRunnerKey, ensurePartnerRunnerKey } from "../tenant-api-keys";
+import { provisionPartnerRunnerKey, rotatePartnerRunnerKey, ensurePartnerRunnerKey, provisionPartnerOperatorKey, provisionPartnerAuditorKey, listPartnerApiKeys } from "../tenant-api-keys";
+import { buildOpsSummary } from "../governance-metrics";
 import { enrollWelcomeSequence, onLeadStageChanged } from "./nurture/service";
 import type { SessionPayload } from "./session";
 import { runGateSummary } from "../resume-blockers";
@@ -278,12 +279,12 @@ adminApp.put("/partners", async (c) => {
   return c.json({ partner });
 });
 
-adminApp.get("/platform-readiness", (c) => {
+adminApp.get("/platform-readiness", async (c) => {
   const denied = requireAdmin(c);
   if (denied) return denied;
 
   const env = c.env;
-  return c.json({
+  const flags = {
     session_secret: Boolean(env.SESSION_SECRET?.trim()),
     resend_api_key: Boolean(env.RESEND_API_KEY?.trim()),
     demo_operator_key: Boolean(env.DEMO_OPERATOR_KEY?.trim()),
@@ -292,6 +293,33 @@ adminApp.get("/platform-readiness", (c) => {
     cron_secret: Boolean(env.CRON_SECRET?.trim()),
     api_keys_json: Boolean(env.API_KEYS_JSON?.trim()),
     site_url: Boolean(env.SITE_URL?.trim()),
+  };
+
+  const partnerStats = await c.env.DB.prepare(
+    `SELECT
+       COUNT(*) AS total,
+       SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active,
+       SUM(CASE WHEN runner_api_key_hint IS NOT NULL THEN 1 ELSE 0 END) AS with_runner_key
+     FROM design_partners`,
+  ).first<{ total: number; active: number; with_runner_key: number }>();
+
+  const readyForOnboarding =
+    flags.session_secret &&
+    flags.resend_api_key &&
+    flags.site_url &&
+    flags.admin_emails;
+
+  const siteBase = env.SITE_URL?.replace(/\/$/, "") ?? "https://orchestrateos.pages.dev";
+
+  return c.json({
+    ...flags,
+    ready_for_onboarding: readyForOnboarding,
+    onboarding_url: `${siteBase}/onboarding`,
+    partners: {
+      total: partnerStats?.total ?? 0,
+      active: partnerStats?.active ?? 0,
+      with_runner_key: partnerStats?.with_runner_key ?? 0,
+    },
   });
 });
 
@@ -381,6 +409,79 @@ adminApp.put("/partners/:id/gate-policy", async (c) => {
     .run();
 
   return c.json({ tenant_id: existing.slug, policy });
+});
+
+adminApp.get("/partners/:id/api-keys", async (c) => {
+  const denied = requireAdmin(c);
+  if (denied) return denied;
+
+  const partnerId = c.req.param("id")?.trim();
+  if (!partnerId) return c.json({ detail: "Partner id is required" }, 400);
+
+  const partner = await c.env.DB.prepare(`SELECT id, slug FROM design_partners WHERE id = ?`)
+    .bind(partnerId)
+    .first<{ id: string; slug: string }>();
+  if (!partner) return c.json({ detail: "Partner not found" }, 404);
+
+  const keys = await listPartnerApiKeys(c.env.DB, partnerId);
+  return c.json({ tenant_id: partner.slug, keys });
+});
+
+adminApp.post("/partners/:id/provision-api-key", async (c) => {
+  const denied = requireAdmin(c);
+  if (denied) return denied;
+
+  const partnerId = c.req.param("id")?.trim();
+  const body = await c.req.json<{ role?: string }>();
+  const role = body.role?.trim() ?? "operator";
+  if (role !== "operator" && role !== "auditor" && role !== "runner") {
+    return c.json({ detail: "role must be runner, operator, or auditor" }, 400);
+  }
+
+  const partner = await c.env.DB.prepare(`SELECT id, slug FROM design_partners WHERE id = ?`)
+    .bind(partnerId)
+    .first<{ id: string; slug: string }>();
+  if (!partner) return c.json({ detail: "Partner not found" }, 404);
+
+  let issued: { key: string; hint: string };
+  if (role === "runner") {
+    issued = await provisionPartnerRunnerKey(c.env.DB, partner.id, partner.slug);
+  } else if (role === "operator") {
+    issued = await provisionPartnerOperatorKey(c.env.DB, partner.id, partner.slug);
+  } else {
+    issued = await provisionPartnerAuditorKey(c.env.DB, partner.id, partner.slug);
+  }
+
+  return c.json(
+    {
+      role,
+      tenant_id: partner.slug,
+      api_key: issued.key,
+      key_hint: issued.hint,
+      message: `${role} API key issued — copy now, shown once.`,
+    },
+    201,
+  );
+});
+
+adminApp.get("/ops/summary", async (c) => {
+  const denied = requireAdmin(c);
+  if (denied) return denied;
+  const summary = await buildOpsSummary(c.env.DB);
+  return c.json(summary);
+});
+
+adminApp.get("/ops/ingress", async (c) => {
+  const denied = requireAdmin(c);
+  if (denied) return denied;
+  const limit = Math.min(parseInt(c.req.query("limit") ?? "50", 10) || 50, 100);
+  const { results } = await c.env.DB.prepare(
+    `SELECT id, tenant_id, source, source_id, status, run_id, created_at, processed_at
+     FROM ingress_events ORDER BY created_at DESC LIMIT ?`,
+  )
+    .bind(limit)
+    .all();
+  return c.json({ events: results ?? [] });
 });
 
 adminApp.get("/outcomes", async (c) => {

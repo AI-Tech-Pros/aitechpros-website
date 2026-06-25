@@ -1,12 +1,18 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import OrchestrateOSNavbar from "@/components/OrchestrateOSNavbar";
-import { requestMagicLink } from "@/lib/platform-api";
+import { fetchOidcConfig, requestMagicLink, startOidcLogin } from "@/lib/platform-api";
 
 export default function OrchestrateOSLogin() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "sent">("idle");
   const [message, setMessage] = useState("");
+  const [ssoEnabled, setSsoEnabled] = useState(false);
+  const [ssoLoading, setSsoLoading] = useState(false);
+
+  useEffect(() => {
+    void fetchOidcConfig().then((c) => setSsoEnabled(c.enabled)).catch(() => undefined);
+  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -17,6 +23,18 @@ export default function OrchestrateOSLogin() {
       result.message ??
         "If an account exists for this email, a sign-in link has been sent.",
     );
+  }
+
+  async function onSso() {
+    setSsoLoading(true);
+    try {
+      const { authorize_url, state } = await startOidcLogin();
+      sessionStorage.setItem("oos_oidc_state", state);
+      window.location.href = authorize_url;
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : "SSO unavailable");
+      setSsoLoading(false);
+    }
   }
 
   return (
@@ -45,6 +63,23 @@ export default function OrchestrateOSLogin() {
             {status === "loading" ? "Sending…" : "Email me a sign-in link"}
           </button>
         </form>
+        {ssoEnabled && (
+          <>
+            <div className="my-6 flex items-center gap-3 text-xs text-white/30">
+              <span className="flex-1 h-px bg-white/10" />
+              or
+              <span className="flex-1 h-px bg-white/10" />
+            </div>
+            <button
+              type="button"
+              onClick={() => void onSso()}
+              disabled={ssoLoading}
+              className="w-full py-3 rounded-xl border border-white/15 text-white/80 text-sm font-semibold disabled:opacity-50"
+            >
+              {ssoLoading ? "Redirecting…" : "Sign in with SSO (OIDC)"}
+            </button>
+          </>
+        )}
         {message && <p className="mt-4 text-sm text-[#06B6D4]">{message}</p>}
         <p className="mt-8 text-sm text-white/40">
           New design partner?{" "}

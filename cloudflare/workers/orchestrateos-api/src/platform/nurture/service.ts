@@ -40,11 +40,19 @@ type EnrollmentRow = {
 export type NurtureEnv = EmailEnv & { DB: D1Database };
 
 export async function enrollWelcomeSequence(db: D1Database, leadId: string): Promise<void> {
-  await enrollSequence(db, SEQUENCE_WELCOME, leadId, { sendFirstImmediately: true });
+  try {
+    await enrollSequence(db, SEQUENCE_WELCOME, leadId, { sendFirstImmediately: true });
+  } catch (err) {
+    console.error("[nurture] enrollWelcomeSequence failed", err);
+  }
 }
 
 export async function enrollPostDemoSequence(db: D1Database, leadId: string): Promise<void> {
-  await enrollSequence(db, SEQUENCE_POST_DEMO, leadId, { sendFirstImmediately: false });
+  try {
+    await enrollSequence(db, SEQUENCE_POST_DEMO, leadId, { sendFirstImmediately: false });
+  } catch (err) {
+    console.error("[nurture] enrollPostDemoSequence failed", err);
+  }
 }
 
 async function enrollSequence(

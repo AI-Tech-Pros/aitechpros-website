@@ -215,3 +215,24 @@ wrangler secret put NOTIFY_EMAIL
 wrangler secret put ADMIN_EMAILS
 wrangler secret put SITE_URL
 ```
+
+Optional platform secrets (Phase C/D):
+
+| GitHub secret | Worker secret | Purpose |
+|---------------|---------------|---------|
+| `OIDC_ISSUER` | `OIDC_ISSUER` | SSO issuer URL (e.g. `https://login.microsoftonline.com/{tenant}/v2.0`) |
+| `OIDC_CLIENT_ID` | `OIDC_CLIENT_ID` | OIDC client id |
+| `OIDC_CLIENT_SECRET` | `OIDC_CLIENT_SECRET` | OIDC client secret |
+| `OBSERVER_WEBHOOK_URL` | `OBSERVER_WEBHOOK_URL` | Slack/webhook URL for gate-block alerts |
+
+## Custom domain (optional)
+
+OrchestrateOS runs on `*.pages.dev` / `*.workers.dev` by default. To use a custom domain (e.g. `orchestrateos.aitechpros.ai`):
+
+1. **Cloudflare Pages** — OrchestrateOS project → Custom domains → add domain → update DNS CNAME to Pages.
+2. **Worker API** — Workers → `orchestrateos-api` → Triggers → Custom Domains → add `api.yourdomain.com`.
+3. **Update `CORS_ORIGINS`** in `wrangler.toml` and **`SITE_URL`** secret to the Pages custom URL.
+4. **Resend** — verify sending domain if using `@yourdomain` from addresses.
+5. **OIDC** — register redirect URI `https://your-pages-domain/auth/oidc/callback` with your IdP.
+
+No code changes required beyond env vars and DNS.
