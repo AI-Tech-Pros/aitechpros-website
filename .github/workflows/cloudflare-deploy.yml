@@ -234,9 +234,6 @@ jobs:
           if [ -n "${ADMIN_EMAILS:-}" ]; then
             printf '%s' "$ADMIN_EMAILS" | npx wrangler secret put ADMIN_EMAILS
           fi
-          if [ -n "${SITE_URL:-}" ]; then
-            printf '%s' "$SITE_URL" | npx wrangler secret put SITE_URL
-          fi
           if [ -n "${ORCHESTRATEOS_DEMO_KEY:-}" ]; then
             printf '%s' "$ORCHESTRATEOS_DEMO_KEY" | npx wrangler secret put DEMO_OPERATOR_KEY
           fi
