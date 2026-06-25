@@ -215,6 +215,9 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           AI_GATEWAY_URL: ${{ secrets.AI_GATEWAY_URL }}
+          OIDC_CLIENT_ID: ${{ secrets.OIDC_CLIENT_ID }}
+          OIDC_CLIENT_SECRET: ${{ secrets.OIDC_CLIENT_SECRET }}
+          OBSERVER_WEBHOOK_URL: ${{ secrets.OBSERVER_WEBHOOK_URL }}
         run: |
           set -euo pipefail
           npx wrangler secret put API_KEYS_JSON < .api-keys.json
@@ -251,6 +254,17 @@ jobs:
           fi
           if [ -n "${AI_GATEWAY_URL:-}" ]; then
             printf '%s' "$AI_GATEWAY_URL" | npx wrangler secret put AI_GATEWAY_URL
+          fi
+          if [ -n "${OIDC_CLIENT_ID:-}" ]; then
+            printf '%s' "$OIDC_CLIENT_ID" | npx wrangler secret put OIDC_CLIENT_ID
+          else
+            echo "::warning::OIDC_CLIENT_ID not set — Google SSO button hidden"
+          fi
+          if [ -n "${OIDC_CLIENT_SECRET:-}" ]; then
+            printf '%s' "$OIDC_CLIENT_SECRET" | npx wrangler secret put OIDC_CLIENT_SECRET
+          fi
+          if [ -n "${OBSERVER_WEBHOOK_URL:-}" ]; then
+            printf '%s' "$OBSERVER_WEBHOOK_URL" | npx wrangler secret put OBSERVER_WEBHOOK_URL
           fi
 
       - name: Framework quickstart smoke

@@ -229,8 +229,8 @@ platformApp.get("/auth/me", (c) => {
 
 platformApp.get("/auth/oidc/config", (c) => c.json({ enabled: oidcEnabled(c.env) }));
 
-platformApp.get("/auth/oidc/start", (c) => {
-  const start = buildOidcAuthorizeUrl(c.env);
+platformApp.get("/auth/oidc/start", async (c) => {
+  const start = await buildOidcAuthorizeUrl(c.env);
   if (!start) return c.json({ detail: "OIDC not configured" }, 503);
   return c.json(start);
 });

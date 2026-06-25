@@ -220,10 +220,20 @@ Optional platform secrets (Phase C/D):
 
 | GitHub secret | Worker secret | Purpose |
 |---------------|---------------|---------|
-| `OIDC_ISSUER` | `OIDC_ISSUER` | SSO issuer URL (e.g. `https://login.microsoftonline.com/{tenant}/v2.0`) |
-| `OIDC_CLIENT_ID` | `OIDC_CLIENT_ID` | OIDC client id |
-| `OIDC_CLIENT_SECRET` | `OIDC_CLIENT_SECRET` | OIDC client secret |
-| `OBSERVER_WEBHOOK_URL` | `OBSERVER_WEBHOOK_URL` | Slack/webhook URL for gate-block alerts |
+| `OIDC_ISSUER` | `wrangler.toml` var | Google: `https://accounts.google.com` |
+| `OIDC_CLIENT_ID` | `OIDC_CLIENT_ID` | Google OAuth Web client ID |
+| `OIDC_CLIENT_SECRET` | `OIDC_CLIENT_SECRET` | Google OAuth client secret |
+| `OBSERVER_WEBHOOK_URL` | `OBSERVER_WEBHOOK_URL` | Optional Slack webhook; email alerts use `NOTIFY_EMAIL` |
+
+### Google SSO setup
+
+1. [Google Cloud Console](https://console.cloud.google.com/) → **APIs & Services** → **Credentials** → **Create credentials** → **OAuth client ID** → **Web application**.
+2. **Authorized redirect URI:** `https://orchestrateos.pages.dev/auth/oidc/callback`
+3. Add **OAuth consent screen** (External) if prompted; add test users for partner emails until verified.
+4. Copy **Client ID** and **Client secret** → GitHub secrets `OIDC_CLIENT_ID` and `OIDC_CLIENT_SECRET`.
+5. Redeploy (push to `main` or re-run **Cloudflare Deploy**). SSO button appears on `/login` when both secrets are set.
+
+Partner email must match an active `design_partners.contact_email` or `ADMIN_EMAILS` entry.
 
 ## Custom domain (optional)
 

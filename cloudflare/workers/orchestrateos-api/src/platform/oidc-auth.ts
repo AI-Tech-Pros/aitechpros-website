@@ -1,4 +1,4 @@
-/** OIDC token exchange helpers (Phase C foundation). */
+/** OIDC token exchange helpers (Phase C) — uses issuer discovery for Google, Entra, Auth0, etc. */
 
 export type OidcEnv = {
   OIDC_ISSUER?: string;
@@ -6,6 +6,13 @@ export type OidcEnv = {
   OIDC_CLIENT_SECRET?: string;
   SITE_URL?: string;
 };
+
+type OidcDiscovery = {
+  authorization_endpoint: string;
+  token_endpoint: string;
+};
+
+const discoveryCache = new Map<string, OidcDiscovery>();
 
 function oidcConfigured(env: OidcEnv): boolean {
   return Boolean(env.OIDC_ISSUER?.trim() && env.OIDC_CLIENT_ID?.trim());
@@ -19,9 +26,26 @@ export function oidcEnabled(env: OidcEnv): boolean {
   return oidcConfigured(env);
 }
 
-export function buildOidcAuthorizeUrl(env: OidcEnv): { authorize_url: string; state: string } | null {
+async function getOidcDiscovery(issuer: string): Promise<OidcDiscovery> {
+  const base = issuer.replace(/\/$/, "");
+  const cached = discoveryCache.get(base);
+  if (cached) return cached;
+
+  const res = await fetch(`${base}/.well-known/openid-configuration`);
+  if (!res.ok) throw new Error(`OIDC discovery failed for ${base}`);
+  const doc = (await res.json()) as OidcDiscovery;
+  if (!doc.authorization_endpoint || !doc.token_endpoint) {
+    throw new Error("OIDC discovery missing endpoints");
+  }
+  discoveryCache.set(base, doc);
+  return doc;
+}
+
+export async function buildOidcAuthorizeUrl(
+  env: OidcEnv,
+): Promise<{ authorize_url: string; state: string } | null> {
   if (!oidcConfigured(env)) return null;
-  const issuer = env.OIDC_ISSUER!.replace(/\/$/, "");
+  const discovery = await getOidcDiscovery(env.OIDC_ISSUER!);
   const redirectUri = `${siteBase(env)}/auth/oidc/callback`;
   const state = crypto.randomUUID();
   const params = new URLSearchParams({
@@ -31,7 +55,7 @@ export function buildOidcAuthorizeUrl(env: OidcEnv): { authorize_url: string; st
     redirect_uri: redirectUri,
     state,
   });
-  return { authorize_url: `${issuer}/authorize?${params.toString()}`, state };
+  return { authorize_url: `${discovery.authorization_endpoint}?${params.toString()}`, state };
 }
 
 type IdTokenClaims = { email?: string; name?: string };
@@ -48,7 +72,7 @@ export async function exchangeOidcCode(
   code: string,
 ): Promise<{ email: string; name: string }> {
   if (!oidcConfigured(env)) throw new Error("OIDC not configured");
-  const issuer = env.OIDC_ISSUER!.replace(/\/$/, "");
+  const discovery = await getOidcDiscovery(env.OIDC_ISSUER!);
   const redirectUri = `${siteBase(env)}/auth/oidc/callback`;
   const tokenBody = new URLSearchParams({
     grant_type: "authorization_code",
@@ -60,7 +84,7 @@ export async function exchangeOidcCode(
     tokenBody.set("client_secret", env.OIDC_CLIENT_SECRET);
   }
 
-  const tokenRes = await fetch(`${issuer}/token`, {
+  const tokenRes = await fetch(discovery.token_endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: tokenBody.toString(),
