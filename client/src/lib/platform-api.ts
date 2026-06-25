@@ -1,5 +1,24 @@
 import { platformApiBase } from "@/lib/site";
 
+const SESSION_TOKEN_KEY = "orchestrateos_session_token";
+
+export function getStoredSessionToken(): string | null {
+  try {
+    return sessionStorage.getItem(SESSION_TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setStoredSessionToken(token: string | null): void {
+  try {
+    if (token) sessionStorage.setItem(SESSION_TOKEN_KEY, token);
+    else sessionStorage.removeItem(SESSION_TOKEN_KEY);
+  } catch {
+    /* private browsing / SSR */
+  }
+}
+
 export type SessionUser = {
   authenticated: boolean;
   email?: string;
@@ -30,13 +49,18 @@ export type PartnerRun = {
 
 async function platformFetch(path: string, init?: RequestInit): Promise<Response> {
   const url = `${platformApiBase()}/api${path}`;
+  const token = getStoredSessionToken();
+  const headers = new Headers(init?.headers);
+  if (!headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+  if (token && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
   return fetch(url, {
     ...init,
     credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...init?.headers,
-    },
+    headers,
   });
 }
 
@@ -72,8 +96,14 @@ export async function verifyMagicLink(token: string): Promise<{
   error?: string;
 }> {
   const res = await platformFetch(`/auth/verify?token=${encodeURIComponent(token)}`);
-  const data = (await res.json()) as { ok?: boolean; redirect?: string; detail?: string };
+  const data = (await res.json()) as {
+    ok?: boolean;
+    token?: string;
+    redirect?: string;
+    detail?: string;
+  };
   if (!res.ok) return { ok: false, error: data.detail ?? "Verification failed" };
+  if (data.token) setStoredSessionToken(data.token);
   return { ok: true, redirect: data.redirect ?? "/partner/dashboard" };
 }
 
@@ -85,6 +115,7 @@ export async function fetchSession(): Promise<SessionUser> {
 
 export async function logout(): Promise<void> {
   await platformFetch("/auth/logout", { method: "POST" });
+  setStoredSessionToken(null);
 }
 
 export async function fetchPartnerMe(): Promise<{

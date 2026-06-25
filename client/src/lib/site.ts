@@ -70,8 +70,9 @@ export function orchestrateOSApiDocsUrl(): string {
   return `${orchestrateOSApiBaseUrl()}/docs`;
 }
 
-/** Platform API base (auth, partner portal). Local dev uses Vite `/api` proxy. */
+/** Same-origin platform API (auth cookies). Gate explorer uses orchestrateOSApiBaseUrl(). */
 export function platformApiBase(): string {
+  if (isOrchestrateOSProductSite() || isOrchestrateOSApp()) return "";
   if (typeof window !== "undefined") {
     const host = window.location.hostname.toLowerCase();
     if (host === "localhost" || host === "127.0.0.1") return "";

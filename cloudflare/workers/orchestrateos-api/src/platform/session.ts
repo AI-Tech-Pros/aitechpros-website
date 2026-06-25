@@ -100,6 +100,11 @@ export function readSessionCookie(cookieHeader: string | undefined): string | nu
   return null;
 }
 
+export function readBearerToken(authorization: string | undefined): string | null {
+  const match = authorization?.match(/^Bearer\s+(.+)$/i);
+  return match?.[1]?.trim() || null;
+}
+
 export async function hashToken(token: string): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");

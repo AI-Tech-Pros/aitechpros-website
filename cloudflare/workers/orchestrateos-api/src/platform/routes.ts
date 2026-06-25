@@ -21,6 +21,7 @@ import { enrollWelcomeSequence, onLeadStageChanged } from "./nurture/service";
 import {
   clearSessionCookieHeader,
   hashToken,
+  readBearerToken,
   readSessionCookie,
   sessionCookieHeader,
   signSession,
@@ -69,7 +70,9 @@ platformApp.use("*", async (c, next) => {
   c.set("session", null);
   const secret = c.env.SESSION_SECRET;
   if (secret) {
-    const raw = readSessionCookie(c.req.header("Cookie"));
+    const raw =
+      readSessionCookie(c.req.header("Cookie")) ??
+      readBearerToken(c.req.header("Authorization"));
     if (raw) {
       const session = await verifySession(raw, secret);
       if (session) c.set("session", session);
@@ -192,6 +195,7 @@ platformApp.get("/auth/verify", async (c) => {
   return new Response(
     JSON.stringify({
       ok: true,
+      token: jwt,
       role: sessionUser.role,
       redirect:
         sessionUser.role === "admin"

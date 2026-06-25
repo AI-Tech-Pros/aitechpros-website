@@ -1,4 +1,3 @@
-/*    /index.html   200
 /api/*  https://orchestrateos-api.nevaquit.workers.dev/api/:splat  200
 /runs/*  https://orchestrateos-api.nevaquit.workers.dev/runs/:splat  200
 /demo/*  https://orchestrateos-api.nevaquit.workers.dev/demo/:splat  200
@@ -11,3 +10,4 @@
 /ingress/*  https://orchestrateos-api.nevaquit.workers.dev/ingress/:splat  200
 /docs  https://orchestrateos-api.nevaquit.workers.dev/docs  200
 /openapi.json  https://orchestrateos-api.nevaquit.workers.dev/openapi.json  200
+/*    /index.html   200
