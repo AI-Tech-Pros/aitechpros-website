@@ -535,13 +535,13 @@ export async function fetchAdminIngressQueue(): Promise<{ events: IngressEvent[]
 }
 
 export async function fetchOidcConfig(): Promise<{ enabled: boolean }> {
-  const res = await fetch(`${platformApiBase()}/auth/oidc/config`);
+  const res = await fetch(`${platformApiBase()}/api/auth/oidc/config`);
   if (!res.ok) return { enabled: false };
   return res.json() as Promise<{ enabled: boolean }>;
 }
 
 export async function startOidcLogin(): Promise<{ authorize_url: string; state: string }> {
-  const res = await fetch(`${platformApiBase()}/auth/oidc/start`);
+  const res = await fetch(`${platformApiBase()}/api/auth/oidc/start`);
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as { detail?: string };
     throw new Error(body.detail ?? "SSO not available");
@@ -555,7 +555,7 @@ export async function exchangeOidcCode(code: string): Promise<{
   role: string;
   redirect: string;
 }> {
-  const res = await fetch(`${platformApiBase()}/auth/oidc/exchange`, {
+  const res = await fetch(`${platformApiBase()}/api/auth/oidc/exchange`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ code }),
