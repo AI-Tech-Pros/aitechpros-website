@@ -36,8 +36,6 @@ export function orchestrateOSApiBaseUrl(): string {
   const envUrl = import.meta.env.VITE_ORCHESTRATEOS_API_URL as string | undefined;
   if (envUrl) return envUrl.replace(/\/$/, "");
 
-  if (isOrchestrateOSProductSite()) return "";
-
   if (typeof window !== "undefined") {
     const host = window.location.hostname.toLowerCase();
     if (host === "localhost" || host === "127.0.0.1") {
@@ -72,9 +70,8 @@ export function orchestrateOSApiDocsUrl(): string {
   return `${orchestrateOSApiBaseUrl()}/docs`;
 }
 
-/** Same-origin platform API base (leads, auth, partner portal). */
+/** Platform API base (auth, partner portal). Local dev uses Vite `/api` proxy. */
 export function platformApiBase(): string {
-  if (isOrchestrateOSProductSite() || isOrchestrateOSApp()) return "";
   if (typeof window !== "undefined") {
     const host = window.location.hostname.toLowerCase();
     if (host === "localhost" || host === "127.0.0.1") return "";

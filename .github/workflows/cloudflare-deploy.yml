@@ -67,6 +67,7 @@ jobs:
       - run: npm ci
       - run: npm run build:orchestrateos
         env:
+          VITE_ORCHESTRATEOS_API_URL: ${{ env.WORKER_API_URL }}
           VITE_ORCHESTRATEOS_DEMO_KEY: ${{ secrets.ORCHESTRATEOS_DEMO_KEY }}
 
       - name: Publish OrchestrateOS to Cloudflare Pages
