@@ -54,15 +54,7 @@ export default function Home() {
     <div className="site-shell">
       <header className="site-header">
         <a className="brand" href="#top" aria-label="AI Tech Pros home">
-          <span className="brand-mark" aria-hidden="true">
-            <span />
-            <span />
-            <span />
-          </span>
-          <span>
-            <strong>AI Tech Pros</strong>
-            <small>Systems for useful intelligence</small>
-          </span>
+          <img className="brand-logo" src="/assets/creative/ai-tech-pros-logo.svg" alt="AI Tech Pros — Systems for Useful Intelligence" />
         </a>
 
         <button
@@ -183,7 +175,7 @@ export default function Home() {
       </main>
 
       <footer className="site-footer">
-        <div className="footer-brand"><span className="brand-mark" aria-hidden="true"><span /><span /><span /></span><strong>AI Tech Pros</strong></div>
+        <div className="footer-brand"><img className="footer-logo" src="/assets/creative/ai-tech-pros-logo.svg" alt="AI Tech Pros — Systems for Useful Intelligence" /></div>
         <p>AI systems for the work ahead.</p>
         <div className="footer-links"><a href="https://www.linkedin.com/company/ai-tech-pros" target="_blank" rel="noreferrer">LinkedIn</a><a href="https://github.com/AI-Tech-Pros" target="_blank" rel="noreferrer">GitHub</a><a href="/privacy">Privacy</a></div>
         <small>© 2026 AI Tech Pros LLC.</small>

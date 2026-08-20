@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 72" role="img" aria-labelledby="title desc">
+  <title id="title">AI Tech Pros</title>
+  <desc id="desc">AI Tech Pros wordmark with the Systems for Useful Intelligence descriptor.</desc>
+  <g transform="translate(0 8)">
+    <rect width="56" height="56" rx="2" fill="#12263a"/>
+    <rect x="11" y="32" width="7" height="17" rx="1" fill="#78c9c0"/>
+    <rect x="24" y="20" width="7" height="29" rx="1" fill="#85bfff"/>
+    <rect x="37" y="10" width="7" height="39" rx="1" fill="#f2b66f"/>
+    <path d="M9 51H47" stroke="#f6faf9" stroke-width="2" opacity=".9"/>
+  </g>
+  <g fill="#12263a" font-family="Arial, Helvetica, sans-serif">
+    <text x="74" y="35" font-size="22" font-weight="700" letter-spacing="-0.7">AI Tech Pros</text>
+    <text x="75" y="55" fill="#70818d" font-size="9" font-weight="700" letter-spacing="1.1">SYSTEMS FOR USEFUL INTELLIGENCE</text>
+  </g>
+</svg>

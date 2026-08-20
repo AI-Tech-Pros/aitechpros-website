@@ -72,3 +72,8 @@ h1, h2, h3 { margin: 0; font-family: var(--font-heading); letter-spacing: -.06em
 .product-visual { display: block; width: 100%; height: 170px; object-fit: cover; }
 @media (max-width: 900px) { .product-layout { grid-template-columns: 1fr auto; }.product-visual-wrap { grid-column: 1 / -1; grid-row: 2; }.product-layout .button { grid-column: 2; grid-row: 3; }.approach-diagram { display: flex; } }
 @media (max-width: 640px) { .hero-visual { min-height: 350px; }.hero-art { width: 125%; max-width: none; transform: translateX(8%); }.card-image-wrap { height: 190px; }.product-layout { grid-template-columns: 1fr; }.product-visual-wrap, .product-layout .button { grid-column: auto; grid-row: auto; }.product-visual { height: 190px; }.approach-diagram { min-height: 230px; margin-top: 28px; }.approach-diagram img { width: 115%; max-width: none; } }
+
+/* Production logo lockup */
+.brand-logo { display: block; width: 226px; height: auto; }
+.footer-logo { display: block; width: 196px; height: auto; }
+@media (max-width: 640px) { .brand-logo { width: 196px; }.footer-logo { width: 188px; } }
