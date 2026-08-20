@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="AI Tech Pros Signal Node mark">
+  <rect width="128" height="128" rx="8" fill="#12263a"/>
+  <path d="M20 99H108" stroke="#f6faf9" stroke-width="4" stroke-linecap="round"/>
+  <path d="M31 78L64 55L97 28" fill="none" stroke="#89c8c0" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="31" cy="78" r="9" fill="#78c9c0"/><circle cx="64" cy="55" r="9" fill="#85bfff"/><circle cx="97" cy="28" r="9" fill="#f2b66f"/>
+  <path d="M31 99V78M64 99V55M97 99V28" stroke="#f6faf9" stroke-width="3" opacity=".9"/>
+</svg>

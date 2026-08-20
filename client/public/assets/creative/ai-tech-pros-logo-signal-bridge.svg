@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 72" role="img" aria-labelledby="title desc">
+  <title id="title">AI Tech Pros</title>
+  <desc id="desc">AI Tech Pros with the tagline AI systems that work.</desc>
+  <g transform="translate(0 8)">
+    <rect width="56" height="56" rx="2" fill="#12263a"/>
+    <path d="M9 51H47" stroke="#f6faf9" stroke-width="2" stroke-linecap="round"/>
+    <path d="M14 43V31M28 43V18M42 43V8" stroke="#f6faf9" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M14 31L28 18L42 8" fill="none" stroke="#247d80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="14" cy="31" r="3" fill="#78c9c0"/><circle cx="28" cy="18" r="3" fill="#85bfff"/><circle cx="42" cy="8" r="3" fill="#f2b66f"/>
+  </g>
+  <g fill="#12263a" font-family="Arial, Helvetica, sans-serif">
+    <text x="74" y="35" font-size="22" font-weight="700" letter-spacing="-0.7">AI Tech Pros</text>
+    <text x="75" y="55" fill="#667984" font-size="10" font-weight="700" letter-spacing=".35">AI SYSTEMS THAT WORK.</text>
+  </g>
+</svg>

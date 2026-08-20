@@ -54,7 +54,7 @@ export default function Home() {
     <div className="site-shell">
       <header className="site-header">
         <a className="brand" href="#top" aria-label="AI Tech Pros home">
-          <img className="brand-logo" src="/assets/creative/ai-tech-pros-logo.svg" alt="AI Tech Pros — Systems for Useful Intelligence" />
+          <img className="brand-logo" src="/assets/creative/ai-tech-pros-logo-signal-bridge.svg" alt="AI Tech Pros — AI systems that work." />
         </a>
 
         <button
@@ -86,7 +86,7 @@ export default function Home() {
         <section className="hero-section" aria-labelledby="hero-heading">
           <div className="hero-grid" aria-hidden="true" />
           <div className="hero-copy">
-            <p className="eyebrow"><CircleDot size={14} /> AI systems, made useful</p>
+            <p className="eyebrow"><CircleDot size={14} /> AI systems that work.</p>
             <h1 id="hero-heading">Build what the future of work <em>needs next.</em></h1>
             <p className="hero-lede">
               AI Tech Pros is a technology company for leaders who need more than a promising demo. We connect strategy, secure infrastructure, and human expertise to make intelligent systems dependable in the real world.
@@ -175,8 +175,8 @@ export default function Home() {
       </main>
 
       <footer className="site-footer">
-        <div className="footer-brand"><img className="footer-logo" src="/assets/creative/ai-tech-pros-logo.svg" alt="AI Tech Pros — Systems for Useful Intelligence" /></div>
-        <p>AI systems for the work ahead.</p>
+        <div className="footer-brand"><img className="footer-logo" src="/assets/creative/ai-tech-pros-logo-signal-bridge.svg" alt="AI Tech Pros — AI systems that work." /></div>
+        <p>AI systems that work.</p>
         <div className="footer-links"><a href="https://www.linkedin.com/company/ai-tech-pros" target="_blank" rel="noreferrer">LinkedIn</a><a href="https://github.com/AI-Tech-Pros" target="_blank" rel="noreferrer">GitHub</a><a href="/privacy">Privacy</a></div>
         <small>© 2026 AI Tech Pros LLC.</small>
       </footer>
