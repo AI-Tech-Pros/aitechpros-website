@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+<title id="title">AI Tech Pros operating principle</title>
+<desc id="desc">Govern, guide, and connect are arranged around a shared system of useful intelligence.</desc>
+<rect width="1200" height="720" fill="#102c43"/>
+<g fill="none" stroke="#89c8c0" stroke-opacity=".5">
+  <path d="M175 360H1025" stroke-width="2"/><path d="M600 112V608" stroke-width="1"/>
+  <circle cx="600" cy="360" r="190" stroke-width="1"/><circle cx="600" cy="360" r="125" stroke-width="2"/>
+  <path d="M240 195L600 360L960 195M240 525L600 360L960 525" stroke-width="1"/>
+</g>
+<g font-family="Arial, sans-serif" text-anchor="middle">
+  <circle cx="600" cy="360" r="76" fill="#f7fbfa"/>
+  <circle cx="600" cy="360" r="48" fill="#247d80"/>
+  <text x="600" y="355" fill="#ffffff" font-size="16" font-weight="700">USEFUL</text>
+  <text x="600" y="377" fill="#ffffff" font-size="16" font-weight="700">INTELLIGENCE</text>
+  <g fill="#102c43" stroke="#89c8c0" stroke-width="2">
+    <circle cx="240" cy="195" r="50"/><circle cx="240" cy="525" r="50"/><circle cx="960" cy="195" r="50"/><circle cx="960" cy="525" r="50"/>
+  </g>
+  <g fill="#ffffff" font-size="19" font-weight="700">
+    <text x="240" y="201">GOVERN</text><text x="240" y="531">GUIDE</text><text x="960" y="201">CONNECT</text><text x="960" y="531">SCALE</text>
+  </g>
+  <g fill="#f2b66f"><circle cx="240" cy="360" r="7"/><circle cx="960" cy="360" r="7"/><circle cx="600" cy="112" r="7"/><circle cx="600" cy="608" r="7"/></g>
+</g>
+</svg>

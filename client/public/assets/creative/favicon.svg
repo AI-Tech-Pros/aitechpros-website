@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="AI Tech Pros mark">
+  <rect width="128" height="128" fill="#12263a"/>
+  <rect x="22" y="73" width="14" height="33" rx="2" fill="#78c9c0"/>
+  <rect x="48" y="48" width="14" height="58" rx="2" fill="#85bfff"/>
+  <rect x="74" y="22" width="14" height="84" rx="2" fill="#f2b66f"/>
+  <path d="M18 112H110" stroke="#f6faf9" stroke-width="3" opacity=".9"/>
+</svg>

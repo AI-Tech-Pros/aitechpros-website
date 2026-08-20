@@ -3,13 +3,10 @@ import {
   Check,
   ChevronRight,
   CircleDot,
-  Compass,
   Layers3,
-  LockKeyhole,
   Menu,
   Network,
   ShieldCheck,
-  Sparkles,
   X,
 } from "lucide-react";
 import { useState } from "react";
@@ -21,6 +18,8 @@ const capabilities = [
     title: "Enterprise AI systems",
     text: "We help teams move from isolated experiments to useful, governed systems that fit the way people actually work.",
     link: "Explore enterprise AI",
+    image: "/assets/creative/capability-enterprise-ai.webp",
+    alt: "Layered modular intelligence system with connected pathways and human markers.",
   },
   {
     number: "02",
@@ -28,6 +27,8 @@ const capabilities = [
     title: "Security with intent",
     text: "Security is designed into the operating model—clear ownership, durable controls, and visibility without unnecessary friction.",
     link: "Explore cybersecurity",
+    image: "/assets/creative/capability-security.webp",
+    alt: "Geometric security structure with protected pathways, checkpoints, and connected infrastructure.",
   },
   {
     number: "03",
@@ -35,6 +36,8 @@ const capabilities = [
     title: "Enablement that travels",
     text: "From educators to creator-operators, we turn expertise into repeatable systems, content, and outcomes that can scale.",
     link: "Explore enablement",
+    image: "/assets/creative/capability-enablement.webp",
+    alt: "Connected learning pathway transforming expertise into a reusable system.",
   },
 ];
 
@@ -107,12 +110,9 @@ export default function Home() {
               <span>Enterprise credibility first. Practical enablement always.</span>
             </div>
           </div>
-          <div className="hero-visual" aria-label="Abstract diagram showing connected AI systems">
+          <div className="hero-visual">
+            <img className="hero-art" src="/assets/creative/ai-tech-pros-hero-master.webp" alt="Abstract connected system representing useful intelligence, secure infrastructure, and human expertise." />
             <div className="visual-label">AI / SECURITY / ENABLEMENT</div>
-            <div className="system-orbit orbit-one"><span>01</span></div>
-            <div className="system-orbit orbit-two"><span>02</span></div>
-            <div className="system-orbit orbit-three"><span>03</span></div>
-            <div className="system-core"><Sparkles size={30} /><span>Useful<br />intelligence</span></div>
             <div className="visual-caption">A connected operating model<br />for the work ahead.</div>
           </div>
         </section>
@@ -131,9 +131,9 @@ export default function Home() {
             <p>Technology only creates value when it is understandable, secure, and adopted. Our work sits at the intersection of those three conditions.</p>
           </div>
           <div className="capability-grid">
-            {capabilities.map(({ number, icon: Icon, title, text, link }) => (
+            {capabilities.map(({ number, icon: Icon, title, text, link, image, alt }) => (
               <article className="capability-card" key={number}>
-                <div className="card-topline"><span>{number}</span><Icon size={22} strokeWidth={1.5} /></div>
+                <div className="card-image-wrap"><img className="capability-image" src={image} alt={alt} loading="lazy" /><div className="card-topline"><span>{number}</span><Icon size={22} strokeWidth={1.5} /></div></div>
                 <h3>{title}</h3>
                 <p>{text}</p>
                 <a className="card-link" href="#approach">{link} <ArrowUpRight size={15} /></a>
@@ -157,11 +157,8 @@ export default function Home() {
             </div>
             <a className="button button-light" href="https://calendly.com/aitechpros/15min" target="_blank" rel="noreferrer">Talk through your next system <ArrowUpRight size={17} /></a>
           </div>
-          <div className="approach-diagram" aria-hidden="true">
-            <div className="diagram-line line-a" /><div className="diagram-line line-b" /><div className="diagram-line line-c" />
-            <div className="diagram-node node-a"><LockKeyhole size={17} /><span>Govern</span></div>
-            <div className="diagram-node node-b"><Compass size={17} /><span>Guide</span></div>
-            <div className="diagram-node node-c"><Network size={17} /><span>Connect</span></div>
+          <div className="approach-diagram">
+            <img src="/assets/creative/operating-principles.svg" alt="Operating model diagram connecting govern, guide, connect, and scale around useful intelligence." loading="lazy" />
           </div>
         </section>
 
@@ -172,6 +169,7 @@ export default function Home() {
               <h2 id="product-heading">When workflows need to keep their promises.</h2>
               <p>OrchestrateOS is our governance-first runtime for durable, resumable AI workflows. It is a focused product for teams building systems where progress, approvals, and accountability matter.</p>
             </div>
+            <div className="product-visual-wrap"><img className="product-visual" src="/assets/creative/orchestrateos-bridge.webp" alt="Conceptual workflow spine with checkpoints, approval gates, and resumable pathways." loading="lazy" /></div>
             <a className="button button-outline" href="https://orchestrateos.pages.dev" target="_blank" rel="noreferrer">Visit OrchestrateOS <ArrowUpRight size={17} /></a>
           </div>
         </section>
