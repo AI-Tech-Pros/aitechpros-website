@@ -111,7 +111,7 @@ export default function Home() {
             </div>
           </div>
           <div className="hero-visual">
-            <img className="hero-art" src="/assets/creative/ai-tech-pros-hero-master.webp" alt="Abstract connected system representing useful intelligence, secure infrastructure, and human expertise." />
+            <img className="hero-art" src="/assets/creative/ai-tech-pros-hero-focus.webp" alt="Abstract connected system representing useful intelligence, secure infrastructure, and human expertise." />
             <div className="visual-label">AI / SECURITY / ENABLEMENT</div>
             <div className="visual-caption">A connected operating model<br />for the work ahead.</div>
           </div>
