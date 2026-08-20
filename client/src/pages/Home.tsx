@@ -80,6 +80,7 @@ export default function Home() {
             Start a conversation <ArrowUpRight size={16} />
           </a>
         </nav>
+        <div className="nav-telemetry" aria-hidden="true"><span className="nav-signal"><i /></span><span>SYSTEM ONLINE</span><span className="nav-telemetry-line" /></div>
       </header>
 
       <main id="top">
@@ -103,17 +104,19 @@ export default function Home() {
             </div>
           </div>
           <div className="hero-visual">
+            <div className="hero-signal-field" aria-hidden="true"><span className="hero-ring ring-one" /><span className="hero-ring ring-two" /><span className="hero-ring ring-three" /><span className="hero-scanline" /><span className="hero-node node-one" /><span className="hero-node node-two" /><span className="hero-node node-three" /></div>
             <img className="hero-art" src="/assets/creative/ai-tech-pros-hero-focus.webp" alt="Abstract connected system representing useful intelligence, secure infrastructure, and human expertise." />
-            <div className="visual-label">AI / SECURITY / ENABLEMENT</div>
+            <div className="visual-label"><span>AI / SECURITY / ENABLEMENT</span><small>FIELD 03 / 04</small></div>
+            <div className="hero-readout" aria-hidden="true"><span>INTELLIGENCE FIELD</span><b>03.07</b><i /></div>
             <div className="visual-caption">A connected operating model<br />for the work ahead.</div>
           </div>
         </section>
 
         <section className="signal-strip" aria-label="Company focus">
-          <div><span>01</span> Strategy</div>
-          <div><span>02</span> Systems</div>
-          <div><span>03</span> Safeguards</div>
-          <div><span>04</span> Scale</div>
+          <div><span>01</span> Strategy <i className="signal-tick" aria-hidden="true" /></div>
+          <div><span>02</span> Systems <i className="signal-tick" aria-hidden="true" /></div>
+          <div><span>03</span> Safeguards <i className="signal-tick" aria-hidden="true" /></div>
+          <div><span>04</span> Scale <i className="signal-tick" aria-hidden="true" /></div>
         </section>
 
         <section id="capabilities" className="section capabilities-section" aria-labelledby="capabilities-heading">
@@ -125,7 +128,8 @@ export default function Home() {
           <div className="capability-grid">
             {capabilities.map(({ number, icon: Icon, title, text, link, image, alt }) => (
               <article className="capability-card" key={number}>
-                <div className="card-image-wrap"><img className="capability-image" src={image} alt={alt} loading="lazy" /><div className="card-topline"><span>{number}</span><Icon size={22} strokeWidth={1.5} /></div></div>
+                <div className="card-image-wrap"><img className="capability-image" src={image} alt={alt} loading="lazy" /><div className="card-topline"><span>{number}</span><Icon size={22} strokeWidth={1.5} /></div><div className="card-scanline" aria-hidden="true" /></div>
+                <div className="module-meta"><span>MODULE {number}</span><i aria-hidden="true" /><span>READY</span></div>
                 <h3>{title}</h3>
                 <p>{text}</p>
                 <a className="card-link" href="#approach">{link} <ArrowUpRight size={15} /></a>
@@ -150,23 +154,24 @@ export default function Home() {
             <a className="button button-light" href="https://calendly.com/aitechpros/15min" target="_blank" rel="noreferrer">Talk through your next system <ArrowUpRight size={17} /></a>
           </div>
           <div className="approach-diagram">
-            <img src="/assets/creative/operating-principles.svg" alt="Operating model diagram connecting govern, guide, connect, and scale around useful intelligence." loading="lazy" />
+            <div className="diagram-frame"><img src="/assets/creative/operating-principles.svg" alt="Operating model diagram connecting govern, guide, connect, and scale around useful intelligence." loading="lazy" /><span className="diagram-pulse pulse-one" aria-hidden="true" /><span className="diagram-pulse pulse-two" aria-hidden="true" /><div className="diagram-readout" aria-hidden="true"><span>GOVERNANCE LATTICE</span><b>ACTIVE / 04 NODES</b></div></div>
           </div>
         </section>
 
         <section id="orchestrateos" className="section product-section" aria-labelledby="product-heading">
-          <div className="product-kicker"><span className="product-dot" /> A product by AI Tech Pros</div>
+          <div className="product-kicker"><span className="product-dot" /> A product by AI Tech Pros <span className="product-status"><i /> RESUMABLE / GOVERNED</span></div>
           <div className="product-layout">
             <div>
               <h2 id="product-heading">When workflows need to keep their promises.</h2>
               <p>OrchestrateOS is our governance-first runtime for durable, resumable AI workflows. It is a focused product for teams building systems where progress, approvals, and accountability matter.</p>
             </div>
-            <div className="product-visual-wrap"><img className="product-visual" src="/assets/creative/orchestrateos-bridge.webp" alt="Conceptual workflow spine with checkpoints, approval gates, and resumable pathways." loading="lazy" /></div>
+            <div className="product-visual-wrap"><img className="product-visual" src="/assets/creative/orchestrateos-bridge.webp" alt="Conceptual workflow spine with checkpoints, approval gates, and resumable pathways." loading="lazy" /><div className="product-telemetry" aria-hidden="true"><span>WORKFLOW TELEMETRY</span><i /><b>07 / 12</b></div></div>
             <a className="button button-outline" href="https://orchestrateos.pages.dev" target="_blank" rel="noreferrer">Visit OrchestrateOS <ArrowUpRight size={17} /></a>
           </div>
         </section>
 
         <section className="closing-section" aria-labelledby="closing-heading">
+          <div className="closing-signal" aria-hidden="true"><span /><i /><b /></div>
           <p className="eyebrow">The next useful thing</p>
           <h2 id="closing-heading">Bring us the hard part.</h2>
           <p>We will help you turn it into a system people can trust.</p>
