@@ -26,7 +26,7 @@ export default function About() {
         <div className="people-grid people-grid--officers">
           <article className="person-card person-card--portrait">
             <div className="person-portrait">
-              <img src={CEO.photo} alt={`${CEO.name}, ${CEO.title}`} />
+              <img src={CEO.photo} alt={`${CEO.name}, ${CEO.title}`} width={300} height={300} decoding="async" />
             </div>
             <div className="person-body">
               <p className="person-role">{CEO.title}</p>
@@ -36,7 +36,7 @@ export default function About() {
           </article>
           <article className="person-card person-card--portrait">
             <div className="person-portrait">
-              <img src={CTO.photo} alt={`${CTO.name}, ${CTO.title}`} />
+              <img src={CTO.photo} alt={`${CTO.name}, ${CTO.title}`} width={300} height={300} decoding="async" />
             </div>
             <div className="person-body">
               <p className="person-role">{CTO.title}</p>
@@ -54,7 +54,7 @@ export default function About() {
             {ADVISORS.map((advisor) => (
               <article className="person-card person-card--portrait" key={advisor.name}>
                 <div className="person-portrait">
-                  <img src={advisor.photo} alt={`${advisor.name}, ${advisor.title}`} />
+                  <img src={advisor.photo} alt={`${advisor.name}, ${advisor.title}`} width={300} height={300} decoding="async" loading="lazy" />
                 </div>
                 <div className="person-body">
                   <p className="person-role">{advisor.title}</p>

@@ -39,20 +39,20 @@ export const CEO = {
   name: "Nehemiah Harvard",
   title: "Chief Executive Officer",
   service: "US Air Force Veteran",
-  photo: "/assets/portraits/nehemiah-harvard.png",
+  photo: "/assets/portraits/nehemiah-harvard.webp",
 };
 
 export const CTO = {
   name: "Henry Jenkins",
   title: "Chief Technology Officer",
   service: "US Army Veteran",
-  photo: "/assets/portraits/henry-jenkins.png",
+  photo: "/assets/portraits/henry-jenkins.webp",
 };
 
 export const ADVISORS = [
-  { name: "Dr. Bruce Lapine", title: "Advisor", photo: "/assets/portraits/bruce-lapine.png" },
-  { name: "Dr. Kimberely N. West", title: "Artificial Intelligence Advisor", photo: "/assets/portraits/kimberely-west.png" },
-  { name: "Abhishek Jain, MD", title: "IT Healthcare Advisor", photo: "/assets/portraits/abhishek-jain.png" },
+  { name: "Dr. Bruce Lapine", title: "Advisor", photo: "/assets/portraits/bruce-lapine.webp" },
+  { name: "Dr. Kimberely N. West", title: "Artificial Intelligence Advisor", photo: "/assets/portraits/kimberely-west.webp" },
+  { name: "Abhishek Jain, MD", title: "IT Healthcare Advisor", photo: "/assets/portraits/abhishek-jain.webp" },
 ];
 
 /** Same public ventures as henryljenkins.com/#projects, in that order. */

@@ -390,6 +390,7 @@ h3 { font-size: 1.35rem; letter-spacing: -.03em; }
   object-fit: cover;
   object-position: center 18%;
   filter: contrast(1.04) saturate(.92);
+  transition: transform 1.2s var(--ease-out-expo);
 }
 .person-body { padding: 22px 26px 26px; }
 .person-card--portrait .person-role { margin-top: 0; }
@@ -423,7 +424,10 @@ h3 { font-size: 1.35rem; letter-spacing: -.03em; }
   object-fit: cover;
   transition: transform 1.2s var(--ease-out-expo);
 }
-.venture-spread:hover .venture-spread-media img { transform: scale(1.03); }
+@media (hover: hover) {
+  .venture-spread:hover .venture-spread-media img,
+  .person-card--portrait:hover .person-portrait img { transform: scale(1.03); }
+}
 .venture-spread-copy {
   display: flex;
   flex-direction: column;
@@ -519,5 +523,7 @@ h3 { font-size: 1.35rem; letter-spacing: -.03em; }
   .legal-block {
     animation: none !important;
   }
-  .venture-spread:hover .venture-spread-media img { transform: none; }
+  .venture-spread:hover .venture-spread-media img,
+  .person-card--portrait:hover .person-portrait img,
+  .capability-card:hover .capability-image { transform: none; }
 }

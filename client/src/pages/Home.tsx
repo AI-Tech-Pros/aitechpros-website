@@ -235,7 +235,7 @@ export default function Home() {
           <div className="people-grid people-grid--officers">
             <article className="person-card person-card--portrait">
               <div className="person-portrait">
-                <img src={CEO.photo} alt={`${CEO.name}, ${CEO.title}`} />
+                <img src={CEO.photo} alt={`${CEO.name}, ${CEO.title}`} width={300} height={300} decoding="async" loading="lazy" />
               </div>
               <div className="person-body">
                 <p className="person-role">{CEO.title}</p>
@@ -245,7 +245,7 @@ export default function Home() {
             </article>
             <article className="person-card person-card--portrait">
               <div className="person-portrait">
-                <img src={CTO.photo} alt={`${CTO.name}, ${CTO.title}`} />
+                <img src={CTO.photo} alt={`${CTO.name}, ${CTO.title}`} width={300} height={300} decoding="async" loading="lazy" />
               </div>
               <div className="person-body">
                 <p className="person-role">{CTO.title}</p>
