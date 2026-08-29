@@ -24,6 +24,10 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
+import Projects from "./pages/Projects";
+import Academy from "./pages/Academy";
+import Backoffice from "./pages/Backoffice";
+import About from "./pages/About";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 
@@ -43,6 +47,10 @@ function MainSiteRouter() {
   return (
     <Switch>
       <Route path={"/"} component={Home} />
+      <Route path={"/projects"} component={Projects} />
+      <Route path={"/academy"} component={Academy} />
+      <Route path={"/backoffice"} component={Backoffice} />
+      <Route path={"/about"} component={About} />
       <Route path={"/orchestrateos"} component={OrchestrateOSRedirect} />
       <Route path={"/orchestrateos/*"} component={OrchestrateOSRedirect} />
       <Route path={"/privacy"} component={PrivacyPolicy} />

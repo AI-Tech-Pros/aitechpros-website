@@ -142,3 +142,32 @@ h1, h2, h3 { margin: 0; font-family: var(--font-heading); letter-spacing: -.06em
 @media (max-width: 900px) { .nav-telemetry { display: none; }.product-status { margin-left: 8px; }.hero-signal-field { inset: 4% 0; }.diagram-frame { max-width: 480px; margin: 0 auto; } }
 @media (max-width: 640px) { .site-header::after { left: 13px; right: 13px; }.hero-signal-field { inset: 8% -5% 3% -5%; }.hero-ring { left: 55%; width: 76%; }.ring-two { width: 58%; }.ring-three { width: 92%; }.hero-readout { left: 3%; bottom: 22%; font-size: 7px; }.hero-readout b { font-size: 10px; }.visual-label small { font-size: 7px; }.signal-tick { display: none; }.product-kicker { flex-wrap: wrap; row-gap: 10px; }.product-status { width: 100%; margin-left: 0; }.diagram-readout { right: 10px; bottom: 10px; font-size: 7px; }.closing-signal { margin-bottom: 22px; } }
 @media (prefers-reduced-motion: reduce) { .hero-ring, .hero-scanline, .hero-node, .nav-signal i, .signal-tick::after, .card-scanline, .diagram-pulse, .product-status i, .closing-signal::before, .closing-signal::after { animation: none !important; } }
+
+.skip-link { position: absolute; left: 16px; top: -48px; z-index: 80; padding: 8px 12px; background: var(--navy); color: white; font-size: 13px; font-weight: 700; }
+.skip-link:focus { top: 12px; }
+.site-header { position: sticky; }
+.footer-links { flex-wrap: wrap; }
+.ventures-section, .leadership-section { padding: 96px 0 40px; }
+.venture-grid, .people-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 48px; }
+.leadership-section .people-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 760px; }
+.venture-card, .person-card, .legal-block { padding: 28px; border: 1px solid var(--line); background: #fff; }
+.venture-card h2, .venture-card h3, .person-card h2, .person-card h3 { margin-bottom: 12px; }
+.venture-card p, .person-card p { margin: 0 0 16px; color: var(--ink-soft); font-size: 15px; }
+.venture-tags { color: #8a9aa3 !important; font-size: 11px !important; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.person-role { margin: 0 0 8px; color: var(--teal); font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.leadership-section .text-link { margin-top: 28px; }
+.subpage { width: min(1180px, calc(100% - 48px)); margin: 0 auto; padding: 72px 0 96px; }
+.subpage-hero { max-width: 760px; margin-bottom: 48px; }
+.subpage-hero h1 { margin: 12px 0 18px; font-size: clamp(36px, 5vw, 64px); }
+.subpage-hero p { color: var(--ink-soft); font-size: 18px; }
+.subpage-hero a { color: var(--blue); font-weight: 700; }
+.subpage-center { min-height: 50vh; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 16px; }
+.prose-light { max-width: 720px; }
+.prose-light h2 { margin: 32px 0 12px; font-size: 28px; }
+.prose-light p, .prose-light li { color: var(--ink-soft); }
+.prose-light ul { margin: 0 0 16px; padding-left: 20px; }
+.prose-light li { margin-bottom: 8px; }
+.legal-block { margin-bottom: 18px; }
+.legal-block h2 { margin-bottom: 12px; font-size: 22px; }
+@media (max-width: 900px) { .venture-grid, .people-grid, .leadership-section .people-grid { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .subpage { width: calc(100% - 34px); padding-top: 48px; } }
