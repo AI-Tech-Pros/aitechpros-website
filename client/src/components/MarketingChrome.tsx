@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { ArrowUpRight, Menu, X } from "lucide-react";
 import {
-  CALENDLY_URL,
+  CONVERSATION_PATH,
   EMAIL_LEGAL,
   GITHUB_URL,
   LEGAL_NAME,
@@ -64,9 +64,8 @@ export default function MarketingChrome({ children }: MarketingChromeProps) {
             ))}
             <a
               className="nav-cta"
-              href={CALENDLY_URL}
-              target="_blank"
-              rel="noreferrer"
+              href={CONVERSATION_PATH}
+              onClick={() => setMobileOpen(false)}
             >
               Start a conversation <ArrowUpRight size={16} />
             </a>

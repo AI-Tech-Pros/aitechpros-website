@@ -23,18 +23,28 @@ export default function About() {
           </p>
         </header>
 
-        <div className="people-grid">
-          <article className="person-card">
-            <p className="person-role">{CEO.title}</p>
-            <h2>{CEO.name}</h2>
-            <p>{CEO.service}. Leads the company and the MedStore Inc. healthcare technology practice.</p>
+        <div className="people-grid people-grid--officers">
+          <article className="person-card person-card--portrait">
+            <div className="person-portrait">
+              <img src={CEO.photo} alt={`${CEO.name}, ${CEO.title}`} />
+            </div>
+            <div className="person-body">
+              <p className="person-role">{CEO.title}</p>
+              <h2>{CEO.name}</h2>
+              <p>{CEO.service}. Leads the company and the MedStore Inc. healthcare technology practice.</p>
+            </div>
           </article>
-          <article className="person-card">
-            <p className="person-role">{CTO.title}</p>
-            <h2>{CTO.name}</h2>
-            <p>
-              {CTO.service}. Architecture, cybersecurity, and Jenkins Cyber Academy instruction. Personal site: henryljenkins.com.
-            </p>
+          <article className="person-card person-card--portrait">
+            <div className="person-portrait">
+              <img src={CTO.photo} alt={`${CTO.name}, ${CTO.title}`} />
+            </div>
+            <div className="person-body">
+              <p className="person-role">{CTO.title}</p>
+              <h2>{CTO.name}</h2>
+              <p>
+                {CTO.service}. Architecture, cybersecurity, and Jenkins Cyber Academy instruction. Personal site: henryljenkins.com.
+              </p>
+            </div>
           </article>
         </div>
 
@@ -42,9 +52,14 @@ export default function About() {
           <h2 id="advisors-heading">Advisors</h2>
           <div className="people-grid">
             {ADVISORS.map((advisor) => (
-              <article className="person-card" key={advisor.name}>
-                <p className="person-role">{advisor.title}</p>
-                <h3>{advisor.name}</h3>
+              <article className="person-card person-card--portrait" key={advisor.name}>
+                <div className="person-portrait">
+                  <img src={advisor.photo} alt={`${advisor.name}, ${advisor.title}`} />
+                </div>
+                <div className="person-body">
+                  <p className="person-role">{advisor.title}</p>
+                  <h3>{advisor.name}</h3>
+                </div>
               </article>
             ))}
           </div>

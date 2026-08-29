@@ -28,6 +28,7 @@ import Projects from "./pages/Projects";
 import Academy from "./pages/Academy";
 import Backoffice from "./pages/Backoffice";
 import About from "./pages/About";
+import Conversation from "./pages/Conversation";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 
@@ -51,6 +52,7 @@ function MainSiteRouter() {
       <Route path={"/academy"} component={Academy} />
       <Route path={"/backoffice"} component={Backoffice} />
       <Route path={"/about"} component={About} />
+      <Route path={"/conversation"} component={Conversation} />
       <Route path={"/orchestrateos"} component={OrchestrateOSRedirect} />
       <Route path={"/orchestrateos/*"} component={OrchestrateOSRedirect} />
       <Route path={"/privacy"} component={PrivacyPolicy} />

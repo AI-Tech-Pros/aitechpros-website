@@ -1,7 +1,7 @@
 import { ArrowUpRight } from "lucide-react";
 import MarketingChrome from "@/components/MarketingChrome";
 import PageMeta from "@/components/PageMeta";
-import { CALENDLY_URL, LEGAL_NAME } from "@/lib/company";
+import { CONVERSATION_PATH, LEGAL_NAME } from "@/lib/company";
 
 export default function Backoffice() {
   return (
@@ -19,7 +19,7 @@ export default function Backoffice() {
             {LEGAL_NAME} is building a multi-tenant backoffice for certification and career educators: clip distribution, sponsorship tracking, and payouts. Educators keep their content, channels, and audiences. We do not take equity, IP, or platform ad revenue. Member zero is Jenkins Cyber Academy.
           </p>
           <div className="hero-actions">
-            <a className="button button-primary" href={CALENDLY_URL} target="_blank" rel="noreferrer">
+            <a className="button button-primary" href={CONVERSATION_PATH}>
               Talk with the network <ArrowUpRight size={17} />
             </a>
             <a className="text-link" href="/academy">

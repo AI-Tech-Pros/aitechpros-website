@@ -9,14 +9,14 @@ import {
 } from "lucide-react";
 import MarketingChrome from "@/components/MarketingChrome";
 import PageMeta from "@/components/PageMeta";
+import VentureSpreads from "@/components/VentureSpreads";
 import {
-  CALENDLY_URL,
   CEO,
+  CONVERSATION_PATH,
   CTO,
   LEGAL_NAME,
   ORCHESTRATEOS_URL,
   SKOOL_URL,
-  VENTURES,
 } from "@/lib/company";
 
 const capabilities = [
@@ -80,7 +80,7 @@ export default function Home() {
               {LEGAL_NAME} is the parent company for leaders who need more than a promising demo. We connect strategy, secure infrastructure, and human expertise — and we now include MedStore Inc., with the same CEO and CTO.
             </p>
             <div className="hero-actions">
-              <a className="button button-primary" href={CALENDLY_URL} target="_blank" rel="noreferrer">
+              <a className="button button-primary" href={CONVERSATION_PATH}>
                 Start a conversation <ArrowUpRight size={17} />
               </a>
               <a className="text-link" href="#capabilities">
@@ -190,7 +190,7 @@ export default function Home() {
                 </div>
               ))}
             </div>
-            <a className="button button-light" href={CALENDLY_URL} target="_blank" rel="noreferrer">
+            <a className="button button-light" href={CONVERSATION_PATH}>
               Talk through your next system <ArrowUpRight size={17} />
             </a>
           </div>
@@ -219,17 +219,8 @@ export default function Home() {
               These are the public projects listed on Henry L. Jenkins&apos; site. {LEGAL_NAME} is the parent. MedStore Inc. is now part of that parent, with unchanged executive leadership.
             </p>
           </div>
-          <div className="venture-grid">
-            {VENTURES.map((venture) => (
-              <article className="venture-card" key={venture.name}>
-                <h3>{venture.name}</h3>
-                <p>{venture.summary}</p>
-                <p className="venture-tags">{venture.tags.join(" · ")}</p>
-                <a className="card-link" href={venture.href} target="_blank" rel="noreferrer">
-                  Visit site <ArrowUpRight size={15} />
-                </a>
-              </article>
-            ))}
+          <div className="venture-spreads-wrap">
+            <VentureSpreads />
           </div>
         </section>
 
@@ -241,16 +232,26 @@ export default function Home() {
               After the acquisition, {CEO.name} remains CEO and {CTO.name} remains CTO. Advisors continue from the MedStore Inc. board.
             </p>
           </div>
-          <div className="people-grid">
-            <article className="person-card">
-              <p className="person-role">{CEO.title}</p>
-              <h3>{CEO.name}</h3>
-              <p>{CEO.service}</p>
+          <div className="people-grid people-grid--officers">
+            <article className="person-card person-card--portrait">
+              <div className="person-portrait">
+                <img src={CEO.photo} alt={`${CEO.name}, ${CEO.title}`} />
+              </div>
+              <div className="person-body">
+                <p className="person-role">{CEO.title}</p>
+                <h3>{CEO.name}</h3>
+                <p>{CEO.service}</p>
+              </div>
             </article>
-            <article className="person-card">
-              <p className="person-role">{CTO.title}</p>
-              <h3>{CTO.name}</h3>
-              <p>{CTO.service}</p>
+            <article className="person-card person-card--portrait">
+              <div className="person-portrait">
+                <img src={CTO.photo} alt={`${CTO.name}, ${CTO.title}`} />
+              </div>
+              <div className="person-body">
+                <p className="person-role">{CTO.title}</p>
+                <h3>{CTO.name}</h3>
+                <p>{CTO.service}</p>
+              </div>
             </article>
           </div>
           <a className="text-link" href="/about">
@@ -301,7 +302,7 @@ export default function Home() {
           <h2 id="closing-heading">Bring us the hard part.</h2>
           <p>We will help you turn it into a system people can trust.</p>
           <div className="hero-actions hero-actions-center">
-            <a className="button button-primary" href={CALENDLY_URL} target="_blank" rel="noreferrer">
+            <a className="button button-primary" href={CONVERSATION_PATH}>
               Book a conversation <ArrowUpRight size={17} />
             </a>
             <a className="text-link" href={SKOOL_URL} target="_blank" rel="noreferrer">

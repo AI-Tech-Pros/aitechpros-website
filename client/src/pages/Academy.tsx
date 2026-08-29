@@ -1,7 +1,7 @@
 import { ArrowUpRight } from "lucide-react";
 import MarketingChrome from "@/components/MarketingChrome";
 import PageMeta from "@/components/PageMeta";
-import { CALENDLY_URL, SKOOL_URL } from "@/lib/company";
+import { CONVERSATION_PATH, SKOOL_URL } from "@/lib/company";
 
 export default function Academy() {
   return (
@@ -22,7 +22,7 @@ export default function Academy() {
             <a className="button button-primary" href={SKOOL_URL} target="_blank" rel="noreferrer">
               Join the free study community <ArrowUpRight size={17} />
             </a>
-            <a className="text-link" href={CALENDLY_URL} target="_blank" rel="noreferrer">
+            <a className="text-link" href={CONVERSATION_PATH}>
               Optional career conversation
             </a>
           </div>

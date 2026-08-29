@@ -1,7 +1,7 @@
-import { ArrowUpRight } from "lucide-react";
 import MarketingChrome from "@/components/MarketingChrome";
 import PageMeta from "@/components/PageMeta";
-import { HENRY_SITE_URL, LEGAL_NAME, VENTURES } from "@/lib/company";
+import VentureSpreads from "@/components/VentureSpreads";
+import { HENRY_SITE_URL, LEGAL_NAME } from "@/lib/company";
 
 export default function Projects() {
   return (
@@ -23,18 +23,7 @@ export default function Projects() {
             . MedStore Inc. is now part of AI Tech Pros, Inc.
           </p>
         </header>
-        <div className="venture-grid">
-          {VENTURES.map((venture) => (
-            <article className="venture-card" key={venture.name}>
-              <h2>{venture.name}</h2>
-              <p>{venture.summary}</p>
-              <p className="venture-tags">{venture.tags.join(" · ")}</p>
-              <a className="card-link" href={venture.href} target="_blank" rel="noreferrer">
-                Visit site <ArrowUpRight size={15} />
-              </a>
-            </article>
-          ))}
-        </div>
+        <VentureSpreads headingLevel="h2" />
       </main>
     </MarketingChrome>
   );
