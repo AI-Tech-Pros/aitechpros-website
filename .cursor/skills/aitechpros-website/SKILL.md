@@ -12,7 +12,7 @@ description: >-
 
 **Exists so the agent can keep the company site aligned** with the 2026 operating plans, Henry L. Jenkins venture list, and MedStore Inc. leadership/legal facts.
 
-Pairs with: `online-business-expert`, `premium-web-development`, `cert-exam-coaching-promo`, `direct-response-copywriting`.
+Pairs with: `online-business-expert`, `premium-web-development`, `luxury-web-design`, `cert-exam-coaching-promo`, `direct-response-copywriting`.
 Does **not** replace: `workers-best-practices` (OrchestrateOS API) or `certification-instructor-lessons`.
 
 ## Progress checklist

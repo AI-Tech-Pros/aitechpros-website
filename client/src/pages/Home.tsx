@@ -300,7 +300,7 @@ export default function Home() {
           <p className="eyebrow">The next useful thing</p>
           <h2 id="closing-heading">Bring us the hard part.</h2>
           <p>We will help you turn it into a system people can trust.</p>
-          <div className="hero-actions" style={{ justifyContent: "center" }}>
+          <div className="hero-actions hero-actions-center">
             <a className="button button-primary" href={CALENDLY_URL} target="_blank" rel="noreferrer">
               Book a conversation <ArrowUpRight size={17} />
             </a>
