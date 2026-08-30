@@ -84,27 +84,44 @@ export default function MarketingChrome({ children }: MarketingChromeProps) {
 
       <div className="site-end">
         <footer className="site-footer">
-          <div className="footer-brand">
-            <img
-              className="footer-logo"
-              src="/assets/creative/ai-tech-pros-logo-signal-bridge.svg"
-              alt="AI Tech Pros — AI systems that work."
-            />
+          <div className="footer-top">
+            <div className="footer-identity">
+              <a className="footer-brand" href="/" aria-label="AI Tech Pros home">
+                <img
+                  className="footer-logo"
+                  src="/assets/creative/ai-tech-pros-logo-signal-bridge.svg"
+                  alt="AI Tech Pros — AI systems that work."
+                />
+              </a>
+              <p className="footer-lede">AI systems that work.</p>
+              <p className="footer-entity">
+                {LEGAL_NAME} includes MedStore Inc.
+              </p>
+            </div>
+            <div className="footer-dirs">
+              <nav className="footer-col" aria-label="Contact">
+                <p className="footer-label">Contact</p>
+                <a href={`mailto:${EMAIL_LEGAL}`}>{EMAIL_LEGAL}</a>
+                <a href={PHONE_HREF}>{PHONE}</a>
+              </nav>
+              <nav className="footer-col" aria-label="Company">
+                <p className="footer-label">Company</p>
+                <a href={LINKEDIN_URL} target="_blank" rel="noreferrer">
+                  LinkedIn
+                </a>
+                <a href={GITHUB_URL} target="_blank" rel="noreferrer">
+                  GitHub
+                </a>
+              </nav>
+              <nav className="footer-col" aria-label="Legal">
+                <p className="footer-label">Legal</p>
+                <a href="/privacy">Privacy</a>
+                <a href="/terms">Terms</a>
+              </nav>
+            </div>
           </div>
-          <p>AI systems that work. {LEGAL_NAME} includes MedStore Inc.</p>
-          <div className="footer-links">
-            <a href={LINKEDIN_URL} target="_blank" rel="noreferrer">
-              LinkedIn
-            </a>
-            <a href={GITHUB_URL} target="_blank" rel="noreferrer">
-              GitHub
-            </a>
-            <a href={`mailto:${EMAIL_LEGAL}`}>{EMAIL_LEGAL}</a>
-            <a href={PHONE_HREF}>{PHONE}</a>
-            <a href="/privacy">Privacy</a>
-            <a href="/terms">Terms</a>
-          </div>
-          <small>© {new Date().getFullYear()} {LEGAL_NAME}</small>
+          <div className="footer-rule" aria-hidden="true" />
+          <p className="footer-copy">© {new Date().getFullYear()} {LEGAL_NAME}</p>
         </footer>
       </div>
     </div>

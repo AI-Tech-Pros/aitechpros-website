@@ -1,25 +1,33 @@
-import { Home } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { useLocation } from "wouter";
 import MarketingChrome from "@/components/MarketingChrome";
 import PageMeta from "@/components/PageMeta";
 
 export default function NotFound() {
-  const [, setLocation] = useLocation();
+  const [path] = useLocation();
 
   return (
     <MarketingChrome>
       <PageMeta
         title="Page not found — AI Tech Pros"
-        description="The page you requested is not on the AI Tech Pros site."
-        path="/404"
+        description="That URL is not part of the AI Tech Pros, Inc. marketing site."
+        path={path === "/404" ? "/404" : path}
+        noindex
       />
-      <main className="subpage subpage-center">
-        <p className="eyebrow">404</p>
-        <h1>Page not found</h1>
-        <p>That URL is not part of this site. It may have moved.</p>
-        <button type="button" className="button button-primary" onClick={() => setLocation("/")}>
-          <Home size={16} /> Go home
-        </button>
+      <main id="main" className="subpage legal-page">
+        <header className="subpage-hero">
+          <p className="eyebrow">404</p>
+          <h1>Page not found</h1>
+          <p>That URL is not part of this site. It may have moved.</p>
+          <div className="hero-actions">
+            <a className="button button-primary" href="/">
+              Go home <ArrowUpRight size={17} />
+            </a>
+            <a className="text-link" href="/conversation">
+              Start a conversation
+            </a>
+          </div>
+        </header>
       </main>
     </MarketingChrome>
   );

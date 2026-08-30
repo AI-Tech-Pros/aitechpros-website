@@ -5,9 +5,10 @@ type PageMetaProps = {
   title: string;
   description: string;
   path?: string;
+  noindex?: boolean;
 };
 
-export default function PageMeta({ title, description, path = "/" }: PageMetaProps) {
+export default function PageMeta({ title, description, path = "/", noindex = false }: PageMetaProps) {
   useEffect(() => {
     document.title = title;
     const set = (selector: string, content: string, isProperty = false) => {
@@ -22,6 +23,7 @@ export default function PageMeta({ title, description, path = "/" }: PageMetaPro
     };
 
     set("description", description);
+    set("robots", noindex ? "noindex, nofollow" : "index, follow");
     set("og:title", title, true);
     set("og:description", description, true);
     set("og:url", `${SITE_URL}${path}`, true);
@@ -29,6 +31,7 @@ export default function PageMeta({ title, description, path = "/" }: PageMetaPro
     set("twitter:card", "summary_large_image");
     set("twitter:title", title);
     set("twitter:description", description);
+    set("twitter:image", `${SITE_URL}/assets/creative/ai-tech-pros-social-preview.png`);
 
     let canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
     if (!canonical) {
@@ -37,7 +40,7 @@ export default function PageMeta({ title, description, path = "/" }: PageMetaPro
       document.head.appendChild(canonical);
     }
     canonical.href = `${SITE_URL}${path}`;
-  }, [title, description, path]);
+  }, [title, description, path, noindex]);
 
   return null;
 }

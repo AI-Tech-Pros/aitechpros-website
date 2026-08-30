@@ -1,3 +1,4 @@
+# API proxies (keep above marketing SPA rules)
 /api/*  https://orchestrateos-api.nevaquit.workers.dev/api/:splat  200
 /runs/*  https://orchestrateos-api.nevaquit.workers.dev/runs/:splat  200
 /demo/*  https://orchestrateos-api.nevaquit.workers.dev/demo/:splat  200
@@ -10,4 +11,27 @@
 /ingress/*  https://orchestrateos-api.nevaquit.workers.dev/ingress/:splat  200
 /docs  https://orchestrateos-api.nevaquit.workers.dev/docs  200
 /openapi.json  https://orchestrateos-api.nevaquit.workers.dev/openapi.json  200
-/*    /index.html   200
+
+# Known marketing routes hydrate the SPA with HTTP 200
+/projects  /index.html  200
+/projects/  /index.html  200
+/academy  /index.html  200
+/academy/  /index.html  200
+/backoffice  /index.html  200
+/backoffice/  /index.html  200
+/about  /index.html  200
+/about/  /index.html  200
+/conversation  /index.html  200
+/conversation/  /index.html  200
+/privacy  /index.html  200
+/privacy/  /index.html  200
+/terms  /index.html  200
+/terms/  /index.html  200
+/orchestrateos  /index.html  200
+/orchestrateos/  /index.html  200
+/orchestrateos/*  /index.html  200
+/404  /index.html  200
+/404/  /index.html  200
+
+# Missing paths: SPA NotFound UI with a real 404 status
+/*  /index.html  404

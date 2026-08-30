@@ -25,52 +25,58 @@ export default function PrivacyPolicy() {
     <MarketingChrome>
       <PageMeta
         title="Privacy Policy — AI Tech Pros"
-        description="How AI Tech Pros, Inc. and MedStore Inc. collect, use, and protect information across our websites and services."
+        description="How AI Tech Pros, Inc. collects and uses information on this marketing website and conversation page."
         path="/privacy"
       />
-      <main className="subpage">
+      <main id="main" className="subpage legal-page">
         <header className="subpage-hero">
           <p className="eyebrow">Legal</p>
           <h1>Privacy Policy</h1>
-          <p>Last updated: August 29, 2026</p>
+          <p>Last updated: August 30, 2026</p>
         </header>
 
         <Section title="1. Who we are">
           <p>
-            {LEGAL_NAME} (&quot;AI Tech Pros,&quot; &quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) is the parent company. We acquired MedStore Inc. Officers are the same as on MedStore Inc.: Nehemiah Harvard, CEO, and Henry Jenkins, CTO. This policy applies to aitechpros-website.pages.dev, orchestrateos.pages.dev, medstoreinc.com, negotiatemedicalbill.ai, and related services we operate.
+            {LEGAL_NAME} (&quot;AI Tech Pros,&quot; &quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) is a Georgia corporation and the parent company of MedStore Inc. Officers are Nehemiah Harvard, CEO, and Henry Jenkins, CTO. This policy applies to this marketing website — published at aitechpros-website.pages.dev and, when connected, aitechpros.ai — including the conversation page.
+          </p>
+          <p>
+            OrchestrateOS, medstoreinc.com, negotiatemedicalbill.ai, and the Henry Jenkins Mentorship community are separate properties and may publish their own notices. This page does not replace those notices.
           </p>
         </Section>
 
         <Section title="2. Information we collect">
-          <p>We may collect:</p>
+          <p>On this website we may collect:</p>
           <ul>
-            <li>Contact details you submit (name, email, phone, company, role, message).</li>
-            <li>Booking details when you use Calendly or similar scheduling tools.</li>
-            <li>Account credentials if you use OrchestrateOS, partner, or educator tools.</li>
-            <li>Device and usage data (pages, referrers, approximate location from IP) on our sites.</li>
-            <li>For healthcare products (MedStore Inc. and Negotiate Medical Bill): information you or a covered entity provide, which may include health information governed by HIPAA and a separate business associate or product notice.</li>
+            <li>Contact details you send by email or phone (name, email, phone, company, message).</li>
+            <li>Scheduling details when you book through the Calendly embed on this site.</li>
+            <li>Technical logs from our host (pages requested, referrer, user agent, and approximate location from IP).</li>
           </ul>
+          <p>
+            This marketing site does not offer a customer login, a Design Partner application, or a cookie consent banner. Calendly may set its own cookies when you use the scheduler.
+          </p>
         </Section>
 
         <Section title="3. Education and marketing consent">
           <p>
-            Jenkins Cyber Academy and related Security+ practice are designed so study, reports, and help work without joining a community and without marketing consent. Viewing a report, clicking an optional community link, or requesting support is not marketing consent. Optional email topics are unchecked by default. We do not attach exam scores, answers, or support content to referral links or routine analytics.
+            Jenkins Cyber Academy and related Security+ practice — on academy pages and in the Henry Jenkins Mentorship community — are designed so study, reports, and help work without joining a paid community and without marketing consent. Viewing a report, clicking an optional community link, or requesting support is not marketing consent. Optional email topics are unchecked by default. This marketing site does not collect exam scores.
           </p>
         </Section>
 
         <Section title="4. How we use information">
           <ul>
-            <li>To operate websites, products, and customer support.</li>
-            <li>To schedule conversations and fulfill educator or healthcare engagements.</li>
-            <li>To protect systems, prevent abuse, and meet legal obligations.</li>
-            <li>To send operational messages (security, booking, account).</li>
-            <li>To send marketing only where you opted in.</li>
+            <li>To operate this website and respond to conversations you start.</li>
+            <li>To schedule meetings you request through Calendly.</li>
+            <li>To protect the site, prevent abuse, and meet legal obligations.</li>
+            <li>To send operational messages about a booking you made.</li>
+            <li>To send marketing only where you opted in. We do not run a newsletter signup on this site today.</li>
           </ul>
-          <p>We do not sell personal information. We do not use customer content to train general-purpose models without explicit consent.</p>
+          <p>We do not sell personal information. We do not use messages you send through this site to train general-purpose models.</p>
         </Section>
 
         <Section title="5. Sharing">
-          <p>We share information with service providers (hosting, email, payments such as Stripe, scheduling), with your organization if you use a team product, and when required by law. Healthcare data follows HIPAA and product-specific agreements.</p>
+          <p>
+            We share information with service providers that run this site and booking (including Cloudflare and Calendly), and when required by law. Healthcare products and OrchestrateOS accounts are not created on this marketing site; those products follow their own agreements.
+          </p>
         </Section>
 
         <Section title="6. Retention and security">

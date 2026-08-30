@@ -241,4 +241,4 @@ python -m pytest resume_engine/tests -q
 
 ## License
 
-Website: © 2026 AI Tech Pros LLC. · SDK: MIT — see [LICENSE](LICENSE).
+Website: © 2026 AI Tech Pros, Inc. · SDK: MIT — see [LICENSE](LICENSE).

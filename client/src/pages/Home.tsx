@@ -14,6 +14,7 @@ import {
   CEO,
   CONVERSATION_PATH,
   CTO,
+  EMAIL_ADMIN,
   LEGAL_NAME,
   ORCHESTRATEOS_URL,
   SKOOL_URL,
@@ -26,7 +27,8 @@ const capabilities = [
     title: "Enterprise AI systems",
     text: "Governed, resumable agent workflows through OrchestrateOS — for teams that cannot restart a 50-step job from zero.",
     link: "Explore OrchestrateOS",
-    href: "/#orchestrateos",
+    href: ORCHESTRATEOS_URL,
+    external: true,
     image: "/assets/creative/capability-enterprise-ai.webp",
     alt: "Layered modular intelligence system with connected pathways and human markers.",
   },
@@ -39,6 +41,7 @@ const capabilities = [
     href: "/academy",
     image: "/assets/creative/capability-security.webp",
     alt: "Geometric security structure with protected pathways, checkpoints, and connected infrastructure.",
+    external: false,
   },
   {
     number: "03",
@@ -49,6 +52,7 @@ const capabilities = [
     href: "/backoffice",
     image: "/assets/creative/capability-enablement.webp",
     alt: "Connected learning pathway transforming expertise into a reusable system.",
+    external: false,
   },
 ];
 
@@ -63,7 +67,7 @@ export default function Home() {
     <MarketingChrome>
       <PageMeta
         title="AI Tech Pros — AI systems that work."
-        description="AI Tech Pros, Inc. connects strategy, secure infrastructure, and human expertise. Ventures include MedStore Inc., Negotiate Medical Bill, OrchestrateOS, and Jenkins Cyber Academy."
+        description="AI Tech Pros, Inc. connects strategy, secure infrastructure, and human expertise. Parent of MedStore Inc., Negotiate Medical Bill, OrchestrateOS, and Jenkins Cyber Academy."
         path="/"
       />
       <main id="top">
@@ -148,7 +152,7 @@ export default function Home() {
             </p>
           </div>
           <div className="capability-grid">
-            {capabilities.map(({ number, icon: Icon, title, text, link, href, image, alt }) => (
+            {capabilities.map(({ number, icon: Icon, title, text, link, href, image, alt, external }) => (
               <article className="capability-card" key={number}>
                 <div className="card-image-wrap">
                   <img className="capability-image" src={image} alt={alt} loading="lazy" />
@@ -165,7 +169,11 @@ export default function Home() {
                 </div>
                 <h3>{title}</h3>
                 <p>{text}</p>
-                <a className="card-link" href={href}>
+                <a
+                  className="card-link"
+                  href={href}
+                  {...(external ? { target: "_blank", rel: "noreferrer" } : {})}
+                >
                   {link} <ArrowUpRight size={15} />
                 </a>
               </article>
@@ -304,6 +312,9 @@ export default function Home() {
           <div className="hero-actions hero-actions-center">
             <a className="button button-primary" href={CONVERSATION_PATH}>
               Book a conversation <ArrowUpRight size={17} />
+            </a>
+            <a className="text-link" href={`mailto:${EMAIL_ADMIN}`}>
+              Write {EMAIL_ADMIN}
             </a>
             <a className="text-link" href={SKOOL_URL} target="_blank" rel="noreferrer">
               Join the free study community <ChevronRight size={17} />
