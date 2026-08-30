@@ -46,7 +46,7 @@ export const CTO = {
   name: "Henry Jenkins",
   title: "Chief Technology Officer",
   service: "US Army Veteran",
-  photo: "/assets/portraits/henry-jenkins.webp",
+  photo: "/assets/portraits/henry-jenkins-0f76ad4c.webp",
 };
 
 export const ADVISORS = [

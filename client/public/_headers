@@ -1,6 +1,15 @@
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
 
+# Unhashed public files (portraits, logos) must not inherit year-long immutable cache.
+/assets/portraits/*
+  ! Cache-Control
+  Cache-Control: public, max-age=0, must-revalidate
+
+/assets/creative/*
+  ! Cache-Control
+  Cache-Control: public, max-age=86400
+
 /fonts/*
   Cache-Control: public, max-age=31536000, immutable
 
