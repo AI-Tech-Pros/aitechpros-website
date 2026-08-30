@@ -283,7 +283,7 @@ h3 { font-size: 1.35rem; letter-spacing: -.03em; }
 .subpage-hero { max-width: 760px; margin-bottom: 48px; }
 .subpage-hero h1 { margin: 12px 0 18px; font-size: clamp(36px, 5vw, 64px); }
 .subpage-hero p { color: var(--ink-soft); font-size: 18px; }
-.subpage-hero a { color: var(--blue); font-weight: 700; }
+.subpage-hero a:not(.button) { color: var(--blue); font-weight: 700; }
 .subpage-center { min-height: 50vh; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 16px; }
 .prose-light { max-width: 720px; }
 .prose-light h2 { margin: 32px 0 12px; font-size: 28px; }
