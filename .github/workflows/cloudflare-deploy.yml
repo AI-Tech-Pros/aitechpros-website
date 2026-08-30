@@ -42,7 +42,7 @@ jobs:
       - run: npm ci
       - run: npm run build:pages
         env:
-          VITE_SITE_URL: https://aitechpros-website.pages.dev
+          VITE_SITE_URL: https://aitechpros.ai
 
       - name: Publish to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3

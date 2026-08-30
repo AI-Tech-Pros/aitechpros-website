@@ -22,7 +22,11 @@ export default function VentureSpreads({ headingLevel = "h3" }: VentureSpreadsPr
             <Heading>{venture.name}</Heading>
             <p>{venture.summary}</p>
             <p className="venture-tags">{venture.tags.join(" · ")}</p>
-            <a className="card-link" href={venture.href} target="_blank" rel="noreferrer">
+            <a
+              className="card-link"
+              href={venture.href}
+              {...(/^https?:\/\//i.test(venture.href) ? { target: "_blank", rel: "noreferrer" } : {})}
+            >
               Visit site <ArrowUpRight size={15} />
             </a>
           </div>

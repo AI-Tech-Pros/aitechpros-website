@@ -37,7 +37,7 @@ export default function PrivacyPolicy() {
 
         <Section title="1. Who we are">
           <p>
-            {LEGAL_NAME} (&quot;AI Tech Pros,&quot; &quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) is a Georgia corporation and the parent company of MedStore Inc. Officers are Nehemiah Harvard, CEO, and Henry Jenkins, CTO. This policy applies to this marketing website — published at aitechpros-website.pages.dev and, when connected, aitechpros.ai — including the conversation page.
+            {LEGAL_NAME} (&quot;AI Tech Pros,&quot; &quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) is a Georgia corporation and the parent company of MedStore Inc. Officers are Nehemiah Harvard, CEO, and Henry Jenkins, CTO. This policy applies to this marketing website at aitechpros.ai, including the conversation page.
           </p>
           <p>
             OrchestrateOS, medstoreinc.com, negotiatemedicalbill.ai, and the Henry Jenkins Mentorship community are separate properties and may publish their own notices. This page does not replace those notices.

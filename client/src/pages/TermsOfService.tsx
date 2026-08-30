@@ -37,7 +37,7 @@ export default function TermsOfService() {
 
         <Section title="1. Agreement">
           <p>
-            By using this marketing website of {LEGAL_NAME} (&quot;AI Tech Pros,&quot; &quot;we,&quot; &quot;us&quot;), including aitechpros-website.pages.dev and aitechpros.ai when that hostname is connected, you agree to these Terms. {LEGAL_NAME} is a Georgia corporation, not an LLC. If you use this site for an organization, you represent that you can bind that organization.
+            By using this marketing website of {LEGAL_NAME} (&quot;AI Tech Pros,&quot; &quot;we,&quot; &quot;us&quot;), including aitechpros.ai, you agree to these Terms. {LEGAL_NAME} is a Georgia corporation, not an LLC. If you use this site for an organization, you represent that you can bind that organization.
           </p>
         </Section>
 

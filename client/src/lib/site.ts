@@ -1,6 +1,6 @@
 /** Hostname and routing — main site + OrchestrateOS product on separate Pages projects. */
 
-export const MAIN_SITE_URL = "https://aitechpros-website.pages.dev";
+export const MAIN_SITE_URL = "https://aitechpros.ai";
 export const ORCHESTRATEOS_SITE_URL = "https://orchestrateos.pages.dev";
 const DEFAULT_API_URL = "https://orchestrateos-api.nevaquit.workers.dev";
 
@@ -53,7 +53,7 @@ export function orchestrateOSUrl(path = ""): string {
   return suffix ? `${base}${suffix}` : base;
 }
 
-/** Main marketing site URL (always aitechpros-website.pages.dev). */
+/** Main marketing site URL (public apex). */
 export function mainSiteUrl(path = "/"): string {
   const suffix = path.startsWith("/") ? path : `/${path}`;
   return `${MAIN_SITE_URL}${suffix}`;

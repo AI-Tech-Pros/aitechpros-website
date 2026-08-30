@@ -2,7 +2,41 @@
 
 export const LEGAL_NAME = "AI Tech Pros, Inc.";
 
-export const SITE_URL = "https://aitechpros-website.pages.dev";
+/** Public apex. Preview/pages.dev may serve the same app but must not appear in crawler or nav URLs. */
+export const SITE_URL = "https://aitechpros.ai";
+
+export function isAllowedMarketingHost(hostname: string): boolean {
+  const host = hostname.toLowerCase().replace(/\.$/, "");
+  return (
+    host === "aitechpros.ai" ||
+    host === "www.aitechpros.ai" ||
+    host === "aitechpros-website.pages.dev" ||
+    host.endsWith(".aitechpros-website.pages.dev") ||
+    host === "localhost" ||
+    host === "127.0.0.1"
+  );
+}
+
+/** Origin for canonicals, OG, and share URLs: current host when allowed, else the public apex. */
+export function marketingOrigin(hostname?: string, protocol?: string): string {
+  if (typeof window !== "undefined" && hostname === undefined) {
+    if (isAllowedMarketingHost(window.location.hostname)) {
+      return window.location.origin;
+    }
+    return SITE_URL;
+  }
+  if (hostname && isAllowedMarketingHost(hostname)) {
+    const proto = (protocol || "https").replace(/:$/, "");
+    const useHttp = hostIsLocal(hostname);
+    return `${useHttp ? proto : "https"}://${hostname}`;
+  }
+  return SITE_URL;
+}
+
+function hostIsLocal(hostname: string): boolean {
+  const host = hostname.toLowerCase();
+  return host === "localhost" || host === "127.0.0.1";
+}
 
 export const PHONE = "+1-404-333-2968";
 export const PHONE_HREF = "tel:+14043332968";
@@ -59,7 +93,7 @@ export const ADVISORS = [
 export const VENTURES = [
   {
     name: "AI Tech Pros",
-    href: SITE_URL,
+    href: "/",
     summary:
       "The parent company. We connect strategy, secure infrastructure, and human expertise so intelligent systems stay dependable in the real world.",
     tags: ["Artificial intelligence", "Enterprise systems", "Governance"],

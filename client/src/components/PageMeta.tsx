@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { SITE_URL } from "@/lib/company";
+import { marketingOrigin } from "@/lib/company";
 
 type PageMetaProps = {
   title: string;
@@ -22,16 +22,17 @@ export default function PageMeta({ title, description, path = "/", noindex = fal
       el.setAttribute("content", content);
     };
 
+    const origin = marketingOrigin();
     set("description", description);
     set("robots", noindex ? "noindex, nofollow" : "index, follow");
     set("og:title", title, true);
     set("og:description", description, true);
-    set("og:url", `${SITE_URL}${path}`, true);
-    set("og:image", `${SITE_URL}/assets/creative/ai-tech-pros-social-preview.png`, true);
+    set("og:url", `${origin}${path}`, true);
+    set("og:image", `${origin}/assets/creative/ai-tech-pros-social-preview.png`, true);
     set("twitter:card", "summary_large_image");
     set("twitter:title", title);
     set("twitter:description", description);
-    set("twitter:image", `${SITE_URL}/assets/creative/ai-tech-pros-social-preview.png`);
+    set("twitter:image", `${origin}/assets/creative/ai-tech-pros-social-preview.png`);
 
     let canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
     if (!canonical) {
@@ -39,7 +40,7 @@ export default function PageMeta({ title, description, path = "/", noindex = fal
       canonical.rel = "canonical";
       document.head.appendChild(canonical);
     }
-    canonical.href = `${SITE_URL}${path}`;
+    canonical.href = `${origin}${path}`;
   }, [title, description, path, noindex]);
 
   return null;

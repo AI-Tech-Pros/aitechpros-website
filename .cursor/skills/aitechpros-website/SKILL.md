@@ -39,7 +39,7 @@ AITECHPROS site progress:
 | Phone | +1-404-333-2968 |
 | Email | info@medstoreinc.com (MedStore/legal); admin@aitechpros.ai |
 | Addresses | 217 Davis Road, Augusta, GA 30907 · 17910 Van Dyke Street STE 1396, Detroit, MI 48234 |
-| Canonical marketing URL | https://aitechpros-website.pages.dev |
+| Canonical marketing URL | https://aitechpros.ai |
 
 MedStoreInc footer Privacy/Terms currently hash-link to `#`. Do **not** copy empty pages. Port officers, addresses, phone, email, HIPAA/healthcare posture, and Georgia contact facts into complete Inc. policies. Source constants: `client/src/lib/company.ts`.
 

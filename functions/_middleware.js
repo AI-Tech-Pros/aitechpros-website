@@ -1,5 +1,22 @@
-const SITE = "https://aitechpros-website.pages.dev";
-const IMAGE = `${SITE}/assets/creative/ai-tech-pros-social-preview.png`;
+const PUBLIC_ORIGIN = "https://aitechpros.ai";
+const PAGES_DEV_ORIGIN = "https://aitechpros-website.pages.dev";
+
+function isAllowedMarketingHost(hostname) {
+  const host = hostname.toLowerCase().replace(/\.$/, "");
+  return (
+    host === "aitechpros.ai" ||
+    host === "www.aitechpros.ai" ||
+    host === "aitechpros-website.pages.dev" ||
+    host.endsWith(".aitechpros-website.pages.dev")
+  );
+}
+
+function marketingOrigin(url) {
+  if (isAllowedMarketingHost(url.hostname)) {
+    return `${url.protocol}//${url.host}`;
+  }
+  return PUBLIC_ORIGIN;
+}
 
 const PAGES = {
   "/": {
@@ -111,17 +128,24 @@ export async function onRequest(context) {
     title: "Page not found — AI Tech Pros",
     description: "That URL is not part of the AI Tech Pros, Inc. marketing site.",
   };
-  const canonical = `${SITE}${path === "/" ? "/" : path}`;
+  const origin = marketingOrigin(url);
+  const canonical = `${origin}${path === "/" ? "/" : path}`;
+  const image = `${origin}/assets/creative/ai-tech-pros-social-preview.png`;
   let html = await response.text();
   html = html.replace(/<title>[^<]*<\/title>/, `<title>${page.title}</title>`);
   html = replaceAttr(html, 'name="description" content', page.description);
   html = replaceAttr(html, 'property="og:title" content', page.title);
   html = replaceAttr(html, 'property="og:description" content', page.description);
   html = replaceAttr(html, 'property="og:url" content', canonical);
-  html = replaceAttr(html, 'property="og:image" content', IMAGE);
+  html = replaceAttr(html, 'property="og:image" content', image);
   html = replaceAttr(html, 'name="twitter:title" content', page.title);
   html = replaceAttr(html, 'name="twitter:description" content', page.description);
+  html = replaceAttr(html, 'name="twitter:image" content', image);
   html = replaceAttr(html, 'rel="canonical" href', canonical);
+  html = html.replace(
+    /(<script type="application\/ld\+json">)([\s\S]*?)(<\/script>)/i,
+    (_, open, body, close) => `${open}${body.split(PAGES_DEV_ORIGIN).join(PUBLIC_ORIGIN)}${close}`,
+  );
 
   const robots = known && PAGES[path] ? "index, follow" : "noindex, nofollow";
   if (/name="robots"/i.test(html)) {
