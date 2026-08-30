@@ -1,18 +1,19 @@
 const PUBLIC_ORIGIN = "https://aitechpros.ai";
 const PAGES_DEV_ORIGIN = "https://aitechpros-website.pages.dev";
 
-function isAllowedMarketingHost(hostname) {
+function isLocalHost(hostname) {
   const host = hostname.toLowerCase().replace(/\.$/, "");
-  return (
-    host === "aitechpros.ai" ||
-    host === "www.aitechpros.ai" ||
-    host === "aitechpros-website.pages.dev" ||
-    host.endsWith(".aitechpros-website.pages.dev")
-  );
+  return host === "localhost" || host === "127.0.0.1";
 }
 
+function shouldRedirectToApex(hostname) {
+  const host = hostname.toLowerCase().replace(/\.$/, "");
+  return host === "www.aitechpros.ai" || host === "aitechpros-website.pages.dev";
+}
+
+/** Canonicals and OG always use the public apex. Preview hosts keep serving in place. */
 function marketingOrigin(url) {
-  if (isAllowedMarketingHost(url.hostname)) {
+  if (isLocalHost(url.hostname)) {
     return `${url.protocol}//${url.host}`;
   }
   return PUBLIC_ORIGIN;
@@ -112,6 +113,9 @@ async function loadSpaDocument(context, url) {
 
 export async function onRequest(context) {
   const url = new URL(context.request.url);
+  if (shouldRedirectToApex(url.hostname)) {
+    return Response.redirect(`${PUBLIC_ORIGIN}${url.pathname}${url.search}`, 301);
+  }
   if (!MARKETING_HOST.test(url.hostname) || SKIP.test(url.pathname)) {
     return context.next();
   }

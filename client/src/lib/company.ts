@@ -17,18 +17,15 @@ export function isAllowedMarketingHost(hostname: string): boolean {
   );
 }
 
-/** Origin for canonicals, OG, and share URLs: current host when allowed, else the public apex. */
+/** Origin for canonicals, OG, and share URLs. Always the public apex except localhost. */
 export function marketingOrigin(hostname?: string, protocol?: string): string {
-  if (typeof window !== "undefined" && hostname === undefined) {
-    if (isAllowedMarketingHost(window.location.hostname)) {
+  const host = hostname ?? (typeof window !== "undefined" ? window.location.hostname : "");
+  if (hostIsLocal(host)) {
+    if (typeof window !== "undefined" && hostname === undefined) {
       return window.location.origin;
     }
-    return SITE_URL;
-  }
-  if (hostname && isAllowedMarketingHost(hostname)) {
-    const proto = (protocol || "https").replace(/:$/, "");
-    const useHttp = hostIsLocal(hostname);
-    return `${useHttp ? proto : "https"}://${hostname}`;
+    const proto = (protocol || "http").replace(/:$/, "");
+    return `${proto}://${host}`;
   }
   return SITE_URL;
 }

@@ -16,7 +16,7 @@ export default function Conversation() {
         description="Book a 15-minute conversation with AI Tech Pros, Inc. We will help you turn the hard part into a system people can trust."
         path="/conversation"
       />
-      <main className="subpage conversation-page">
+      <main id="main" className="subpage conversation-page">
         <header className="subpage-hero">
           <p className="eyebrow">The next useful thing</p>
           <h1>Bring us the hard part.</h1>

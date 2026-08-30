@@ -11,7 +11,7 @@ export default function Projects() {
         description="The same public ventures listed on henryljenkins.com: AI Tech Pros, Negotiate Medical Bill, and MedStore Inc."
         path="/projects"
       />
-      <main className="subpage">
+      <main id="main" className="subpage">
         <header className="subpage-hero">
           <p className="eyebrow">Ventures</p>
           <h1>The same projects as henryljenkins.com</h1>

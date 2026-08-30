@@ -1,6 +1,16 @@
 import MarketingChrome from "@/components/MarketingChrome";
 import PageMeta from "@/components/PageMeta";
-import { ADVISORS, CEO, CTO, LEGAL_NAME, MEDSTORE_ABOUT_URL } from "@/lib/company";
+import {
+  ADVISORS,
+  CEO,
+  CTO,
+  EMAIL_ADMIN,
+  EMAIL_LEGAL,
+  LEGAL_NAME,
+  MEDSTORE_ABOUT_URL,
+  PHONE,
+  PHONE_HREF,
+} from "@/lib/company";
 
 export default function About() {
   return (
@@ -10,7 +20,7 @@ export default function About() {
         description="AI Tech Pros, Inc. is led by the same CEO and CTO as MedStore Inc.: Nehemiah Harvard and Henry Jenkins."
         path="/about"
       />
-      <main className="subpage">
+      <main id="main" className="subpage">
         <header className="subpage-hero">
           <p className="eyebrow">Leadership</p>
           <h1>Same CEO and CTO as MedStore Inc.</h1>
@@ -22,6 +32,33 @@ export default function About() {
             .
           </p>
         </header>
+
+        <dl className="proof-facts">
+          <div>
+            <dt>Legal name</dt>
+            <dd>{LEGAL_NAME}</dd>
+          </div>
+          <div>
+            <dt>Officers</dt>
+            <dd>
+              {CEO.name}, CEO · {CTO.name}, CTO
+            </dd>
+          </div>
+          <div>
+            <dt>Includes</dt>
+            <dd>MedStore Inc., with the same executive leadership</dd>
+          </div>
+          <div>
+            <dt>Contact</dt>
+            <dd>
+              <a href={`mailto:${EMAIL_ADMIN}`}>{EMAIL_ADMIN}</a>
+              {" · "}
+              <a href={`mailto:${EMAIL_LEGAL}`}>{EMAIL_LEGAL}</a>
+              {" · "}
+              <a href={PHONE_HREF}>{PHONE}</a>
+            </dd>
+          </div>
+        </dl>
 
         <div className="people-grid people-grid--officers">
           <article className="person-card person-card--portrait">

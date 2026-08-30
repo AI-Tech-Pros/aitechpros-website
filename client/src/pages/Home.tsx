@@ -17,7 +17,6 @@ import {
   EMAIL_ADMIN,
   LEGAL_NAME,
   ORCHESTRATEOS_URL,
-  SKOOL_URL,
 } from "@/lib/company";
 
 const capabilities = [
@@ -70,7 +69,7 @@ export default function Home() {
         description="AI Tech Pros, Inc. connects strategy, secure infrastructure, and human expertise. Parent of MedStore Inc., Negotiate Medical Bill, OrchestrateOS, and Jenkins Cyber Academy."
         path="/"
       />
-      <main id="top">
+      <main id="main">
         <section className="hero-section" aria-labelledby="hero-heading">
           <div className="hero-grid" aria-hidden="true" />
           <div className="hero-copy">
@@ -269,7 +268,7 @@ export default function Home() {
 
         <section id="orchestrateos" className="section product-section" aria-labelledby="product-heading">
           <div className="product-kicker">
-            <span className="product-dot" /> A product by AI Tech Pros{" "}
+            <span className="product-dot" /> A product by {LEGAL_NAME}{" "}
             <span className="product-status">
               <i /> RESUMABLE / GOVERNED
             </span>
@@ -311,13 +310,10 @@ export default function Home() {
           <p>We will help you turn it into a system people can trust.</p>
           <div className="hero-actions hero-actions-center">
             <a className="button button-primary" href={CONVERSATION_PATH}>
-              Book a conversation <ArrowUpRight size={17} />
+              Start a conversation <ArrowUpRight size={17} />
             </a>
             <a className="text-link" href={`mailto:${EMAIL_ADMIN}`}>
               Write {EMAIL_ADMIN}
-            </a>
-            <a className="text-link" href={SKOOL_URL} target="_blank" rel="noreferrer">
-              Join the free study community <ChevronRight size={17} />
             </a>
           </div>
         </section>

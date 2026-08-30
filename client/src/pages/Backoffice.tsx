@@ -11,7 +11,7 @@ export default function Backoffice() {
         description="AI Tech Pros Backoffice helps certification educators keep their channels while the network runs distribution, sponsorship operations, and payouts. Member zero: Jenkins Cyber Academy."
         path="/backoffice"
       />
-      <main className="subpage">
+      <main id="main" className="subpage">
         <header className="subpage-hero">
           <p className="eyebrow">Educator backoffice</p>
           <h1>Keep the classroom. We run the secondary work.</h1>

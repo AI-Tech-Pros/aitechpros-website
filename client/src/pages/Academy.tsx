@@ -11,7 +11,7 @@ export default function Academy() {
         description="Free live CompTIA Security+ study, hands-on labs, and career support. Join the Henry Jenkins Mentorship community. Practice remains free whether or not you join."
         path="/academy"
       />
-      <main className="subpage">
+      <main id="main" className="subpage">
         <header className="subpage-hero">
           <p className="eyebrow">Jenkins Cyber Academy</p>
           <h1>Free live cybersecurity study, hands-on practice, and career support.</h1>

@@ -1,3 +1,7 @@
+# Keep crawlers and visitors on the public apex, not www or the Pages hostname.
+https://www.aitechpros.ai/*  https://aitechpros.ai/:splat  301
+https://aitechpros-website.pages.dev/*  https://aitechpros.ai/:splat  301
+
 # API proxies (keep above marketing SPA rules)
 /api/*  https://orchestrateos-api.nevaquit.workers.dev/api/:splat  200
 /runs/*  https://orchestrateos-api.nevaquit.workers.dev/runs/:splat  200

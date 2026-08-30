@@ -1,8 +1,14 @@
 import { useState, type ReactNode } from "react";
 import { ArrowUpRight, Menu, X } from "lucide-react";
 import {
+  ADDRESS_MAILING,
+  ADDRESS_OPERATING,
+  CEO,
   CONVERSATION_PATH,
+  CTO,
+  EMAIL_ADMIN,
   EMAIL_LEGAL,
+  formatAddress,
   GITHUB_URL,
   LEGAL_NAME,
   LINKEDIN_URL,
@@ -80,7 +86,7 @@ export default function MarketingChrome({ children }: MarketingChromeProps) {
         </header>
       </div>
 
-      <div id="main">{children}</div>
+      {children}
 
       <div className="site-end">
         <footer className="site-footer">
@@ -97,15 +103,23 @@ export default function MarketingChrome({ children }: MarketingChromeProps) {
               <p className="footer-entity">
                 {LEGAL_NAME} includes MedStore Inc.
               </p>
+              <p className="footer-officers">
+                {CEO.name}, CEO · {CTO.name}, CTO
+              </p>
+              <p className="footer-address">Operating: {formatAddress(ADDRESS_OPERATING)}</p>
+              <p className="footer-address">Mailing: {formatAddress(ADDRESS_MAILING)}</p>
             </div>
             <div className="footer-dirs">
               <nav className="footer-col" aria-label="Contact">
                 <p className="footer-label">Contact</p>
+                <a href={`mailto:${EMAIL_ADMIN}`}>{EMAIL_ADMIN}</a>
                 <a href={`mailto:${EMAIL_LEGAL}`}>{EMAIL_LEGAL}</a>
                 <a href={PHONE_HREF}>{PHONE}</a>
               </nav>
               <nav className="footer-col" aria-label="Company">
                 <p className="footer-label">Company</p>
+                <a href={CONVERSATION_PATH}>Start a conversation</a>
+                <a href="/about">Leadership</a>
                 <a href={LINKEDIN_URL} target="_blank" rel="noreferrer">
                   LinkedIn
                 </a>
