@@ -25,7 +25,7 @@ export default function MarketingChrome({ children }: MarketingChromeProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="site-shell">
+    <div className="site-shell" data-rev="2">
       <div className="atelier-grain" aria-hidden="true" />
       <a className="skip-link" href="#main">
         Skip to content

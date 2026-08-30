@@ -47,10 +47,50 @@ const PAGES = {
 const SKIP = /^\/(assets|fonts|robots\.txt|sitemap\.xml|_headers|_redirects)/;
 const MARKETING_HOST =
   /(^|\.)aitechpros-website\.pages\.dev$|^(www\.)?aitechpros\.(ai|com)$/;
+const KNOWN_EXTRA = new Set(["/orchestrateos"]);
 
 function replaceAttr(html, attr, value) {
   const pattern = new RegExp(`(${attr}=")[^"]*(")`, "i");
   return html.replace(pattern, `$1${value}$2`);
+}
+
+function isKnownPath(path) {
+  return Boolean(PAGES[path]) || KNOWN_EXTRA.has(path) || path.startsWith("/orchestrateos/");
+}
+
+async function fetchHomeDocument(context, url) {
+  const home = new URL("/", url);
+  const assets = context.env && context.env.ASSETS;
+  if (assets && typeof assets.fetch === "function") {
+    return assets.fetch(new Request(home, context.request));
+  }
+  return fetch(home.toString(), { headers: { accept: "text/html" } });
+}
+
+async function loadSpaDocument(context, url) {
+  const response = await context.next();
+  const isRedirect = response.status >= 300 && response.status < 400;
+
+  if (response.status === 404) {
+    return fetchHomeDocument(context, url);
+  }
+
+  if (!isRedirect) {
+    return response;
+  }
+
+  const location = response.headers.get("location") || "";
+  let dest = "";
+  try {
+    dest = new URL(location, url).pathname.replace(/\/$/, "") || "/";
+  } catch {
+    dest = "";
+  }
+  if (dest !== "/" && dest !== "/index.html") {
+    return response;
+  }
+
+  return fetchHomeDocument(context, url);
 }
 
 export async function onRequest(context) {
@@ -59,13 +99,14 @@ export async function onRequest(context) {
     return context.next();
   }
 
-  const response = await context.next();
+  const response = await loadSpaDocument(context, url);
   const type = response.headers.get("content-type") || "";
   if (!type.includes("text/html")) {
     return response;
   }
 
   const path = url.pathname.replace(/\/$/, "") || "/";
+  const known = isKnownPath(path);
   const page = PAGES[path] || {
     title: "Page not found — AI Tech Pros",
     description: "That URL is not part of the AI Tech Pros, Inc. marketing site.",
@@ -82,7 +123,7 @@ export async function onRequest(context) {
   html = replaceAttr(html, 'name="twitter:description" content', page.description);
   html = replaceAttr(html, 'rel="canonical" href', canonical);
 
-  const robots = PAGES[path] ? "index, follow" : "noindex, nofollow";
+  const robots = known && PAGES[path] ? "index, follow" : "noindex, nofollow";
   if (/name="robots"/i.test(html)) {
     html = replaceAttr(html, 'name="robots" content', robots);
   } else {
@@ -91,5 +132,5 @@ export async function onRequest(context) {
 
   const headers = new Headers(response.headers);
   headers.set("cache-control", "public, max-age=0, must-revalidate");
-  return new Response(html, { status: response.status, headers });
+  return new Response(html, { status: known ? 200 : 404, headers });
 }

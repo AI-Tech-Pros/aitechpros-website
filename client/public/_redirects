@@ -12,26 +12,24 @@
 /docs  https://orchestrateos-api.nevaquit.workers.dev/docs  200
 /openapi.json  https://orchestrateos-api.nevaquit.workers.dev/openapi.json  200
 
-# Known marketing routes hydrate the SPA with HTTP 200
-/projects  /index.html  200
-/projects/  /index.html  200
-/academy  /index.html  200
-/academy/  /index.html  200
-/backoffice  /index.html  200
-/backoffice/  /index.html  200
-/about  /index.html  200
-/about/  /index.html  200
-/conversation  /index.html  200
-/conversation/  /index.html  200
-/privacy  /index.html  200
-/privacy/  /index.html  200
-/terms  /index.html  200
-/terms/  /index.html  200
-/orchestrateos  /index.html  200
-/orchestrateos/  /index.html  200
-/orchestrateos/*  /index.html  200
-/404  /index.html  200
-/404/  /index.html  200
-
-# Missing paths: SPA NotFound UI with a real 404 status
-/*  /index.html  404
+# Rewrite to / (not /index.html). Pages canonicalizes /index.html to / with 308,
+# which dropped About, Privacy, Terms, and other marketing routes on the homepage.
+/projects  /  200
+/projects/  /  200
+/academy  /  200
+/academy/  /  200
+/backoffice  /  200
+/backoffice/  /  200
+/about  /  200
+/about/  /  200
+/conversation  /  200
+/conversation/  /  200
+/privacy  /  200
+/privacy/  /  200
+/terms  /  200
+/terms/  /  200
+/orchestrateos  /  200
+/orchestrateos/  /  200
+/orchestrateos/*  /  200
+/404  /  200
+/404/  /  200
